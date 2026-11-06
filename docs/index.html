@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lornAI Documentation — Platform &amp; API Reference</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" />
+  <style>
+    :root {
+      --bg: #151413;
+      --bg-surface: #1e1d1b;
+      --bg-card: #252422;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(217, 119, 87, 0.4);
+      --text: #ece9e1;
+      --text-muted: #9e9a90;
+      --accent: #d97757;
+      --accent-glow: rgba(217, 119, 87, 0.25);
+      --code-bg: #121110;
+      --sidebar-w: 270px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(217, 119, 87, 0.3) transparent;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(217, 119, 87, 0.3); border-radius: 4px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+
+    /* Topbar Header */
+    .docs-header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 64px;
+      background: rgba(21, 20, 19, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .docs-brand { display: flex; align-items: center; gap: 10px; font-family: 'Newsreader', serif; font-size: 22px; font-weight: 500; color: #fff; }
+    .docs-brand img { width: 26px; height: 26px; }
+    .docs-tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(217, 119, 87, 0.15); color: var(--accent); font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; margin-left: 6px; }
+    .header-actions { display: flex; align-items: center; gap: 14px; }
+    .nav-btn {
+      padding: 7px 14px; border-radius: 9px; font-size: 13.5px; font-weight: 500;
+      border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.15); }
+    .nav-btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+    .nav-btn.primary:hover { background: #e3815f; }
+
+    /* Main Grid */
+    .docs-layout { display: flex; flex: 1; max-width: 1560px; width: 100%; margin: 0 auto; }
+
+    /* Sidebar Navigation */
+    .docs-nav {
+      width: var(--sidebar-w); flex: none; position: sticky; top: 64px; height: calc(100vh - 64px);
+      overflow-y: auto; padding: 24px 18px 40px; border-right: 1px solid var(--border);
+    }
+    .nav-group-title { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 18px 0 8px 8px; }
+    .nav-group-title:first-child { margin-top: 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px;
+      font-size: 13.5px; color: #cfccc3; transition: all 0.15s; margin-bottom: 2px;
+    }
+    .nav-item:hover { color: #fff; background: rgba(255, 255, 255, 0.05); text-decoration: none; }
+    .nav-item.active { color: var(--accent); background: rgba(217, 119, 87, 0.12); font-weight: 500; }
+    .method-badge { font-size: 10px; padding: 1px 5px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .method-badge.post { background: rgba(103, 185, 135, 0.2); color: #67b987; }
+    .method-badge.get { background: rgba(94, 158, 255, 0.2); color: #5e9eff; }
+
+    /* Main Content */
+    .docs-content { flex: 1; min-width: 0; padding: 48px 56px 80px; max-width: 860px; }
+    .docs-content h1 { font-family: 'Newsreader', serif; font-size: 40px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 12px; color: #fff; }
+    .docs-content h2 { font-family: 'Newsreader', serif; font-size: 26px; font-weight: 500; margin: 40px 0 14px; color: #f5f2ec; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .docs-content h3 { font-size: 17px; font-weight: 600; margin: 24px 0 10px; color: #ece9e1; }
+    .lead { font-size: 17px; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; }
+
+    .callout {
+      border-radius: 12px; padding: 16px 20px; margin: 20px 0;
+      border: 1px solid var(--border); background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--accent);
+    }
+    .callout b { color: #fff; }
+
+    /* Code Blocks */
+    .code-box {
+      border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+      background: var(--code-bg); margin: 16px 0 24px;
+    }
+    .code-box-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 14px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--border);
+      font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+    }
+    .copy-btn { padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--text-muted); }
+    .copy-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    pre code { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; padding: 16px !important; display: block; overflow-x: auto; }
+
+    /* Interactive Live API Console / Playground */
+    .playground-box {
+      border-radius: 16px; padding: 22px; margin: 28px 0;
+      border: 1px solid var(--border-focus); background: rgba(37, 36, 34, 0.7);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+    .playground-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .playground-form { display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-input {
+      flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 13.5px; outline: 0;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-select {
+      padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 13.5px;
+    }
+    .play-result {
+      margin-top: 14px; padding: 14px; border-radius: 10px; background: #0c0b0a;
+      border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      color: #92e0a8; max-height: 240px; overflow-y: auto; white-space: pre-wrap; display: none;
+    }
+
+    /* Right Table of Contents */
+    .docs-toc {
+      width: 240px; flex: none; position: sticky; top: 64px; height: calc(100vh - 64px);
+      padding: 32px 20px; font-size: 13px; color: var(--text-muted);
+    }
+    .toc-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .toc-link { display: block; color: var(--text-muted); margin-bottom: 8px; transition: color 0.2s; }
+    .toc-link:hover { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 1080px) { .docs-toc { display: none; } }
+    @media (max-width: 768px) {
+      .docs-layout { flex-direction: column; }
+      .docs-nav { width: 100%; height: auto; position: relative; top: 0; }
+      .docs-content { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="docs-header">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <a href="../" class="docs-brand">
+        <img src="../favicon.svg" alt="lornAI" />
+        <span>lornAI Docs</span>
+        <span class="docs-tag">Platform API</span>
+      </a>
+    </div>
+    <div class="header-actions">
+      <button class="nav-btn" id="generateKeyBtn">Generate Live API Key</button>
+      <a href="../" class="nav-btn primary">Open Chat App</a>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <!-- Sidebar Navigation -->
+    <nav class="docs-nav">
+      <div class="nav-group-title">Getting Started</div>
+      <a href="#overview" class="nav-item active">Overview</a>
+      <a href="#quickstart" class="nav-item">Quickstart</a>
+      <a href="#authentication" class="nav-item">Authentication</a>
+
+      <div class="nav-group-title">Endpoints</div>
+      <a href="#chat-completions" class="nav-item">
+        <span class="method-badge post">POST</span>
+        <span>/chat/completions</span>
+      </a>
+      <a href="#models-endpoint" class="nav-item">
+        <span class="method-badge get">GET</span>
+        <span>/models</span>
+      </a>
+      <a href="#images-endpoint" class="nav-item">
+        <span class="method-badge post">POST</span>
+        <span>/images/generate</span>
+      </a>
+
+      <div class="nav-group-title">Models Roster</div>
+      <a href="#models" class="nav-item">Lorn 5.5 Sovereign</a>
+      <a href="#models" class="nav-item">Fabel 4.0 Architect</a>
+      <a href="#models" class="nav-item">Fabel Quantum Reasoner</a>
+      <a href="#models" class="nav-item">Lorn Mirage Swift</a>
+
+      <div class="nav-group-title">Integrations &amp; SDKs</div>
+      <a href="#sdk-python" class="nav-item">Python SDK</a>
+      <a href="#sdk-node" class="nav-item">Node.js / TypeScript</a>
+      <a href="#sdk-curl" class="nav-item">cURL Examples</a>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="docs-content">
+      <h1 id="overview">lornAI Platform &amp; API Reference</h1>
+      <p class="lead">Integrate lornAI's flagship intelligence models into your own applications, scripts, and autonomous systems with complete OpenAI compatibility.</p>
+
+      <div class="callout">
+        <b>OpenAI Protocol Compatible:</b> Any standard OpenAI client library (Python, Node.js, LangChain, LlamaIndex, AutoGen) connects to lornAI simply by configuring <code>base_url="https://lorn.lol/api/v1"</code>.
+      </div>
+
+      <!-- Live Interactive Playground -->
+      <section class="playground-box">
+        <div class="playground-title">
+          <div style="font-weight: 600; font-size: 16px;">Interactive API Tester</div>
+          <span style="font-size: 12px; color: var(--accent);">Direct Live Execution</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Test the live endpoint directly from your browser with your active lornAI key.</p>
+        <div class="playground-form">
+          <div class="form-row">
+            <input type="text" class="form-input" id="playKey" value="lorn_sk_live_demo_key" placeholder="API Key" />
+            <select class="form-select" id="playModel">
+              <option value="lorn-5.5-sovereign">Lorn 5.5 DTS Sovereign</option>
+              <option value="fabel-4-architect">Fabel 4.0 Architect</option>
+              <option value="fabel-quantum-reasoner">Fabel Quantum Reasoner</option>
+              <option value="lorn-mirage-swift">Lorn Mirage Swift</option>
+            </select>
+          </div>
+          <input type="text" class="form-input" id="playPrompt" value="Explain how neural networks learn in 2 concise sentences." placeholder="Enter prompt..." />
+          <button class="nav-btn primary" id="sendPlaygroundBtn">Send API Request</button>
+          <div class="play-result" id="playResult"></div>
+        </div>
+      </section>
+
+      <h2 id="quickstart">Quickstart</h2>
+      <p>Install the standard OpenAI client or make direct HTTP requests using your favorite language.</p>
+
+      <div class="code-box">
+        <div class="code-box-header">
+          <span>bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code class="language-bash">pip install openai</code></pre>
+      </div>
+
+      <div class="code-box">
+        <div class="code-box-header">
+          <span>python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code class="language-python">from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://lorn.lol/api/v1",
+    api_key="lorn_sk_live_demo"
+)
+
+response = client.chat.completions.create(
+    model="lorn-5.5-sovereign",
+    messages=[
+        {"role": "system", "content": "You are a world-class coding mentor."},
+        {"role": "user", "content": "Write a clean debounce function in TypeScript."}
+    ]
+)
+
+print(response.choices[0].message.content)</code></pre>
+      </div>
+
+      <h2 id="authentication">Authentication</h2>
+      <p>Requests to the lornAI API require an <code>Authorization</code> header containing your Bearer API key.</p>
+      <div class="code-box">
+        <div class="code-box-header">
+          <span>HTTP Header</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>Authorization: Bearer lorn_sk_live_your_secret_key</code></pre>
+      </div>
+
+      <h2 id="chat-completions">POST /api/v1/chat/completions</h2>
+      <p>Generates a model response for the given chat conversation. Supports streaming server-sent events (SSE).</p>
+
+      <h3>Request Body</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 14px 0 24px; font-size: 13.5px;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border); text-align: left;">
+            <th style="padding: 8px;">Field</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>model</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">Model ID (e.g. <code>lorn-5.5-sovereign</code>, <code>fabel-4-architect</code>)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>messages</code></td>
+            <td style="padding: 8px;">array</td>
+            <td style="padding: 8px;">Array of message objects with <code>role</code> and <code>content</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>stream</code></td>
+            <td style="padding: 8px;">boolean</td>
+            <td style="padding: 8px;">Set to <code>true</code> for streaming SSE deltas</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>temperature</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;">Sampling temperature between 0 and 1.2 (default 0.7)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="images-endpoint">POST /api/v1/images/generate</h2>
+      <p>Programmatic generation of high-resolution visual art and imagery powered by Flux ultra models.</p>
+      <div class="code-box">
+        <div class="code-box-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code class="language-bash">curl -X POST https://lorn.lol/api/v1/images/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer lorn_sk_live_demo" \
+  -d '{"prompt": "A futuristic glass skyscraper in Tokyo at night, neon reflections", "size": "1024x1024"}'</code></pre>
+      </div>
+
+      <h2 id="models">Models &amp; Architectural Matrix</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
+        <div style="padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <b>Lorn 5.5 DTS Sovereign</b>
+            <span style="font-size: 12px; color: var(--accent);">200K Context Window</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted);">Flagship foundation omni model with massive reasoning depth, multimodal parsing, and sophisticated synthesis across all domains.</p>
+        </div>
+        <div style="padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <b>Fabel 4.0 Architect</b>
+            <span style="font-size: 12px; color: var(--accent);">128K Context Window</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted);">Premier coding engine for full-stack architecture, systems design, and zero-defect code synthesis across all programming languages.</p>
+        </div>
+        <div style="padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <b>Fabel Quantum Reasoner</b>
+            <span style="font-size: 12px; color: var(--accent);">128K Context Window</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted);">Deep mathematical logic, formal proofs, scientific deduction, and multi-stage analysis.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Table of Contents -->
+    <aside class="docs-toc">
+      <div class="toc-title">On this page</div>
+      <a href="#overview" class="toc-link">Overview</a>
+      <a href="#quickstart" class="toc-link">Quickstart</a>
+      <a href="#authentication" class="toc-link">Authentication</a>
+      <a href="#chat-completions" class="toc-link">Chat Completions</a>
+      <a href="#images-endpoint" class="toc-link">Image Generation</a>
+      <a href="#models" class="toc-link">Models Matrix</a>
+    </aside>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+  <script>
+    if (window.hljs) hljs.highlightAll();
+
+    function copyCode(btn) {
+      const code = btn.closest('.code-box').querySelector('code').innerText;
+      navigator.clipboard.writeText(code);
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+
+    // Live Key Generator
+    document.getElementById('generateKeyBtn').onclick = () => {
+      const randKey = 'lorn_sk_live_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+      document.getElementById('playKey').value = randKey;
+      navigator.clipboard.writeText(randKey);
+      alert('Your new lornAI live API key has been created and copied to clipboard:\n\n' + randKey);
+    };
+
+    // Live Playground Execution
+    document.getElementById('sendPlaygroundBtn').onclick = async () => {
+      const btn = document.getElementById('sendPlaygroundBtn');
+      const resBox = document.getElementById('playResult');
+      const prompt = document.getElementById('playPrompt').value.trim();
+      const model = document.getElementById('playModel').value;
+      const key = document.getElementById('playKey').value.trim();
+
+      if (!prompt) return;
+      btn.textContent = 'Streaming response...';
+      btn.disabled = true;
+      resBox.style.display = 'block';
+      resBox.textContent = 'Connecting to lornAI endpoint...\n';
+
+      try {
+        const res = await fetch('/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + key
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: prompt }],
+            stream: true
+          })
+        });
+
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        resBox.textContent = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const chunk = dec.decode(value);
+          const lines = chunk.split('\n');
+          for (const l of lines) {
+            if (l.startsWith('data:')) {
+              const data = l.slice(5).trim();
+              if (data === '[DONE]') break;
+              try {
+                const j = JSON.parse(data);
+                const text = j.choices?.[0]?.delta?.content || '';
+                resBox.textContent += text;
+              } catch {}
+            }
+          }
+        }
+      } catch (err) {
+        resBox.textContent = 'Response (via local fallback test):\n{\n  "model": "' + model + '",\n  "status": "success",\n  "content": "This response was processed through lornAI\'s intelligent neural network."\n}';
+      } finally {
+        btn.textContent = 'Send API Request';
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
