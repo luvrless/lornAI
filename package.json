@@ -1,18 +1,17 @@
 {
   "name": "lorn-ai",
   "version": "1.0.0",
-  "description": "Next-Generation AI Assistant with Claude UI design, multi-model engine, Puter.js integration, NVIDIA NIM, and Live Artifacts.",
+  "description": "Next-Generation AI Assistant with Claude UI design, multi-model engine, and Live Artifacts.",
   "main": "index.html",
   "scripts": {
     "start": "npx serve .",
     "dev": "npx serve .",
-    "build": "echo 'lornAI is ready for Cloudflare Pages deployment!'"
+    "build": "echo 'lornAI ready'",
+    "deploy": "npx wrangler pages deploy ."
   },
   "keywords": [
     "claude-ui",
     "ai-chat",
-    "puter-js",
-    "nvidia-nim",
     "artifacts",
     "cloudflare-pages"
   ],

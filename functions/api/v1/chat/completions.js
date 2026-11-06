@@ -1,126 +1,90 @@
 /**
  * Cloudflare Pages Function: POST /api/v1/chat/completions
- * OpenAI-compatible completions API endpoint with streaming SSE support
- * Allows external developers and applications to build on top of lornAI
+ * lornAI public API — OpenAI-compatible, powered by Frail intelligence network.
+ * Never exposes upstream providers.
  */
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
+const LORNAI_IDENTITY = `You are lornAI, an intelligent assistant developed by Frail as part of the lorn project (https://lorn.lol).
+You are powered by a distributed proprietary intelligence network — not any single external AI brand.
+Never claim to be OpenAI, GPT, NVIDIA, Claude, or any third-party AI.
+If asked what model or AI you are, say you are lornAI by Frail.
+Be helpful, conversational, and comprehensive.`;
+
+export async function onRequestOptions() {
+  return new Response(null, { status: 204, headers: CORS });
+}
 
 export async function onRequestPost(context) {
   const { request } = context;
 
-  // Verify custom lornAI API key header if present (supports lorn_sk_...)
-  const authHeader = request.headers.get("Authorization") || "";
-  let apiKey = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-  // If no key provided, issue ephemeral public dev access
-  if (!apiKey) {
-    apiKey = "lorn_sk_live_public_demo";
-  }
-
   let body;
-  try {
-    body = await request.json();
-  } catch (err) {
-    return new Response(JSON.stringify({ error: { message: "Invalid JSON request body", type: "invalid_request_error" } }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+  try { body = await request.json(); }
+  catch {
+    return new Response(JSON.stringify({ error: { message: 'Invalid JSON', type: 'invalid_request_error' } }), {
+      status: 400, headers: { 'Content-Type': 'application/json', ...CORS }
     });
   }
 
-  const { model = "lorn-5.5-sovereign", messages = [], stream = false, temperature = 0.7 } = body;
+  const { model = 'lorn-5.5-sovereign', messages = [], stream = false, temperature = 0.72 } = body;
+  const sysPrompt = `${LORNAI_IDENTITY}\n\nYou are operating as ${model}, a Frail intelligence tier within lornAI.`;
+  const upstreamMsgs = [{ role: 'system', content: sysPrompt }, ...messages.filter(m => m.role !== 'system')];
 
-  // Map lornAI model IDs to upstream capabilities
-  const modelMap = {
-    "lorn-5.5-sovereign": "openai-large",
-    "fabel-4-architect": "openai-large",
-    "fabel-quantum-reasoner": "openai-large",
-    "fabel-lumina-vision": "openai-large",
-    "lorn-5.0-nexus": "openai",
-    "lorn-mirage-swift": "openai-fast"
-  };
+  /* Try multiple upstream sources in order */
+  const sources = [
+    () => fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'openai', messages: upstreamMsgs, stream, temperature, seed: Math.floor(Math.random() * 99999) })
+    }),
+    () => fetch('https://text.pollinations.ai/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: upstreamMsgs, stream, seed: Math.floor(Math.random() * 99999) })
+    })
+  ];
 
-  const targetModel = modelMap[model] || "openai";
+  for (const source of sources) {
+    try {
+      const res = await source();
+      if (!res.ok) continue;
 
-  // System role enhancement
-  const systemPrompt = `You are ${model}, powered by lornAI (https://lorn.lol). Provide brilliant, structured, and comprehensive responses. Use clean Markdown formatting.`;
-  const upstreamMessages = [{ role: "system", content: systemPrompt }, ...messages];
-
-  try {
-    const upstreamRes = await fetch("https://text.pollinations.ai/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: targetModel,
-        messages: upstreamMessages,
-        stream: stream,
-        temperature: temperature
-      })
-    });
-
-    if (!upstreamRes.ok) {
-      throw new Error(`Upstream engine error: ${upstreamRes.status}`);
-    }
-
-    if (stream) {
-      // Forward streaming SSE
-      return new Response(upstreamRes.body, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
-      });
-    } else {
-      // Non-streaming response
-      const data = await upstreamRes.json();
-      return new Response(JSON.stringify(data), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
-        }
-      });
-    }
-  } catch (err) {
-    // Intelligent fallback response
-    const fallbackResponse = {
-      id: "chatcmpl-" + Math.random().toString(36).slice(2),
-      object: "chat.completion",
-      created: Math.floor(Date.now() / 1000),
-      model: model,
-      choices: [
-        {
-          index: 0,
-          message: {
-            role: "assistant",
-            content: `I am ${model} via lornAI. Received your request. (Processed seamlessly via primary engine network).`
-          },
-          finish_reason: "stop"
-        }
-      ],
-      usage: {
-        prompt_tokens: 15,
-        completion_tokens: 25,
-        total_tokens: 40
+      if (stream) {
+        return new Response(res.body, {
+          headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', ...CORS }
+        });
       }
-    };
 
-    return new Response(JSON.stringify(fallbackResponse), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
+      const text = await res.text();
+      let content = text;
+      try {
+        const j = JSON.parse(text);
+        content = j.choices?.[0]?.message?.content || j.choices?.[0]?.delta?.content || text;
+      } catch {}
+
+      return new Response(JSON.stringify({
+        id: 'chatcmpl-' + Math.random().toString(36).slice(2),
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: upstreamMsgs.reduce((s, m) => s + (m.content || '').length / 4, 0) | 0, completion_tokens: content.length / 4 | 0, total_tokens: 0 }
+      }), { headers: { 'Content-Type': 'application/json', ...CORS } });
+    } catch {}
   }
-}
 
-export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    }
-  });
+  /* Final fallback */
+  return new Response(JSON.stringify({
+    id: 'chatcmpl-' + Math.random().toString(36).slice(2),
+    object: 'chat.completion',
+    created: Math.floor(Date.now() / 1000),
+    model,
+    choices: [{ index: 0, message: { role: 'assistant', content: 'lornAI is momentarily unavailable. Please try again.' }, finish_reason: 'stop' }],
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+  }), { status: 503, headers: { 'Content-Type': 'application/json', ...CORS } });
 }
