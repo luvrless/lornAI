@@ -1,6 +1,7 @@
-name = "lorn-ai"
+name = "lornai"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "."
+account_id = "cfac04926d19976f4dbc17d2addb32cc"
 
 [assets]
 directory = "."

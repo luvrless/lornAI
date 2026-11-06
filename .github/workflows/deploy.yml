@@ -1,0 +1,25 @@
+name: Deploy lornAI to Cloudflare Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: cfac04926d19976f4dbc17d2addb32cc
+          command: pages deploy . --project-name=lornai --commit-dirty=true
