@@ -94,81 +94,91 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 /* ---------- App Layout ---------- */
 .app { position: relative; z-index: 1; display: flex; height: 100dvh; width: 100vw; overflow: hidden; }
 
-/* ---------- Clean Sidebar & Fixed Collapsed State ---------- */
+/* ══ Sidebar ══ */
 .sidebar {
-  width: var(--side-w); flex: none; display: flex; flex-direction: column; gap: 6px;
-  padding: 12px; margin: 10px 0 10px 10px; border-radius: var(--radius);
-  background: var(--side); z-index: 40; position: relative;
-  transition: width 0.4s var(--ease), padding 0.4s var(--ease), margin 0.4s var(--ease), transform 0.4s var(--ease);
-  overflow: hidden; user-select: none;
+  width: var(--side-w);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  margin: 10px 0 10px 10px;
+  border-radius: var(--radius);
+  background: var(--side);
+  z-index: 40;
+  position: relative;
+  transition: width 0.38s var(--ease), padding 0.38s var(--ease), margin 0.38s var(--ease), transform 0.38s var(--ease);
+  overflow: hidden;
+  user-select: none;
+  /* prevent collapsed text overflow from bleeding */
+  min-width: 0;
 }
 
-/* Beautiful Centered Collapsed Sidebar (Fixes Screenshot Bug) */
+/* ── Collapsed sidebar — icons only, no text bleed ── */
 .app.collapsed .sidebar {
-  width: 64px;
-  padding: 14px 8px;
+  width: 64px !important;
+  padding: 12px 10px !important;
   align-items: center;
 }
-.app.collapsed .sidebar .side-top {
-  justify-content: center;
-  width: 100%;
-  overflow: hidden;
-}
+/* Hide all text/labels in collapsed state */
 .app.collapsed .sidebar .brand,
-.app.collapsed .sidebar .brand * {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  width: 0 !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-}
-.app.collapsed .sidebar #collapseBtn {
-  margin: 0 auto;
-}
-.app.collapsed .sidebar .new-chat {
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  justify-content: center;
-  align-items: center;
-  border-radius: 12px;
-  margin: 8px auto 0;
-}
-.app.collapsed .sidebar .new-chat span:last-child,
+.app.collapsed .sidebar .new-chat > span:not(.plus),
 .app.collapsed .sidebar .search,
 .app.collapsed .sidebar .side-label,
 .app.collapsed .sidebar .history,
 .app.collapsed .sidebar .pinfo,
 .app.collapsed .sidebar .gear {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
+  max-width: 0 !important;
+  overflow: hidden;
+  flex: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  border: none !important;
 }
+.app.collapsed .sidebar .side-top {
+  justify-content: center;
+}
+.app.collapsed .sidebar #collapseBtn {
+  margin: 0 auto;
+}
+/* New chat button icon-only */
+.app.collapsed .sidebar .new-chat {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 0;
+  padding: 0 !important;
+  justify-content: center;
+  border-radius: 13px;
+  margin: 6px auto 0;
+}
+.app.collapsed .sidebar .new-chat .plus {
+  margin: 0;
+}
+/* Profile button icon-only */
 .app.collapsed .sidebar .side-bottom {
   margin-top: auto;
   width: 100%;
   display: flex;
   justify-content: center;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
 }
 .app.collapsed .sidebar .profile {
-  width: 42px;
-  height: 42px;
-  padding: 0;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
   justify-content: center;
-  align-items: center;
   border-radius: 50%;
   margin: 0 auto;
 }
 .app.collapsed .sidebar .avatar {
   margin: 0;
+  flex: none;
 }
 
 .side-top { display: flex; align-items: center; gap: 10px; height: 40px; }
@@ -251,6 +261,7 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px 28px; height: 60px; z-index: 10; position: relative;
+  flex-shrink: 0;
 }
 .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .chat-title {
@@ -297,6 +308,9 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 .scroller {
   flex: 1; overflow-y: auto; padding: 0 28px; display: flex; flex-direction: column;
   position: relative; z-index: 5;
+  /* Prevent jump-scroll during streaming — keep scroll position stable */
+  overflow-anchor: none;
+  overscroll-behavior-y: contain;
 }
 
 .welcome {
@@ -587,10 +601,38 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 }
 @keyframes ring { 70% { box-shadow: 0 0 0 10px rgba(217, 119, 87, 0); } }
 
+/* ══ AI response images — controlled size, never giant ══ */
+.content img {
+  max-width: min(380px, 100%);
+  max-height: 280px;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  cursor: zoom-in;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.content img:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 36px rgba(0,0,0,0.5);
+}
+
 .disclaimer { text-align: center; font-size: 11.5px; color: var(--dim); margin: 8px 0 0; }
 
-/* ---------- Artifacts Drawer ---------- */
-.artifact-drawer {
+/* ══ Topbar chat title (shows current chat name) ══ */
+.chat-title {
+  font-size: 14.5px; color: #d8d5cd; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+  flex: 1; min-width: 0;
+}
+
+/* ══ Main area uses remaining space regardless of sidebar state ══ */
+/* ══ Main area uses remaining space regardless of sidebar state ══ */
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; }
   position: fixed; top: 0; right: 0; bottom: 0; width: min(600px, 92vw);
   background: rgba(30, 29, 27, 0.94); backdrop-filter: blur(36px) saturate(180%);
   -webkit-backdrop-filter: blur(36px) saturate(180%);
@@ -829,4 +871,159 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ══════════════════════════════════════════════
+   PATCH — All remaining fixes appended
+══════════════════════════════════════════════ */
+
+/* Error text inside AI response */
+.err-text {
+  color: #f08a7a;
+  font-size: 13px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239,100,97,0.1);
+  border: 1px solid rgba(239,100,97,0.25);
+  border-radius: 8px;
+}
+
+/* Topbar left group */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+/* Make sure .main never shrinks below 0 and doesn't overflow sidebar */
+.app.collapsed .main {
+  /* When sidebar collapses to 64px, main grows naturally via flex */
+  flex: 1;
+  min-width: 0;
+}
+
+/* Docs link button */
+.docs-link-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+  font-size: 12.5px; color: var(--muted); text-decoration: none;
+  transition: all 0.2s; white-space: nowrap; cursor: pointer;
+}
+.docs-link-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: var(--line-2); }
+.docs-link-btn svg { width: 14px; height: 14px; }
+
+/* Smooth thread anchor at bottom so streaming doesn't scroll-jump */
+#thread::after {
+  content: '';
+  display: block;
+  height: 1px;
+  overflow-anchor: auto;
+}
+
+/* Ensure images in content are never wider than their container */
+.content img, .msg img {
+  max-width: min(380px, 100%) !important;
+  max-height: 280px !important;
+  height: auto !important;
+  width: auto !important;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+}
+
+/* Guest limit banner */
+.guest-limit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(217,119,87,0.14);
+  border: 1px solid rgba(217,119,87,0.4);
+  color: #f5cfc1;
+  font-size: 13px;
+  margin-bottom: 8px;
+  animation: rise 0.4s var(--ease);
+}
+.guest-limit-btn {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.guest-limit-btn:hover { background: #e3815f; }
+
+/* Context meter pill */
+.context-meter-btn {
+  display: flex; align-items: center; gap: 7px; padding: 6px 12px;
+  border-radius: 999px; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line); font-size: 12.5px; color: var(--muted);
+  transition: all 0.2s; cursor: pointer; white-space: nowrap;
+}
+.context-meter-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); border-color: var(--line-2); }
+.context-meter-btn svg { width: 14px; height: 14px; stroke: var(--accent); }
+.context-bar-mini {
+  width: 32px; height: 5px; border-radius: 999px;
+  background: rgba(255,255,255,0.1); overflow: hidden;
+}
+.context-bar-fill {
+  height: 100%; width: 1%;
+  background: linear-gradient(90deg, var(--accent), #f3a07a);
+  border-radius: 999px; transition: width 0.5s;
+}
+
+/* Mobile: collapsed class shouldn't shrink sidebar on mobile — use side-open instead */
+@media (max-width: 820px) {
+  .app.collapsed .sidebar {
+    width: var(--side-w) !important;
+    padding: 12px !important;
+    align-items: flex-start;
+  }
+  .app.collapsed .sidebar .brand,
+  .app.collapsed .sidebar .new-chat > span:not(.plus),
+  .app.collapsed .sidebar .search,
+  .app.collapsed .sidebar .side-label,
+  .app.collapsed .sidebar .history,
+  .app.collapsed .sidebar .pinfo,
+  .app.collapsed .sidebar .gear {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    flex: initial !important;
+    padding: initial !important;
+    margin: initial !important;
+    font-size: initial !important;
+    border: initial !important;
+  }
+  .app.collapsed .sidebar .new-chat {
+    width: auto !important;
+    height: auto !important;
+    padding: 8px 10px !important;
+  }
+  .app.collapsed .sidebar .profile {
+    width: 100% !important;
+    height: auto !important;
+    padding: 6px !important;
+    border-radius: 12px !important;
+  }
+  .app.collapsed .sidebar .side-bottom {
+    justify-content: flex-start;
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
 }
