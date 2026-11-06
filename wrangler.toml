@@ -1,3 +1,4 @@
+# Cloudflare Pages — no build config needed for static sites
+# wrangler.toml is only used for local `wrangler pages dev` preview
 name = "lornai"
 compatibility_date = "2024-11-01"
-pages_build_output_dir = "."
