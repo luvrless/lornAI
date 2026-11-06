@@ -1,651 +1,374 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>lornAI - Next-Generation AI Assistant</title>
-  <meta name="description" content="lornAI - Intelligent AI Assistant with Claude design, ultra-fast streaming, 150+ skills pack, live code artifacts, and MCP server connectivity.">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-
-  <!-- Google Fonts: Editorial Serif + Clean Modern Sans + Code Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-  <!-- Highlight.js for Syntax Highlighting -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-  <!-- Marked.js for fast Markdown parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <!-- Puter.js SDK -->
-  <script src="https://js.puter.com/v2/"></script>
-
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f1e1c" />
+  <title>lornAI</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="theme-dark">
-  <div id="app" class="app-container">
-    
-    <!-- Collapsible Sidebar -->
-    <aside id="sidebar" class="sidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="currentColor"/>
-            </svg>
-          </div>
-          <span class="brand-name">lornAI</span>
-          <span class="brand-badge">5.0</span>
-        </div>
-        <button id="sidebar-toggle-btn" class="icon-btn" title="Toggle sidebar">
-          <i class="fa-solid fa-bars-staggered"></i>
+<body>
+  <!-- Ambient Animated Background -->
+  <div class="ambient" aria-hidden="true">
+    <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+    <div class="grain"></div>
+  </div>
+
+  <div class="app" id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar glass" id="sidebar">
+      <div class="side-top">
+        <button class="icon-btn" id="collapseBtn" title="Toggle sidebar" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
         </button>
+        <div class="brand"><span class="mark mini"></span><span>lornAI</span></div>
       </div>
 
-      <div class="sidebar-action">
-        <button id="new-chat-btn" class="new-chat-btn">
-          <i class="fa-solid fa-plus"></i>
-          <span>New chat</span>
-          <kbd class="shortcut-badge">Ctrl+K</kbd>
+      <button class="new-chat" id="newChatBtn">
+        <span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span>New chat</span>
+      </button>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="searchInput" placeholder="Search chats..." autocomplete="off" />
+      </div>
+
+      <div class="side-label">Recents</div>
+      <nav class="history" id="history"></nav>
+
+      <!-- Bottom Profile / Account (Click to Log In / Account) -->
+      <div class="side-bottom">
+        <button class="profile" id="userProfileBtn" title="Account &amp; Settings">
+          <span class="avatar" id="userAvatar">G</span>
+          <span class="pinfo">
+            <b id="userName">Guest user</b>
+            <small id="userStatus">Click to log in</small>
+          </span>
+          <svg viewBox="0 0 24 24" class="gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
-      </div>
-
-      <div class="sidebar-search">
-        <div class="search-input-wrap">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="chat-search" placeholder="Search conversations..." autocomplete="off">
-        </div>
-      </div>
-
-      <!-- History List Grouped by Time -->
-      <div class="sidebar-content custom-scrollbar">
-        <div class="chat-history-group" id="history-container">
-          <!-- Dynamically injected conversation items -->
-        </div>
-      </div>
-
-      <!-- Sidebar Footer -->
-      <div class="sidebar-footer">
-        <div class="user-account-strip" id="user-account-btn">
-          <div class="user-avatar" id="sidebar-user-avatar">
-            <i class="fa-regular fa-user"></i>
-          </div>
-          <div class="user-details">
-            <span class="user-name" id="sidebar-user-name">Guest User</span>
-            <span class="user-tier" id="sidebar-user-badge">Sign in for Cloud Sync</span>
-          </div>
-          <i class="fa-solid fa-chevron-right arrow-sm"></i>
-        </div>
-
-        <div class="footer-control-row">
-          <button id="settings-btn" class="footer-icon-btn" title="Settings & Customization">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Settings</span>
-          </button>
-          <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Theme">
-            <i class="fa-solid fa-moon" id="theme-icon"></i>
-          </button>
-        </div>
       </div>
     </aside>
 
-    <!-- Main Chat Workspace -->
-    <main class="main-workspace">
-      <!-- Top Workspace Bar -->
-      <header class="workspace-header">
-        <div class="header-left">
-          <button id="mobile-sidebar-toggle" class="icon-btn mobile-only">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-          
-          <!-- Claude-style Model Selector Dropdown -->
-          <div class="model-picker-container" id="model-picker-wrap">
-            <button class="model-picker-btn" id="model-picker-trigger">
-              <span class="model-sparkle">✦</span>
-              <span class="model-selected-name" id="current-model-display">lorn dts 5.0</span>
-              <span class="model-tag-badge flagship" id="current-model-tag">Best • Flagship</span>
-              <i class="fa-solid fa-chevron-down caret-icon"></i>
-            </button>
+    <div class="scrim" id="scrim"></div>
 
-            <!-- Dropdown Menu -->
-            <div class="model-menu-dropdown custom-scrollbar" id="model-dropdown-menu">
-              <div class="dropdown-header">Model Selection</div>
-              
-              <div class="dropdown-category">
-                <span class="cat-label">LORN DTS SERIES (FLAGSHIP REASONING)</span>
-                <div class="model-opt active" data-model="lorn-dts-5.0">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn dts 5.0</span>
-                    <span class="opt-badge flagship">Best Model</span>
-                  </div>
-                  <div class="opt-desc">Ultimate deep reasoning, multi-disciplinary coding, vision, and peak intellect</div>
-                </div>
-                <div class="model-opt" data-model="lorn-dts-4.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn dts 4.5</span>
-                    <span class="opt-badge smart">Ultra</span>
-                  </div>
-                  <div class="opt-desc">High-speed analysis, creative prose, and deep multi-turn comprehension</div>
-                </div>
-                <div class="model-opt" data-model="lorn-dts-4.0">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn dts 4.0</span>
-                    <span class="opt-badge smart">Pro</span>
-                  </div>
-                  <div class="opt-desc">Balanced high-precision synthesis and coding support</div>
-                </div>
-                <div class="model-opt" data-model="lorn-dts-3.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn dts 3.5</span>
-                    <span class="opt-badge fast">Standard</span>
-                  </div>
-                  <div class="opt-desc">Fast, dependable assistant for daily tasks and writing</div>
-                </div>
-              </div>
-
-              <div class="dropdown-category">
-                <span class="cat-label">LORN LIGHT SERIES (INSTANT SPEED)</span>
-                <div class="model-opt" data-model="lorn-light-4.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn light 4.5</span>
-                    <span class="opt-badge light">Turbo</span>
-                  </div>
-                  <div class="opt-desc">Near-instant responses with fluent conversational depth</div>
-                </div>
-                <div class="model-opt" data-model="lorn-light-3.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn light 3.5</span>
-                    <span class="opt-badge light">Fast</span>
-                  </div>
-                  <div class="opt-desc">Optimized for quick translations, summaries, and edits</div>
-                </div>
-                <div class="model-opt" data-model="lorn-light-2.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn light 2.5</span>
-                    <span class="opt-badge nano">Nano</span>
-                  </div>
-                  <div class="opt-desc">Ultra-compact, low-latency micro-responses</div>
-                </div>
-                <div class="model-opt" data-model="lorn-light-1.5">
-                  <div class="opt-main">
-                    <span class="opt-name">lorn light 1.5</span>
-                    <span class="opt-badge nano">Micro</span>
-                  </div>
-                  <div class="opt-desc">Lightning-fast replies for quick question-and-answers</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="header-right">
-          <!-- Active Skills Pill -->
-          <button id="skills-badge-btn" class="header-pill-btn" title="Explore 150+ Skills Pack">
-            <i class="fa-solid fa-wand-magic-sparkles text-terracotta"></i>
-            <span>150+ Skills Pack</span>
-            <span class="pill-dot"></span>
-          </button>
-          
-          <button id="toggle-artifacts-btn" class="header-btn" title="View Artifacts">
-            <i class="fa-solid fa-code"></i>
-            <span>Artifacts</span>
-            <span class="artifacts-count" id="artifacts-counter">0</span>
-          </button>
-          <button id="clear-chat-btn" class="header-btn secondary" title="Clear current messages">
-            <i class="fa-regular fa-trash-can"></i>
-          </button>
-        </div>
+    <!-- Main Section -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="Open menu">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </button>
+        <div class="chat-title" id="chatTitle">New chat</div>
+        <!-- Engine pill hidden visually per requirement -->
+        <div class="engine-pill" id="enginePill"><i></i><span>Ready</span></div>
       </header>
 
-      <!-- Chat Viewport -->
-      <div class="chat-viewport custom-scrollbar" id="chat-viewport">
-        <!-- Welcoming Hero -->
-        <div class="hero-welcome-container" id="hero-welcome">
-          <div class="hero-sparkle-glyph">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 2L19.2 12.8L30 16L19.2 19.2L16 30L12.8 19.2L2 16L12.8 12.8L16 2Z" fill="currentColor"/>
-            </svg>
-          </div>
-          <h1 class="hero-title" id="hero-greeting">Good evening, Friend.</h1>
-          <p class="hero-subtitle">What would you like to explore, build, or discuss with lornAI today?</p>
-
-          <!-- Prompt Starters -->
-          <div class="starter-grid">
-            <div class="starter-card" data-prompt="Let's have a deep, thoughtful conversation. Tell me what fascinating idea has been on your mind lately.">
-              <div class="card-icon"><i class="fa-regular fa-comments"></i></div>
-              <div class="card-text">
-                <span class="card-title">Philosophical & Casual Chat</span>
-                <span class="card-desc">Talk freely with human-like warmth, curiosity, and wit</span>
-              </div>
-            </div>
-            <div class="starter-card" data-prompt="Create a complete interactive Roblox Luau script for an advanced inventory and trading system with clean OOP architecture.">
-              <div class="card-icon"><i class="fa-solid fa-gamepad"></i></div>
-              <div class="card-text">
-                <span class="card-title">Roblox Studio & Game Dev</span>
-                <span class="card-desc">Production-grade Luau scripts with OOP and client-server sync</span>
-              </div>
-            </div>
-            <div class="starter-card" data-prompt="Build a stunning, interactive dark-themed landing page component with CSS glassmorphism and smooth animations.">
-              <div class="card-icon"><i class="fa-solid fa-code"></i></div>
-              <div class="card-text">
-                <span class="card-title">Live Code & Artifacts</span>
-                <span class="card-desc">Generate HTML/CSS/JS with instant sandbox preview</span>
-              </div>
-            </div>
-            <div class="starter-card" data-prompt="Solve this step-by-step with deep reasoning: What are the mathematical implications of P vs NP on post-quantum cryptography?">
-              <div class="card-icon"><i class="fa-solid fa-brain"></i></div>
-              <div class="card-text">
-                <span class="card-title">Deep Reasoning & Math</span>
-                <span class="card-desc">Analyze complex theoretical problems with precision</span>
-              </div>
-            </div>
-          </div>
+      <section class="scroller" id="scroller">
+        <!-- Welcome Screen -->
+        <div class="welcome" id="welcome">
+          <div class="mark big"></div>
+          <h1 class="greet" id="greet">Good evening</h1>
+          <p class="sub">How can lornAI help you today?</p>
         </div>
+        <div class="thread" id="thread"></div>
+      </section>
 
-        <!-- Messages Container -->
-        <div class="messages-container" id="messages-container"></div>
-      </div>
+      <!-- Composer -->
+      <div class="composer-wrap" id="composerWrap">
+        <form class="composer glass" id="composer">
+          <!-- Image Upload Preview Tray -->
+          <div class="media-tray" id="mediaTray" style="display: none;"></div>
 
-      <!-- Claude Iconic Input Container -->
-      <div class="chat-input-area">
-        <div class="input-card" id="input-card">
-          <!-- Attachment Preview Pills -->
-          <div id="attachments-preview" class="attachments-preview hidden"></div>
-
-          <!-- Auto-expanding Textarea -->
-          <textarea 
-            id="chat-textarea" 
-            placeholder="Reply to lornAI or drag & drop images/files..." 
-            rows="1"
-            autocomplete="off"
-            autofocus
-          ></textarea>
-
-          <!-- Input Action Bar -->
-          <div class="input-bottom-bar">
-            <div class="input-tools-left">
-              <!-- File / Image Upload -->
-              <input type="file" id="file-upload-input" accept="image/*,.txt,.py,.js,.html,.css,.json,.lua" multiple style="display:none;">
-              <button id="attach-file-btn" class="input-tool-btn" title="Attach Image or Code (Vision Supported)">
-                <i class="fa-solid fa-paperclip"></i>
+          <textarea id="input" rows="1" placeholder="How can I help you today?" autocomplete="off"></textarea>
+          
+          <div class="composer-row">
+            <div class="left-tools">
+              <!-- Media Attachment Input -->
+              <input type="file" id="mediaUpload" accept="image/*" style="display: none;" />
+              <button type="button" class="tool-btn" id="attachBtn" title="Attach image or screenshot">
+                <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
               </button>
-
-              <!-- Quick Model Pill inside input -->
-              <button id="quick-model-pill" class="input-pill-btn" title="Active Model">
-                <span class="model-dot"></span>
-                <span id="pill-model-name">lorn dts 5.0</span>
+              <button type="button" class="tool-btn" id="modelAdviceBtn" title="Model guide &amp; advice">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </button>
-
-              <!-- Instant Speed / Deep Reasoning Toggle -->
-              <button id="turbo-toggle-btn" class="input-pill-btn active" title="Ultra Fast Low-Latency Streaming">
-                <i class="fa-solid fa-bolt"></i>
-                <span>Fast Stream</span>
+              <button type="button" class="tool-btn" id="clearInputBtn" title="Clear input">
+                <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
-
-              <!-- Vision Active Indicator when images attached -->
-              <span id="vision-indicator" class="vision-indicator hidden">
-                <i class="fa-solid fa-eye"></i> Vision Ready
-              </span>
             </div>
 
-            <div class="input-tools-right">
-              <span id="char-counter" class="char-counter"></span>
-              <button id="send-message-btn" class="send-btn" disabled title="Send message (Enter)">
-                <i class="fa-solid fa-arrow-up"></i>
+            <!-- Model Switching & Send Button placed in Composer Row -->
+            <div class="right-tools">
+              <div class="model-picker" id="modelPicker">
+                <button type="button" class="model-btn" id="modelBtn">
+                  <span id="modelName">Fabel Code</span>
+                  <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="model-menu glass" id="modelMenu" role="menu"></div>
+              </div>
+
+              <button type="submit" class="send" id="sendBtn" aria-label="Send message" disabled>
+                <svg class="arrow" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                <svg class="stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
               </button>
             </div>
           </div>
+        </form>
+
+        <div class="suggestions" id="suggestions">
+          <button data-p="Build a clean modern responsive navbar with pure CSS"><span>&lt;/&gt;</span>Fabel Code</button>
+          <button data-p="Explain quantum entanglement simply with real-world analogies"><span>🎓</span>Explain</button>
+          <button data-p="Write an atmospheric cyberpunk story intro"><span>✍️</span>Write</button>
+          <button data-p="Analyze the architecture tradeoffs of microservices vs monoliths"><span>💡</span>Deep DTS</button>
         </div>
 
-        <div class="input-disclaimer">
-          lornAI can make mistakes. Verify important facts. Powered by autonomous multi-model failover.
-        </div>
+        <p class="disclaimer">lornAI can make mistakes. Please verify important information.</p>
       </div>
     </main>
-
-    <!-- Claude-style Live Code & Preview Artifacts Drawer -->
-    <aside id="artifacts-drawer" class="artifacts-drawer custom-scrollbar">
-      <div class="artifacts-header">
-        <div class="artifacts-title-wrap">
-          <i class="fa-solid fa-cube text-terracotta"></i>
-          <div>
-            <h3 id="artifact-title">Artifact Viewer</h3>
-            <span id="artifact-subtitle">Interactive preview & syntax view</span>
-          </div>
-        </div>
-        <div class="artifacts-actions">
-          <button id="artifact-copy-btn" class="icon-btn-sm" title="Copy Code">
-            <i class="fa-regular fa-copy"></i>
-          </button>
-          <button id="artifact-download-btn" class="icon-btn-sm" title="Download File">
-            <i class="fa-solid fa-download"></i>
-          </button>
-          <button id="close-artifacts-btn" class="icon-btn-sm" title="Close Panel">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mode Selector (Code vs Live Preview) -->
-      <div class="artifact-tabs-bar">
-        <button class="artifact-tab-btn active" id="tab-code-btn">
-          <i class="fa-solid fa-code"></i> Code
-        </button>
-        <button class="artifact-tab-btn" id="tab-preview-btn">
-          <i class="fa-regular fa-eye"></i> Live Preview
-        </button>
-      </div>
-
-      <!-- Artifact Content Containers -->
-      <div class="artifact-body">
-        <div id="artifact-code-view" class="artifact-code-container custom-scrollbar">
-          <pre><code id="artifact-code-block" class="language-javascript">// Code will be displayed here</code></pre>
-        </div>
-        <div id="artifact-preview-view" class="artifact-preview-container hidden">
-          <iframe id="artifact-preview-iframe" sandbox="allow-scripts allow-modals"></iframe>
-        </div>
-      </div>
-    </aside>
-
   </div>
+
+  <!-- Artifacts Drawer (Live Preview & Code Split with wide button spacing) -->
+  <aside class="artifact-drawer" id="artifactDrawer" aria-hidden="true">
+    <div class="artifact-header">
+      <div class="artifact-title-box">
+        <svg viewBox="0 0 24 24" style="color: var(--accent);"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span class="artifact-title" id="artifactTitle">Artifact Preview</span>
+      </div>
+      <div class="artifact-actions">
+        <button class="artifact-btn" id="artifactCopyBtn" title="Copy code">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+          <span>Copy</span>
+        </button>
+        <button class="artifact-btn" id="artifactDownloadBtn" title="Download file">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>Download</span>
+        </button>
+        <button class="icon-btn" id="artifactCloseBtn" title="Close preview">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="artifact-nav">
+      <button class="artifact-tab active" id="tabPreview">Preview</button>
+      <button class="artifact-tab" id="tabCode">Source Code</button>
+    </div>
+    <div class="artifact-body">
+      <div class="artifact-pane active" id="panePreview">
+        <iframe class="artifact-preview-frame" id="artifactFrame" sandbox="allow-scripts allow-modals"></iframe>
+      </div>
+      <div class="artifact-pane" id="paneCode">
+        <pre class="artifact-code-view" id="artifactCodeView"><code></code></pre>
+      </div>
+    </div>
+  </aside>
 
   <!-- Settings & Customization Modal -->
-  <div id="settings-modal" class="modal-backdrop hidden">
-    <div class="modal-dialog custom-scrollbar">
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-sliders text-terracotta"></i>
-          <h2>Preferences & Capabilities</h2>
+  <div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>Settings &amp; Brain</h2>
+        <button class="icon-btn" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+
+      <div class="modal-tabs">
+        <button class="modal-tab-btn active" data-tab="tabGeneral">General</button>
+        <button class="modal-tab-btn" data-tab="tabModels">Models Guide</button>
+        <button class="modal-tab-btn" data-tab="tabBrain">AI Brain &amp; Memory</button>
+        <button class="modal-tab-btn" data-tab="tabMCP">MCP Servers</button>
+        <button class="modal-tab-btn" data-tab="tabAccount">Account</button>
+      </div>
+
+      <!-- Tab: General -->
+      <div class="tab-pane active" id="tabGeneral">
+        <label class="row">
+          <span><b>Creativity &amp; Temperature</b><small id="tempVal">0.6</small></span>
+          <input type="range" id="tempRange" min="0" max="1.2" step="0.1" value="0.6" />
+        </label>
+        <label class="row">
+          <span><b>Visual Effects &amp; Ambient</b><small>Smooth glowing orbs &amp; grain</small></span>
+          <input type="checkbox" id="fxToggle" class="switch" checked />
+        </label>
+        <label class="row">
+          <span><b>Device &amp; Environment Context</b><small id="envContextLabel">Detecting location...</small></span>
+          <span style="font-size: 12px; color: var(--accent);" id="envContextStatus">Active</span>
+        </label>
+        <button class="danger" id="clearAllBtn">Clear all current conversation history</button>
+      </div>
+
+      <!-- Tab: Models Guide & Advice -->
+      <div class="tab-pane" id="tabModels">
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b>Fabel Code</b>
+            <span class="badge-best">Coding Flagship</span>
+          </div>
+          <p class="advice-card-desc">Specialized for code generation, architectural design, debugging, full-stack applications, and systems programming. Near zero syntax bugs.</p>
         </div>
-        <button id="close-settings-btn" class="icon-btn">
-          <i class="fa-solid fa-xmark"></i>
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b>Fabel Pro</b>
+            <span class="badge-best">Deep Logic</span>
+          </div>
+          <p class="advice-card-desc">Advanced reasoning engine for mathematical proofs, complex logic puzzles, multi-step problem solving, and analytical research.</p>
+        </div>
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b>lorn dts 5.0</b>
+            <span class="badge-best">Flagship Omni</span>
+          </div>
+          <p class="advice-card-desc">The strongest all-around foundation model with multimodal vision parsing, broad global context, and natural fluid writing.</p>
+        </div>
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b>Fabel Swift / lorn light 4.5</b>
+            <span class="badge-best">Instant Speed</span>
+          </div>
+          <p class="advice-card-desc">Ultra-low latency models for lightning quick queries, rapid summaries, and casual chat.</p>
+        </div>
+      </div>
+
+      <!-- Tab: AI Brain, 150+ Skills Pack & Long-term Memory -->
+      <div class="tab-pane" id="tabBrain">
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b>Autonomous Skills Core</b>
+            <span style="color: var(--success); font-size: 12px;">● 150+ Master Skills Active</span>
+          </div>
+          <p class="advice-card-desc">lornAI operates with an expanded knowledge base across software engineering, creative arts, scientific simulation, mathematics, and web technology.</p>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <b style="font-size: 13.5px;">Continuous Long-term Memory</b>
+          <p style="font-size: 12px; color: var(--dim); margin: 4px 0 10px;">lornAI remembers details and preferences you share across conversations to deliver personalized assistance.</p>
+          <div id="memoryList" style="font-size: 12.5px; color: var(--muted); background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 10px; padding: 10px; max-height: 140px; overflow-y: auto;">
+            No memories stored yet. Converse with lornAI to start building memory.
+          </div>
+          <button type="button" class="artifact-btn" id="clearMemoryBtn" style="margin-top: 10px; font-size: 11.5px;">Clear AI Memory</button>
+        </div>
+      </div>
+
+      <!-- Tab: MCP Servers (Starts empty, user adds) -->
+      <div class="tab-pane" id="tabMCP">
+        <p style="font-size: 12.5px; color: var(--muted); margin: 0 0 12px;">Model Context Protocol (MCP) servers allow lornAI to interact with local tools, environments (like Roblox Studio), and external services.</p>
+        <div id="mcpServerList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+          <!-- Empty by default per user request -->
+          <div style="font-size: 12.5px; color: var(--dim); padding: 12px; text-align: center; border: 1px dashed var(--line); border-radius: 12px;">
+            No MCP servers added yet. Add a server to grant lornAI external tooling capabilities.
+          </div>
+        </div>
+        <button type="button" class="btn-primary" id="addMcpServerBtn">+ Add MCP Server</button>
+      </div>
+
+      <!-- Tab: Account & Authentication -->
+      <div class="tab-pane" id="tabAccount">
+        <div class="advice-card">
+          <div class="advice-card-head">
+            <b id="accDisplayName">Guest User</b>
+            <span id="accStatusBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.08);">Offline Guest</span>
+          </div>
+          <p class="advice-card-desc" id="accDescription">Tabs and conversation history are only permanently stored when you log in or register.</p>
+        </div>
+        <div style="margin-top: 14px;" id="authActionsBox">
+          <button type="button" class="btn-primary" id="openAuthModalBtn">Sign In or Register</button>
+        </div>
+        <button type="button" class="danger" id="logoutBtn" style="display: none;">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modal (Discord OAuth, Google, Phone, Email with Leak Check) -->
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>Sign In to lornAI</h2>
+        <button class="icon-btn" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--muted); margin: 0 0 16px;">Log in to persist your conversations, synchronize history across devices, and unlock full memory capabilities.</p>
+
+      <div class="auth-grid">
+        <!-- Discord OAuth -->
+        <button class="auth-btn discord" id="discordLoginBtn">
+          <svg viewBox="0 0 24 24" style="stroke: none; fill: currentColor;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          <span>Continue with Discord</span>
+        </button>
+
+        <!-- Google OAuth via Neon -->
+        <button class="auth-btn" id="googleLoginBtn">
+          <svg viewBox="0 0 24 24" style="stroke: none; fill: currentColor;"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <!-- Phone Auth via Neon -->
+        <button class="auth-btn" id="phoneLoginBtn">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Continue with Phone Number</span>
         </button>
       </div>
 
-      <div class="modal-body">
-        <!-- Settings Tabs -->
-        <div class="settings-tabs">
-          <button class="settings-tab-btn active" data-tab="general">General</button>
-          <button class="settings-tab-btn" data-tab="skills">150+ Skills Pack</button>
-          <button class="settings-tab-btn" data-tab="mcp">MCP Servers</button>
-          <button class="settings-tab-btn" data-tab="account">Account & Auth</button>
-          <button class="settings-tab-btn" data-tab="developer">Developer</button>
+      <div class="divider-text">or with email</div>
+
+      <!-- Email / Password Form with Leak Checker -->
+      <form id="emailAuthForm">
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" class="form-control" id="authEmail" placeholder="you@domain.com" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" class="form-control" id="authPass" placeholder="••••••••••••" required />
         </div>
 
-        <!-- Tab 1: General & Customization -->
-        <div class="tab-pane active" id="tab-general">
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Default Model</label>
-              <p>Preferred model when starting fresh chats. <strong>lorn dts 5.0</strong> is the most capable.</p>
-            </div>
-            <select id="setting-default-model" class="claude-select">
-              <option value="lorn-dts-5.0">lorn dts 5.0 (Best • Flagship Reasoning & Coding)</option>
-              <option value="lorn-dts-4.5">lorn dts 4.5 (Ultra Analysis & Writing)</option>
-              <option value="lorn-dts-4.0">lorn dts 4.0 (Balanced Pro)</option>
-              <option value="lorn-dts-3.5">lorn dts 3.5 (Standard Intelligent)</option>
-              <option value="lorn-light-4.5">lorn light 4.5 (Instant Turbo)</option>
-              <option value="lorn-light-3.5">lorn light 3.5 (Fast Lightweight)</option>
-              <option value="lorn-light-2.5">lorn light 2.5 (Nano Speed)</option>
-              <option value="lorn-light-1.5">lorn light 1.5 (Instant Micro)</option>
-            </select>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Response Creativity (Temperature)</label>
-              <p>Lower is more factual & direct; higher is more imaginative.</p>
-            </div>
-            <div class="range-wrap">
-              <input type="range" id="setting-temperature" min="0" max="1" step="0.05" value="0.75">
-              <span id="temp-val">0.75</span>
-            </div>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Streaming Acceleration</label>
-              <p>Optimizes chunk decoders for immediate, zero-delay responses.</p>
-            </div>
-            <input type="checkbox" id="setting-turbo" checked class="claude-switch">
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Auto-Open Artifacts</label>
-              <p>Instantly launch side panel when interactive HTML/CSS/JS or code is generated.</p>
-            </div>
-            <input type="checkbox" id="setting-autoopen-artifacts" checked class="claude-switch">
-          </div>
-
-          <div class="setting-group">
-            <label class="section-label">AI Persona & Custom Instructions</label>
-            <p class="field-desc">Teach lornAI how to behave, respond, and adapt to your preferences.</p>
-            <textarea id="custom-system-prompt" class="claude-textarea custom-scrollbar" rows="5"></textarea>
+        <!-- HaveIBeenPwned Leak Alert -->
+        <div class="leak-warning-card" id="leakWarningCard">
+          <div style="font-weight: 600; margin-bottom: 2px;">⚠️ Data Breach Alert</div>
+          <span id="leakWarningText">This password was found in a public data breach.</span>
+          <div class="leak-warning-actions">
+            <button type="button" class="leak-btn change" id="leakChangeBtn">Change Password</button>
+            <button type="button" class="leak-btn proceed" id="leakProceedBtn">Proceed Anyway</button>
           </div>
         </div>
 
-        <!-- Tab 2: 150+ Skills Pack & Custom Skills -->
-        <div class="tab-pane" id="tab-skills">
-          <div class="banner-notice">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span><strong>150+ Built-in Master Skills Pack:</strong> Contains specialized capabilities for Roblox Studio, Advanced Game Dev, Full-Stack Coding, Math, Cyber Security, Creative Writing, UI/UX, and Analysis.</span>
-          </div>
-
-          <!-- Master Pack Accordion Card -->
-          <div class="skillpack-card" id="skillpack-master-card">
-            <div class="skillpack-header" id="toggle-skillpack-accordion">
-              <div class="pack-badge-icon"><i class="fa-solid fa-box-open"></i></div>
-              <div class="pack-meta">
-                <span class="pack-title">Lorn Master Skillpack (150+ Skills)</span>
-                <span class="pack-status">Status: Active & Injected into lornAI Brain</span>
-              </div>
-              <button class="expand-pack-btn" id="expand-pack-btn">
-                <span>View All 150 Skills</span>
-                <i class="fa-solid fa-chevron-down caret-icon"></i>
-              </button>
-            </div>
-
-            <!-- Expandable 150 Skills Grid -->
-            <div class="skillpack-details hidden custom-scrollbar" id="skillpack-details-content">
-              <div class="skills-search-bar">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="skill-search-input" placeholder="Search 150+ skills (e.g. Roblox, Python, UI, Security)...">
-              </div>
-              <div class="skills-catalog-grid" id="skills-catalog-grid">
-                <!-- Dynamically populated 150 skills -->
-              </div>
-            </div>
-          </div>
-
-          <!-- User Custom Skills Manager -->
-          <div class="custom-skills-section">
-            <div class="flex-between">
-              <label class="section-label">Your Custom Skills</label>
-              <button id="add-skill-modal-btn" class="claude-btn-sm primary">
-                <i class="fa-solid fa-plus"></i> Add Custom Skill
-              </button>
-            </div>
-            <p class="field-desc">Add specialized knowledge, workflows, or rules for your projects.</p>
-            <div id="user-skills-list" class="user-skills-list">
-              <!-- Custom user skills rendered here -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 3: MCP Servers (Model Context Protocol & Roblox Studio) -->
-        <div class="tab-pane" id="tab-mcp">
-          <div class="banner-notice">
-            <i class="fa-solid fa-network-wired"></i>
-            <span><strong>Model Context Protocol (MCP):</strong> Connect external tools and studio environments (e.g. <strong>Roblox Studio MCP</strong>, Database tools, filesystem connectors) directly to lornAI.</span>
-          </div>
-
-          <div class="mcp-section">
-            <div class="flex-between">
-              <label class="section-label">Connected MCP Servers</label>
-              <button id="add-mcp-btn" class="claude-btn-sm primary">
-                <i class="fa-solid fa-plus"></i> Add MCP Server
-              </button>
-            </div>
-            <p class="field-desc">Manage local and remote tool endpoints.</p>
-
-            <div class="mcp-server-list" id="mcp-server-list">
-              <!-- Preset Roblox Studio MCP Server -->
-              <div class="mcp-server-card active">
-                <div class="mcp-card-left">
-                  <div class="mcp-icon roblox"><i class="fa-solid fa-cube"></i></div>
-                  <div>
-                    <div class="mcp-name">Roblox Studio MCP Server</div>
-                    <div class="mcp-endpoint">http://127.0.0.1:3000/sse (Luau & Studio Automation)</div>
-                  </div>
-                </div>
-                <div class="mcp-card-right">
-                  <span class="mcp-badge enabled">Enabled</span>
-                  <input type="checkbox" checked class="claude-switch mcp-toggle">
-                </div>
-              </div>
-
-              <!-- Preset Filesystem MCP Server -->
-              <div class="mcp-server-card">
-                <div class="mcp-card-left">
-                  <div class="mcp-icon"><i class="fa-solid fa-folder-tree"></i></div>
-                  <div>
-                    <div class="mcp-name">Filesystem & Project MCP</div>
-                    <div class="mcp-endpoint">local://workspace-context</div>
-                  </div>
-                </div>
-                <div class="mcp-card-right">
-                  <span class="mcp-badge ready">Ready</span>
-                  <input type="checkbox" checked class="claude-switch mcp-toggle">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 4: Account & Auth (Neon & Discord) -->
-        <div class="tab-pane" id="tab-account">
-          <div class="account-profile-box">
-            <div class="profile-header-wrap">
-              <div class="profile-large-avatar" id="account-avatar">
-                <i class="fa-regular fa-user"></i>
-              </div>
-              <div class="profile-meta">
-                <h3 id="account-user-name">Guest User</h3>
-                <span class="profile-email" id="account-user-email">Not signed in</span>
-                <div class="provider-pill" id="account-provider-pill">
-                  <span class="dot"></span> <span id="account-provider-label">Local Anonymous Session</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sign in buttons -->
-            <div class="auth-buttons-group" id="auth-action-buttons">
-              <!-- Discord Auth -->
-              <a href="https://discord.com/oauth2/authorize?client_id=1460381998051889225&response_type=code&redirect_uri=https%3A%2F%2Florn.lol%2Fapi%2Fauth%2Fcallback%2Fdiscord&scope=identify+email" class="auth-btn discord-btn">
-                <i class="fa-brands fa-discord"></i>
-                <span>Sign in with Discord</span>
-              </a>
-
-              <!-- Google Auth through Neon -->
-              <button id="google-auth-btn" class="auth-btn google-btn">
-                <i class="fa-brands fa-google"></i>
-                <span>Sign in with Google (Neon)</span>
-              </button>
-
-              <!-- Phone Auth through Neon -->
-              <button id="phone-auth-btn" class="auth-btn phone-btn">
-                <i class="fa-solid fa-phone"></i>
-                <span>Sign in with Phone (SMS)</span>
-              </button>
-            </div>
-
-            <div id="account-signed-in-actions" class="hidden">
-              <button id="sign-out-btn" class="claude-btn secondary">Sign Out</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 5: Developer Tools -->
-        <div class="tab-pane" id="tab-developer">
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Export Chat Data</label>
-              <p>Download your entire conversation archive in structured JSON.</p>
-            </div>
-            <button id="export-chats-btn" class="claude-btn-sm secondary">
-              <i class="fa-solid fa-download"></i> Export JSON
-            </button>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Import Chat Data</label>
-              <p>Restore conversations from an exported JSON backup file.</p>
-            </div>
-            <input type="file" id="import-chats-input" accept=".json" style="display:none;">
-            <button id="import-chats-btn" class="claude-btn-sm secondary">
-              <i class="fa-solid fa-upload"></i> Import JSON
-            </button>
-          </div>
-
-          <div class="setting-row">
-            <div class="setting-info">
-              <label>Reset Everything</label>
-              <p>Clear all local conversations and preferences.</p>
-            </div>
-            <button id="reset-all-btn" class="claude-btn-sm danger">
-              <i class="fa-regular fa-trash-can"></i> Reset All Data
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button id="save-settings-btn" class="claude-btn primary">Save Changes</button>
-      </div>
+        <button type="submit" class="btn-primary" id="emailSubmitBtn">Sign In or Register</button>
+      </form>
     </div>
   </div>
 
-  <!-- Custom Skill Creator Modal -->
-  <div id="add-skill-modal" class="modal-backdrop hidden">
-    <div class="modal-dialog-sm custom-scrollbar">
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-wand-magic-sparkles text-terracotta"></i>
-          <h3>Create Custom Skill</h3>
-        </div>
-        <button id="close-add-skill-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+  <!-- Add MCP Server Modal -->
+  <div class="modal" id="mcpModal" aria-hidden="true">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>Add MCP Server</h2>
+        <button class="icon-btn" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
-      <div class="modal-body">
-        <div class="setting-group">
-          <label class="section-label">Skill Name</label>
-          <input type="text" id="new-skill-name" class="claude-input" placeholder="e.g. Roblox DataStore Specialist">
+      <form id="addMcpForm">
+        <div class="form-group">
+          <label>Server Name</label>
+          <input type="text" class="form-control" id="mcpName" placeholder="e.g. Roblox Studio MCP" required />
         </div>
-        <div class="setting-group">
-          <label class="section-label">Skill Category</label>
-          <input type="text" id="new-skill-cat" class="claude-input" placeholder="e.g. Roblox, Web, Creative">
+        <div class="form-group">
+          <label>Server URL / Command</label>
+          <input type="text" class="form-control" id="mcpEndpoint" placeholder="e.g. http://localhost:8080/mcp or stdio:npx ..." required />
         </div>
-        <div class="setting-group">
-          <label class="section-label">Instructions / Brain Rules</label>
-          <textarea id="new-skill-prompt" class="claude-textarea" rows="4" placeholder="Specific instructions and behaviors for this skill..."></textarea>
+        <div class="form-group">
+          <label>Description / Capability (Optional)</label>
+          <input type="text" class="form-control" id="mcpDesc" placeholder="e.g. Inspect objects, generate Luau code in Roblox Studio" />
         </div>
-      </div>
-      <div class="modal-footer">
-        <button id="save-custom-skill-btn" class="claude-btn primary">Save Skill</button>
-      </div>
+        <button type="submit" class="btn-primary">Connect MCP Server</button>
+      </form>
     </div>
   </div>
 
-  <!-- Mobile Overlay -->
-  <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+  <div class="toast glass" id="toast"></div>
 
-  <script src="app.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+  <script src="app.js" type="module"></script>
 </body>
 </html>
