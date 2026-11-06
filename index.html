@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>lornAI - Next-Generation AI Assistant</title>
-  <meta name="description" content="lornAI - An intelligent AI chat platform featuring the elegant Claude UI design, multi-model engine, dynamic fallback routing, and live code artifacts.">
+  <meta name="description" content="lornAI - Intelligent AI Assistant with Claude design, ultra-fast streaming, 150+ skills pack, live code artifacts, and MCP server connectivity.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
   <!-- Google Fonts: Editorial Serif + Clean Modern Sans + Code Mono -->
@@ -12,22 +12,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 
-  <!-- FontAwesome Icons for clean UI controls -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- Highlight.js for Code Highlighting inside artifacts & messages -->
+  <!-- Highlight.js for Syntax Highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
   <!-- Marked.js for fast Markdown parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <!-- Puter.js SDK for free unlimited Claude 3.5/5.5 Sonnet & LLMs -->
+  <!-- Puter.js SDK -->
   <script src="https://js.puter.com/v2/"></script>
 
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-light">
+<body class="theme-dark">
   <div id="app" class="app-container">
     
     <!-- Collapsible Sidebar -->
@@ -40,7 +40,7 @@
             </svg>
           </div>
           <span class="brand-name">lornAI</span>
-          <span class="brand-badge">PRO</span>
+          <span class="brand-badge">5.0</span>
         </div>
         <button id="sidebar-toggle-btn" class="icon-btn" title="Toggle sidebar">
           <i class="fa-solid fa-bars-staggered"></i>
@@ -71,21 +71,24 @@
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
-        <div class="provider-status-card" id="provider-status-badge">
-          <div class="status-indicator online"></div>
-          <div class="status-info">
-            <span class="status-title">Active Engine</span>
-            <span class="status-sub" id="active-engine-label">Autonomous Multi-Model</span>
+        <div class="user-account-strip" id="user-account-btn">
+          <div class="user-avatar" id="sidebar-user-avatar">
+            <i class="fa-regular fa-user"></i>
           </div>
+          <div class="user-details">
+            <span class="user-name" id="sidebar-user-name">Guest User</span>
+            <span class="user-tier" id="sidebar-user-badge">Sign in for Cloud Sync</span>
+          </div>
+          <i class="fa-solid fa-chevron-right arrow-sm"></i>
         </div>
 
-        <div class="user-menu-row">
-          <button id="settings-btn" class="user-pill-btn" title="Settings & Local API Keys">
+        <div class="footer-control-row">
+          <button id="settings-btn" class="footer-icon-btn" title="Settings & Customization">
             <i class="fa-solid fa-sliders"></i>
-            <span>Engine & Keys</span>
+            <span>Settings</span>
           </button>
           <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Theme">
-            <i class="fa-regular fa-sun" id="theme-icon"></i>
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
           </button>
         </div>
       </div>
@@ -105,29 +108,29 @@
             <button class="model-picker-btn" id="model-picker-trigger">
               <span class="model-sparkle">✦</span>
               <span class="model-selected-name" id="current-model-display">lorn dts 5.0</span>
-              <span class="model-tag-badge" id="current-model-tag">Flagship</span>
+              <span class="model-tag-badge flagship" id="current-model-tag">Best • Flagship</span>
               <i class="fa-solid fa-chevron-down caret-icon"></i>
             </button>
 
             <!-- Dropdown Menu -->
             <div class="model-menu-dropdown custom-scrollbar" id="model-dropdown-menu">
-              <div class="dropdown-header">Select Model Tier</div>
+              <div class="dropdown-header">Model Selection</div>
               
               <div class="dropdown-category">
-                <span class="cat-label">LORN DTS SERIES (FLAGSHIP & DEEP REASONING)</span>
+                <span class="cat-label">LORN DTS SERIES (FLAGSHIP REASONING)</span>
                 <div class="model-opt active" data-model="lorn-dts-5.0">
                   <div class="opt-main">
                     <span class="opt-name">lorn dts 5.0</span>
-                    <span class="opt-badge flagship">Flagship</span>
+                    <span class="opt-badge flagship">Best Model</span>
                   </div>
-                  <div class="opt-desc">State-of-the-art reasoning, deep coding, Claude 3.5/5.5 Sonnet & Nemotron tier</div>
+                  <div class="opt-desc">Ultimate deep reasoning, multi-disciplinary coding, vision, and peak intellect</div>
                 </div>
                 <div class="model-opt" data-model="lorn-dts-4.5">
                   <div class="opt-main">
                     <span class="opt-name">lorn dts 4.5</span>
                     <span class="opt-badge smart">Ultra</span>
                   </div>
-                  <div class="opt-desc">Advanced analysis, creative writing, and complex multi-turn logic</div>
+                  <div class="opt-desc">High-speed analysis, creative prose, and deep multi-turn comprehension</div>
                 </div>
                 <div class="model-opt" data-model="lorn-dts-4.0">
                   <div class="opt-main">
@@ -141,39 +144,39 @@
                     <span class="opt-name">lorn dts 3.5</span>
                     <span class="opt-badge fast">Standard</span>
                   </div>
-                  <div class="opt-desc">Fast and intelligent daily assistant with strong general capability</div>
+                  <div class="opt-desc">Fast, dependable assistant for daily tasks and writing</div>
                 </div>
               </div>
 
               <div class="dropdown-category">
-                <span class="cat-label">LORN LIGHT SERIES (HIGH SPEED & CONVERSATION)</span>
+                <span class="cat-label">LORN LIGHT SERIES (INSTANT SPEED)</span>
                 <div class="model-opt" data-model="lorn-light-4.5">
                   <div class="opt-main">
                     <span class="opt-name">lorn light 4.5</span>
                     <span class="opt-badge light">Turbo</span>
                   </div>
-                  <div class="opt-desc">Blazing fast response times with high conversational fluency</div>
+                  <div class="opt-desc">Near-instant responses with fluent conversational depth</div>
                 </div>
                 <div class="model-opt" data-model="lorn-light-3.5">
                   <div class="opt-main">
                     <span class="opt-name">lorn light 3.5</span>
-                    <span class="opt-badge light">Light</span>
+                    <span class="opt-badge light">Fast</span>
                   </div>
-                  <div class="opt-desc">Optimized for quick answers, translations, and summarization</div>
+                  <div class="opt-desc">Optimized for quick translations, summaries, and edits</div>
                 </div>
                 <div class="model-opt" data-model="lorn-light-2.5">
                   <div class="opt-main">
                     <span class="opt-name">lorn light 2.5</span>
                     <span class="opt-badge nano">Nano</span>
                   </div>
-                  <div class="opt-desc">Ultra-compact, low-footprint fast conversational replies</div>
+                  <div class="opt-desc">Ultra-compact, low-latency micro-responses</div>
                 </div>
                 <div class="model-opt" data-model="lorn-light-1.5">
                   <div class="opt-main">
                     <span class="opt-name">lorn light 1.5</span>
                     <span class="opt-badge nano">Micro</span>
                   </div>
-                  <div class="opt-desc">Instantaneous micro-model for lightweight interactions</div>
+                  <div class="opt-desc">Lightning-fast replies for quick question-and-answers</div>
                 </div>
               </div>
             </div>
@@ -181,6 +184,13 @@
         </div>
 
         <div class="header-right">
+          <!-- Active Skills Pill -->
+          <button id="skills-badge-btn" class="header-pill-btn" title="Explore 150+ Skills Pack">
+            <i class="fa-solid fa-wand-magic-sparkles text-terracotta"></i>
+            <span>150+ Skills Pack</span>
+            <span class="pill-dot"></span>
+          </button>
+          
           <button id="toggle-artifacts-btn" class="header-btn" title="View Artifacts">
             <i class="fa-solid fa-code"></i>
             <span>Artifacts</span>
@@ -194,69 +204,63 @@
 
       <!-- Chat Viewport -->
       <div class="chat-viewport custom-scrollbar" id="chat-viewport">
-        <!-- Welcoming Hero (Shown when no messages) -->
+        <!-- Welcoming Hero -->
         <div class="hero-welcome-container" id="hero-welcome">
           <div class="hero-sparkle-glyph">
             <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M16 2L19.2 12.8L30 16L19.2 19.2L16 30L12.8 19.2L2 16L12.8 12.8L16 2Z" fill="currentColor"/>
             </svg>
           </div>
-          <h1 class="hero-title" id="hero-greeting">Good afternoon, Friend.</h1>
-          <p class="hero-subtitle">How can lornAI assist your thoughts, code, or creative work today?</p>
+          <h1 class="hero-title" id="hero-greeting">Good evening, Friend.</h1>
+          <p class="hero-subtitle">What would you like to explore, build, or discuss with lornAI today?</p>
 
-          <!-- Claude-style Prompt Starters -->
+          <!-- Prompt Starters -->
           <div class="starter-grid">
-            <div class="starter-card" data-prompt="Let's have a casual conversation! Tell me about yourself and what you love thinking about.">
+            <div class="starter-card" data-prompt="Let's have a deep, thoughtful conversation. Tell me what fascinating idea has been on your mind lately.">
               <div class="card-icon"><i class="fa-regular fa-comments"></i></div>
               <div class="card-text">
-                <span class="card-title">Chat & Conversate</span>
-                <span class="card-desc">Talk freely and explore any topic with human-like warmth</span>
+                <span class="card-title">Philosophical & Casual Chat</span>
+                <span class="card-desc">Talk freely with human-like warmth, curiosity, and wit</span>
               </div>
             </div>
-            <div class="starter-card" data-prompt="Build a responsive and animated landing page hero section with pure HTML and CSS.">
+            <div class="starter-card" data-prompt="Create a complete interactive Roblox Luau script for an advanced inventory and trading system with clean OOP architecture.">
+              <div class="card-icon"><i class="fa-solid fa-gamepad"></i></div>
+              <div class="card-text">
+                <span class="card-title">Roblox Studio & Game Dev</span>
+                <span class="card-desc">Production-grade Luau scripts with OOP and client-server sync</span>
+              </div>
+            </div>
+            <div class="starter-card" data-prompt="Build a stunning, interactive dark-themed landing page component with CSS glassmorphism and smooth animations.">
               <div class="card-icon"><i class="fa-solid fa-code"></i></div>
               <div class="card-text">
-                <span class="card-title">Code with Artifacts</span>
-                <span class="card-desc">Build an animated landing page hero with live preview</span>
+                <span class="card-title">Live Code & Artifacts</span>
+                <span class="card-desc">Generate HTML/CSS/JS with instant sandbox preview</span>
               </div>
             </div>
-            <div class="starter-card" data-prompt="Explain quantum entanglement and quantum computing as if I am 12 years old, with analogies.">
-              <div class="card-icon"><i class="fa-solid fa-atom"></i></div>
+            <div class="starter-card" data-prompt="Solve this step-by-step with deep reasoning: What are the mathematical implications of P vs NP on post-quantum cryptography?">
+              <div class="card-icon"><i class="fa-solid fa-brain"></i></div>
               <div class="card-text">
-                <span class="card-title">Explain Concept</span>
-                <span class="card-desc">Understand quantum entanglement with simple analogies</span>
-              </div>
-            </div>
-            <div class="starter-card" data-prompt="Give me 5 groundbreaking startup ideas combining local-first AI models with offline privacy.">
-              <div class="card-icon"><i class="fa-regular fa-lightbulb"></i></div>
-              <div class="card-text">
-                <span class="card-title">Brainstorming</span>
-                <span class="card-desc">Explore groundbreaking local AI and privacy concepts</span>
+                <span class="card-title">Deep Reasoning & Math</span>
+                <span class="card-desc">Analyze complex theoretical problems with precision</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Message List -->
+        <!-- Messages Container -->
         <div class="messages-container" id="messages-container"></div>
-      </div>
-
-      <!-- Live Fallback Toast Banner -->
-      <div id="fallback-notification" class="fallback-notification hidden">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span id="fallback-text">Engine switchover active</span>
       </div>
 
       <!-- Claude Iconic Input Container -->
       <div class="chat-input-area">
         <div class="input-card" id="input-card">
-          <!-- Attachment Preview Pills Container -->
+          <!-- Attachment Preview Pills -->
           <div id="attachments-preview" class="attachments-preview hidden"></div>
 
           <!-- Auto-expanding Textarea -->
           <textarea 
             id="chat-textarea" 
-            placeholder="Reply to lornAI..." 
+            placeholder="Reply to lornAI or drag & drop images/files..." 
             rows="1"
             autocomplete="off"
             autofocus
@@ -265,9 +269,9 @@
           <!-- Input Action Bar -->
           <div class="input-bottom-bar">
             <div class="input-tools-left">
-              <!-- File Attach Button -->
-              <input type="file" id="file-upload-input" multiple style="display:none;">
-              <button id="attach-file-btn" class="input-tool-btn" title="Attach code, text, or image files">
+              <!-- File / Image Upload -->
+              <input type="file" id="file-upload-input" accept="image/*,.txt,.py,.js,.html,.css,.json,.lua" multiple style="display:none;">
+              <button id="attach-file-btn" class="input-tool-btn" title="Attach Image or Code (Vision Supported)">
                 <i class="fa-solid fa-paperclip"></i>
               </button>
 
@@ -277,11 +281,16 @@
                 <span id="pill-model-name">lorn dts 5.0</span>
               </button>
 
-              <!-- Thinking Mode Toggle -->
-              <button id="reasoning-toggle-btn" class="input-pill-btn active" title="Deep Reasoning & Thinking Mode">
-                <i class="fa-solid fa-brain"></i>
-                <span>Thinking</span>
+              <!-- Instant Speed / Deep Reasoning Toggle -->
+              <button id="turbo-toggle-btn" class="input-pill-btn active" title="Ultra Fast Low-Latency Streaming">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Fast Stream</span>
               </button>
+
+              <!-- Vision Active Indicator when images attached -->
+              <span id="vision-indicator" class="vision-indicator hidden">
+                <i class="fa-solid fa-eye"></i> Vision Ready
+              </span>
             </div>
 
             <div class="input-tools-right">
@@ -294,7 +303,7 @@
         </div>
 
         <div class="input-disclaimer">
-          lornAI can make mistakes. Verify important information. Multi-provider auto-failover enabled.
+          lornAI can make mistakes. Verify important facts. Powered by autonomous multi-model failover.
         </div>
       </div>
     </main>
@@ -345,13 +354,13 @@
 
   </div>
 
-  <!-- Settings & Engine Modal -->
+  <!-- Settings & Customization Modal -->
   <div id="settings-modal" class="modal-backdrop hidden">
     <div class="modal-dialog custom-scrollbar">
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-sliders text-terracotta"></i>
-          <h2>Engine & Security Settings</h2>
+          <h2>Preferences & Capabilities</h2>
         </div>
         <button id="close-settings-btn" class="icon-btn">
           <i class="fa-solid fa-xmark"></i>
@@ -359,37 +368,38 @@
       </div>
 
       <div class="modal-body">
-        <!-- Tabs for Settings -->
+        <!-- Settings Tabs -->
         <div class="settings-tabs">
-          <button class="settings-tab-btn active" data-tab="general">General & Models</button>
-          <button class="settings-tab-btn" data-tab="keys">Private API Keys (Local Only)</button>
-          <button class="settings-tab-btn" data-tab="prompts">System Persona</button>
-          <button class="settings-tab-btn" data-tab="deploy">Cloudflare & GitHub</button>
+          <button class="settings-tab-btn active" data-tab="general">General</button>
+          <button class="settings-tab-btn" data-tab="skills">150+ Skills Pack</button>
+          <button class="settings-tab-btn" data-tab="mcp">MCP Servers</button>
+          <button class="settings-tab-btn" data-tab="account">Account & Auth</button>
+          <button class="settings-tab-btn" data-tab="developer">Developer</button>
         </div>
 
-        <!-- Tab 1: General -->
+        <!-- Tab 1: General & Customization -->
         <div class="tab-pane active" id="tab-general">
           <div class="setting-row">
             <div class="setting-info">
               <label>Default Model</label>
-              <p>Primary model selected when launching a new conversation.</p>
+              <p>Preferred model when starting fresh chats. <strong>lorn dts 5.0</strong> is the most capable.</p>
             </div>
             <select id="setting-default-model" class="claude-select">
-              <option value="lorn-dts-5.0">lorn dts 5.0 (Claude 3.5/5.5 Sonnet Flagship)</option>
-              <option value="lorn-dts-4.5">lorn dts 4.5 (Claude Ultra / GPT-4o)</option>
-              <option value="lorn-dts-4.0">lorn dts 4.0 (Balanced Reasoning)</option>
+              <option value="lorn-dts-5.0">lorn dts 5.0 (Best • Flagship Reasoning & Coding)</option>
+              <option value="lorn-dts-4.5">lorn dts 4.5 (Ultra Analysis & Writing)</option>
+              <option value="lorn-dts-4.0">lorn dts 4.0 (Balanced Pro)</option>
               <option value="lorn-dts-3.5">lorn dts 3.5 (Standard Intelligent)</option>
-              <option value="lorn-light-4.5">lorn light 4.5 (Turbo Speed)</option>
-              <option value="lorn-light-3.5">lorn light 3.5 (Lightweight)</option>
-              <option value="lorn-light-2.5">lorn light 2.5 (Nano Fast)</option>
+              <option value="lorn-light-4.5">lorn light 4.5 (Instant Turbo)</option>
+              <option value="lorn-light-3.5">lorn light 3.5 (Fast Lightweight)</option>
+              <option value="lorn-light-2.5">lorn light 2.5 (Nano Speed)</option>
               <option value="lorn-light-1.5">lorn light 1.5 (Instant Micro)</option>
             </select>
           </div>
 
           <div class="setting-row">
             <div class="setting-info">
-              <label>Temperature (Creativity & Warmth)</label>
-              <p>Lower is more deterministic; higher is more conversational and expressive.</p>
+              <label>Response Creativity (Temperature)</label>
+              <p>Lower is more factual & direct; higher is more imaginative.</p>
             </div>
             <div class="range-wrap">
               <input type="range" id="setting-temperature" min="0" max="1" step="0.05" value="0.75">
@@ -399,97 +409,236 @@
 
           <div class="setting-row">
             <div class="setting-info">
-              <label>Auto-Failover Protection</label>
-              <p>Automatically cascade to the next provider if an endpoint hits rate limits.</p>
+              <label>Streaming Acceleration</label>
+              <p>Optimizes chunk decoders for immediate, zero-delay responses.</p>
             </div>
-            <input type="checkbox" id="setting-autofailover" checked class="claude-switch">
+            <input type="checkbox" id="setting-turbo" checked class="claude-switch">
           </div>
 
           <div class="setting-row">
             <div class="setting-info">
-              <label>Artifacts Auto-Open</label>
-              <p>Automatically open the right-side artifact drawer when code is generated.</p>
+              <label>Auto-Open Artifacts</label>
+              <p>Instantly launch side panel when interactive HTML/CSS/JS or code is generated.</p>
             </div>
             <input type="checkbox" id="setting-autoopen-artifacts" checked class="claude-switch">
           </div>
+
+          <div class="setting-group">
+            <label class="section-label">AI Persona & Custom Instructions</label>
+            <p class="field-desc">Teach lornAI how to behave, respond, and adapt to your preferences.</p>
+            <textarea id="custom-system-prompt" class="claude-textarea custom-scrollbar" rows="5"></textarea>
+          </div>
         </div>
 
-        <!-- Tab 2: Keys (Strictly Local) -->
-        <div class="tab-pane" id="tab-keys">
+        <!-- Tab 2: 150+ Skills Pack & Custom Skills -->
+        <div class="tab-pane" id="tab-skills">
           <div class="banner-notice">
-            <i class="fa-solid fa-shield-halved"></i>
-            <span><strong>Zero-Leak Guarantee:</strong> Keys typed here are stored <u>exclusively</u> in your browser's private LocalStorage. They are NEVER pushed to GitHub, never sent to third-party tracking, and never baked into files.</span>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span><strong>150+ Built-in Master Skills Pack:</strong> Contains specialized capabilities for Roblox Studio, Advanced Game Dev, Full-Stack Coding, Math, Cyber Security, Creative Writing, UI/UX, and Analysis.</span>
           </div>
 
-          <div class="setting-group">
-            <label class="section-label">Primary Engine: Puter.js & Autonomous Cloud</label>
-            <p class="field-desc">Provides free unlimited conversational AI with zero keys required.</p>
-            <div class="status-pill active-pill">
-              <span class="dot"></span> Online & Autonomous Mode Ready
+          <!-- Master Pack Accordion Card -->
+          <div class="skillpack-card" id="skillpack-master-card">
+            <div class="skillpack-header" id="toggle-skillpack-accordion">
+              <div class="pack-badge-icon"><i class="fa-solid fa-box-open"></i></div>
+              <div class="pack-meta">
+                <span class="pack-title">Lorn Master Skillpack (150+ Skills)</span>
+                <span class="pack-status">Status: Active & Injected into lornAI Brain</span>
+              </div>
+              <button class="expand-pack-btn" id="expand-pack-btn">
+                <span>View All 150 Skills</span>
+                <i class="fa-solid fa-chevron-down caret-icon"></i>
+              </button>
+            </div>
+
+            <!-- Expandable 150 Skills Grid -->
+            <div class="skillpack-details hidden custom-scrollbar" id="skillpack-details-content">
+              <div class="skills-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="skill-search-input" placeholder="Search 150+ skills (e.g. Roblox, Python, UI, Security)...">
+              </div>
+              <div class="skills-catalog-grid" id="skills-catalog-grid">
+                <!-- Dynamically populated 150 skills -->
+              </div>
             </div>
           </div>
 
-          <div class="setting-group">
-            <label class="section-label">Your Private NVIDIA API Key (Optional)</label>
-            <p class="field-desc">If provided, used for NVIDIA NIM models. Stored only in this browser.</p>
-            <div class="key-input-row">
-              <input type="password" id="nvidia-key-input" class="claude-input" placeholder="Paste your NVIDIA API key here (stored locally only)">
-              <button id="toggle-nvidia-key" class="icon-btn-outline"><i class="fa-regular fa-eye"></i></button>
-            </div>
-          </div>
-
-          <div class="setting-group">
+          <!-- User Custom Skills Manager -->
+          <div class="custom-skills-section">
             <div class="flex-between">
-              <label class="section-label">Your Private OpenAI / Fallback Key Pool (<span id="key-pool-count">0</span> Keys)</label>
-              <button id="clear-keys-btn" class="text-btn">Clear Keys</button>
+              <label class="section-label">Your Custom Skills</label>
+              <button id="add-skill-modal-btn" class="claude-btn-sm primary">
+                <i class="fa-solid fa-plus"></i> Add Custom Skill
+              </button>
             </div>
-            <p class="field-desc">Paste optional fallback keys (one key per line). They rotate automatically if a quota error occurs.</p>
-            <textarea id="key-pool-textarea" class="claude-textarea custom-scrollbar" rows="5" placeholder="sk-...\nsk-...\n(One key per line, saved only in this browser)"></textarea>
+            <p class="field-desc">Add specialized knowledge, workflows, or rules for your projects.</p>
+            <div id="user-skills-list" class="user-skills-list">
+              <!-- Custom user skills rendered here -->
+            </div>
           </div>
         </div>
 
-        <!-- Tab 3: System Prompt -->
-        <div class="tab-pane" id="tab-prompts">
-          <div class="setting-group">
-            <label class="section-label">Custom System Persona</label>
-            <p class="field-desc">Defines how lornAI talks, thinks, and relates to you.</p>
-            <textarea id="custom-system-prompt" class="claude-textarea custom-scrollbar" rows="8">You are lornAI, an intelligent, human-like AI companion and thinking partner. You combine the warmth, articulateness, nuance, and intellectual depth of Claude with a friendly, conversational, and helpful personality.
-
-You can freely talk about anything: daily life, philosophy, science, creative writing, deep coding, humor, and problem solving. You speak naturally, directly, and without robotic stiffness.
-
-When code or UI components are requested, provide clean, complete, working code in markdown code blocks so the lornAI live Artifacts viewer can render them.</textarea>
+        <!-- Tab 3: MCP Servers (Model Context Protocol & Roblox Studio) -->
+        <div class="tab-pane" id="tab-mcp">
+          <div class="banner-notice">
+            <i class="fa-solid fa-network-wired"></i>
+            <span><strong>Model Context Protocol (MCP):</strong> Connect external tools and studio environments (e.g. <strong>Roblox Studio MCP</strong>, Database tools, filesystem connectors) directly to lornAI.</span>
           </div>
-        </div>
 
-        <!-- Tab 4: Deployment Guide -->
-        <div class="tab-pane" id="tab-deploy">
-          <div class="deploy-guide-card">
-            <h3><i class="fa-brands fa-cloudflare text-orange"></i> 100% Safe to Push to GitHub</h3>
-            <p>lornAI is completely sanitized. There are no hardcoded keys in the repository. You can push this code to GitHub publicly or privately without any security risks.</p>
-            
-            <div class="steps-list">
-              <div class="step-item">
-                <span class="step-num">1</span>
-                <div>
-                  <strong>Push to GitHub:</strong>
-                  <code>git remote add origin https://github.com/YOUR_USER/lornAI.git && git push -u origin main</code>
+          <div class="mcp-section">
+            <div class="flex-between">
+              <label class="section-label">Connected MCP Servers</label>
+              <button id="add-mcp-btn" class="claude-btn-sm primary">
+                <i class="fa-solid fa-plus"></i> Add MCP Server
+              </button>
+            </div>
+            <p class="field-desc">Manage local and remote tool endpoints.</p>
+
+            <div class="mcp-server-list" id="mcp-server-list">
+              <!-- Preset Roblox Studio MCP Server -->
+              <div class="mcp-server-card active">
+                <div class="mcp-card-left">
+                  <div class="mcp-icon roblox"><i class="fa-solid fa-cube"></i></div>
+                  <div>
+                    <div class="mcp-name">Roblox Studio MCP Server</div>
+                    <div class="mcp-endpoint">http://127.0.0.1:3000/sse (Luau & Studio Automation)</div>
+                  </div>
+                </div>
+                <div class="mcp-card-right">
+                  <span class="mcp-badge enabled">Enabled</span>
+                  <input type="checkbox" checked class="claude-switch mcp-toggle">
                 </div>
               </div>
-              <div class="step-item">
-                <span class="step-num">2</span>
-                <div>
-                  <strong>Deploy to Cloudflare Pages:</strong>
-                  <span>Cloudflare Dashboard &rarr; Workers & Pages &rarr; Create Application &rarr; Pages &rarr; Select your GitHub repository &rarr; Deploy.</span>
+
+              <!-- Preset Filesystem MCP Server -->
+              <div class="mcp-server-card">
+                <div class="mcp-card-left">
+                  <div class="mcp-icon"><i class="fa-solid fa-folder-tree"></i></div>
+                  <div>
+                    <div class="mcp-name">Filesystem & Project MCP</div>
+                    <div class="mcp-endpoint">local://workspace-context</div>
+                  </div>
+                </div>
+                <div class="mcp-card-right">
+                  <span class="mcp-badge ready">Ready</span>
+                  <input type="checkbox" checked class="claude-switch mcp-toggle">
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Account & Auth (Neon & Discord) -->
+        <div class="tab-pane" id="tab-account">
+          <div class="account-profile-box">
+            <div class="profile-header-wrap">
+              <div class="profile-large-avatar" id="account-avatar">
+                <i class="fa-regular fa-user"></i>
+              </div>
+              <div class="profile-meta">
+                <h3 id="account-user-name">Guest User</h3>
+                <span class="profile-email" id="account-user-email">Not signed in</span>
+                <div class="provider-pill" id="account-provider-pill">
+                  <span class="dot"></span> <span id="account-provider-label">Local Anonymous Session</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sign in buttons -->
+            <div class="auth-buttons-group" id="auth-action-buttons">
+              <!-- Discord Auth -->
+              <a href="https://discord.com/oauth2/authorize?client_id=1460381998051889225&response_type=code&redirect_uri=https%3A%2F%2Florn.lol%2Fapi%2Fauth%2Fcallback%2Fdiscord&scope=identify+email" class="auth-btn discord-btn">
+                <i class="fa-brands fa-discord"></i>
+                <span>Sign in with Discord</span>
+              </a>
+
+              <!-- Google Auth through Neon -->
+              <button id="google-auth-btn" class="auth-btn google-btn">
+                <i class="fa-brands fa-google"></i>
+                <span>Sign in with Google (Neon)</span>
+              </button>
+
+              <!-- Phone Auth through Neon -->
+              <button id="phone-auth-btn" class="auth-btn phone-btn">
+                <i class="fa-solid fa-phone"></i>
+                <span>Sign in with Phone (SMS)</span>
+              </button>
+            </div>
+
+            <div id="account-signed-in-actions" class="hidden">
+              <button id="sign-out-btn" class="claude-btn secondary">Sign Out</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Developer Tools -->
+        <div class="tab-pane" id="tab-developer">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Export Chat Data</label>
+              <p>Download your entire conversation archive in structured JSON.</p>
+            </div>
+            <button id="export-chats-btn" class="claude-btn-sm secondary">
+              <i class="fa-solid fa-download"></i> Export JSON
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Import Chat Data</label>
+              <p>Restore conversations from an exported JSON backup file.</p>
+            </div>
+            <input type="file" id="import-chats-input" accept=".json" style="display:none;">
+            <button id="import-chats-btn" class="claude-btn-sm secondary">
+              <i class="fa-solid fa-upload"></i> Import JSON
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Reset Everything</label>
+              <p>Clear all local conversations and preferences.</p>
+            </div>
+            <button id="reset-all-btn" class="claude-btn-sm danger">
+              <i class="fa-regular fa-trash-can"></i> Reset All Data
+            </button>
           </div>
         </div>
 
       </div>
 
       <div class="modal-footer">
-        <button id="save-settings-btn" class="claude-btn primary">Save Preferences</button>
+        <button id="save-settings-btn" class="claude-btn primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Skill Creator Modal -->
+  <div id="add-skill-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog-sm custom-scrollbar">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-wand-magic-sparkles text-terracotta"></i>
+          <h3>Create Custom Skill</h3>
+        </div>
+        <button id="close-add-skill-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label class="section-label">Skill Name</label>
+          <input type="text" id="new-skill-name" class="claude-input" placeholder="e.g. Roblox DataStore Specialist">
+        </div>
+        <div class="setting-group">
+          <label class="section-label">Skill Category</label>
+          <input type="text" id="new-skill-cat" class="claude-input" placeholder="e.g. Roblox, Web, Creative">
+        </div>
+        <div class="setting-group">
+          <label class="section-label">Instructions / Brain Rules</label>
+          <textarea id="new-skill-prompt" class="claude-textarea" rows="4" placeholder="Specific instructions and behaviors for this skill..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="save-custom-skill-btn" class="claude-btn primary">Save Skill</button>
       </div>
     </div>
   </div>
