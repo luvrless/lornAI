@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lornAI - Next-Generation AI Assistant</title>
+  <meta name="description" content="lornAI - An intelligent AI chat platform featuring the elegant Claude UI design, multi-model engine, dynamic fallback routing, and live code artifacts.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Google Fonts: Editorial Serif + Clean Modern Sans + Code Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons for clean UI controls -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Highlight.js for Code Highlighting inside artifacts & messages -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Marked.js for fast Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Puter.js SDK for free unlimited Claude 3.5/5.5 Sonnet & LLMs -->
+  <script src="https://js.puter.com/v2/"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-light">
+  <div id="app" class="app-container">
+    
+    <!-- Collapsible Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <span class="brand-name">lornAI</span>
+          <span class="brand-badge">PRO</span>
+        </div>
+        <button id="sidebar-toggle-btn" class="icon-btn" title="Toggle sidebar">
+          <i class="fa-solid fa-bars-staggered"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-action">
+        <button id="new-chat-btn" class="new-chat-btn">
+          <i class="fa-solid fa-plus"></i>
+          <span>New chat</span>
+          <kbd class="shortcut-badge">Ctrl+K</kbd>
+        </button>
+      </div>
+
+      <div class="sidebar-search">
+        <div class="search-input-wrap">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="chat-search" placeholder="Search conversations..." autocomplete="off">
+        </div>
+      </div>
+
+      <!-- History List Grouped by Time -->
+      <div class="sidebar-content custom-scrollbar">
+        <div class="chat-history-group" id="history-container">
+          <!-- Dynamically injected conversation items -->
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="provider-status-card" id="provider-status-badge">
+          <div class="status-indicator online"></div>
+          <div class="status-info">
+            <span class="status-title">Active Engine</span>
+            <span class="status-sub" id="active-engine-label">Autonomous Multi-Model</span>
+          </div>
+        </div>
+
+        <div class="user-menu-row">
+          <button id="settings-btn" class="user-pill-btn" title="Settings & Local API Keys">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Engine & Keys</span>
+          </button>
+          <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Theme">
+            <i class="fa-regular fa-sun" id="theme-icon"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="main-workspace">
+      <!-- Top Workspace Bar -->
+      <header class="workspace-header">
+        <div class="header-left">
+          <button id="mobile-sidebar-toggle" class="icon-btn mobile-only">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          
+          <!-- Claude-style Model Selector Dropdown -->
+          <div class="model-picker-container" id="model-picker-wrap">
+            <button class="model-picker-btn" id="model-picker-trigger">
+              <span class="model-sparkle">✦</span>
+              <span class="model-selected-name" id="current-model-display">lorn dts 5.0</span>
+              <span class="model-tag-badge" id="current-model-tag">Flagship</span>
+              <i class="fa-solid fa-chevron-down caret-icon"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div class="model-menu-dropdown custom-scrollbar" id="model-dropdown-menu">
+              <div class="dropdown-header">Select Model Tier</div>
+              
+              <div class="dropdown-category">
+                <span class="cat-label">LORN DTS SERIES (FLAGSHIP & DEEP REASONING)</span>
+                <div class="model-opt active" data-model="lorn-dts-5.0">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn dts 5.0</span>
+                    <span class="opt-badge flagship">Flagship</span>
+                  </div>
+                  <div class="opt-desc">State-of-the-art reasoning, deep coding, Claude 3.5/5.5 Sonnet & Nemotron tier</div>
+                </div>
+                <div class="model-opt" data-model="lorn-dts-4.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn dts 4.5</span>
+                    <span class="opt-badge smart">Ultra</span>
+                  </div>
+                  <div class="opt-desc">Advanced analysis, creative writing, and complex multi-turn logic</div>
+                </div>
+                <div class="model-opt" data-model="lorn-dts-4.0">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn dts 4.0</span>
+                    <span class="opt-badge smart">Pro</span>
+                  </div>
+                  <div class="opt-desc">Balanced high-precision synthesis and coding support</div>
+                </div>
+                <div class="model-opt" data-model="lorn-dts-3.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn dts 3.5</span>
+                    <span class="opt-badge fast">Standard</span>
+                  </div>
+                  <div class="opt-desc">Fast and intelligent daily assistant with strong general capability</div>
+                </div>
+              </div>
+
+              <div class="dropdown-category">
+                <span class="cat-label">LORN LIGHT SERIES (HIGH SPEED & CONVERSATION)</span>
+                <div class="model-opt" data-model="lorn-light-4.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn light 4.5</span>
+                    <span class="opt-badge light">Turbo</span>
+                  </div>
+                  <div class="opt-desc">Blazing fast response times with high conversational fluency</div>
+                </div>
+                <div class="model-opt" data-model="lorn-light-3.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn light 3.5</span>
+                    <span class="opt-badge light">Light</span>
+                  </div>
+                  <div class="opt-desc">Optimized for quick answers, translations, and summarization</div>
+                </div>
+                <div class="model-opt" data-model="lorn-light-2.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn light 2.5</span>
+                    <span class="opt-badge nano">Nano</span>
+                  </div>
+                  <div class="opt-desc">Ultra-compact, low-footprint fast conversational replies</div>
+                </div>
+                <div class="model-opt" data-model="lorn-light-1.5">
+                  <div class="opt-main">
+                    <span class="opt-name">lorn light 1.5</span>
+                    <span class="opt-badge nano">Micro</span>
+                  </div>
+                  <div class="opt-desc">Instantaneous micro-model for lightweight interactions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <button id="toggle-artifacts-btn" class="header-btn" title="View Artifacts">
+            <i class="fa-solid fa-code"></i>
+            <span>Artifacts</span>
+            <span class="artifacts-count" id="artifacts-counter">0</span>
+          </button>
+          <button id="clear-chat-btn" class="header-btn secondary" title="Clear current messages">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Viewport -->
+      <div class="chat-viewport custom-scrollbar" id="chat-viewport">
+        <!-- Welcoming Hero (Shown when no messages) -->
+        <div class="hero-welcome-container" id="hero-welcome">
+          <div class="hero-sparkle-glyph">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 2L19.2 12.8L30 16L19.2 19.2L16 30L12.8 19.2L2 16L12.8 12.8L16 2Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <h1 class="hero-title" id="hero-greeting">Good afternoon, Friend.</h1>
+          <p class="hero-subtitle">How can lornAI assist your thoughts, code, or creative work today?</p>
+
+          <!-- Claude-style Prompt Starters -->
+          <div class="starter-grid">
+            <div class="starter-card" data-prompt="Let's have a casual conversation! Tell me about yourself and what you love thinking about.">
+              <div class="card-icon"><i class="fa-regular fa-comments"></i></div>
+              <div class="card-text">
+                <span class="card-title">Chat & Conversate</span>
+                <span class="card-desc">Talk freely and explore any topic with human-like warmth</span>
+              </div>
+            </div>
+            <div class="starter-card" data-prompt="Build a responsive and animated landing page hero section with pure HTML and CSS.">
+              <div class="card-icon"><i class="fa-solid fa-code"></i></div>
+              <div class="card-text">
+                <span class="card-title">Code with Artifacts</span>
+                <span class="card-desc">Build an animated landing page hero with live preview</span>
+              </div>
+            </div>
+            <div class="starter-card" data-prompt="Explain quantum entanglement and quantum computing as if I am 12 years old, with analogies.">
+              <div class="card-icon"><i class="fa-solid fa-atom"></i></div>
+              <div class="card-text">
+                <span class="card-title">Explain Concept</span>
+                <span class="card-desc">Understand quantum entanglement with simple analogies</span>
+              </div>
+            </div>
+            <div class="starter-card" data-prompt="Give me 5 groundbreaking startup ideas combining local-first AI models with offline privacy.">
+              <div class="card-icon"><i class="fa-regular fa-lightbulb"></i></div>
+              <div class="card-text">
+                <span class="card-title">Brainstorming</span>
+                <span class="card-desc">Explore groundbreaking local AI and privacy concepts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message List -->
+        <div class="messages-container" id="messages-container"></div>
+      </div>
+
+      <!-- Live Fallback Toast Banner -->
+      <div id="fallback-notification" class="fallback-notification hidden">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span id="fallback-text">Engine switchover active</span>
+      </div>
+
+      <!-- Claude Iconic Input Container -->
+      <div class="chat-input-area">
+        <div class="input-card" id="input-card">
+          <!-- Attachment Preview Pills Container -->
+          <div id="attachments-preview" class="attachments-preview hidden"></div>
+
+          <!-- Auto-expanding Textarea -->
+          <textarea 
+            id="chat-textarea" 
+            placeholder="Reply to lornAI..." 
+            rows="1"
+            autocomplete="off"
+            autofocus
+          ></textarea>
+
+          <!-- Input Action Bar -->
+          <div class="input-bottom-bar">
+            <div class="input-tools-left">
+              <!-- File Attach Button -->
+              <input type="file" id="file-upload-input" multiple style="display:none;">
+              <button id="attach-file-btn" class="input-tool-btn" title="Attach code, text, or image files">
+                <i class="fa-solid fa-paperclip"></i>
+              </button>
+
+              <!-- Quick Model Pill inside input -->
+              <button id="quick-model-pill" class="input-pill-btn" title="Active Model">
+                <span class="model-dot"></span>
+                <span id="pill-model-name">lorn dts 5.0</span>
+              </button>
+
+              <!-- Thinking Mode Toggle -->
+              <button id="reasoning-toggle-btn" class="input-pill-btn active" title="Deep Reasoning & Thinking Mode">
+                <i class="fa-solid fa-brain"></i>
+                <span>Thinking</span>
+              </button>
+            </div>
+
+            <div class="input-tools-right">
+              <span id="char-counter" class="char-counter"></span>
+              <button id="send-message-btn" class="send-btn" disabled title="Send message (Enter)">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-disclaimer">
+          lornAI can make mistakes. Verify important information. Multi-provider auto-failover enabled.
+        </div>
+      </div>
+    </main>
+
+    <!-- Claude-style Live Code & Preview Artifacts Drawer -->
+    <aside id="artifacts-drawer" class="artifacts-drawer custom-scrollbar">
+      <div class="artifacts-header">
+        <div class="artifacts-title-wrap">
+          <i class="fa-solid fa-cube text-terracotta"></i>
+          <div>
+            <h3 id="artifact-title">Artifact Viewer</h3>
+            <span id="artifact-subtitle">Interactive preview & syntax view</span>
+          </div>
+        </div>
+        <div class="artifacts-actions">
+          <button id="artifact-copy-btn" class="icon-btn-sm" title="Copy Code">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+          <button id="artifact-download-btn" class="icon-btn-sm" title="Download File">
+            <i class="fa-solid fa-download"></i>
+          </button>
+          <button id="close-artifacts-btn" class="icon-btn-sm" title="Close Panel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode Selector (Code vs Live Preview) -->
+      <div class="artifact-tabs-bar">
+        <button class="artifact-tab-btn active" id="tab-code-btn">
+          <i class="fa-solid fa-code"></i> Code
+        </button>
+        <button class="artifact-tab-btn" id="tab-preview-btn">
+          <i class="fa-regular fa-eye"></i> Live Preview
+        </button>
+      </div>
+
+      <!-- Artifact Content Containers -->
+      <div class="artifact-body">
+        <div id="artifact-code-view" class="artifact-code-container custom-scrollbar">
+          <pre><code id="artifact-code-block" class="language-javascript">// Code will be displayed here</code></pre>
+        </div>
+        <div id="artifact-preview-view" class="artifact-preview-container hidden">
+          <iframe id="artifact-preview-iframe" sandbox="allow-scripts allow-modals"></iframe>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Settings & Engine Modal -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog custom-scrollbar">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-sliders text-terracotta"></i>
+          <h2>Engine & Security Settings</h2>
+        </div>
+        <button id="close-settings-btn" class="icon-btn">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tabs for Settings -->
+        <div class="settings-tabs">
+          <button class="settings-tab-btn active" data-tab="general">General & Models</button>
+          <button class="settings-tab-btn" data-tab="keys">Private API Keys (Local Only)</button>
+          <button class="settings-tab-btn" data-tab="prompts">System Persona</button>
+          <button class="settings-tab-btn" data-tab="deploy">Cloudflare & GitHub</button>
+        </div>
+
+        <!-- Tab 1: General -->
+        <div class="tab-pane active" id="tab-general">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Default Model</label>
+              <p>Primary model selected when launching a new conversation.</p>
+            </div>
+            <select id="setting-default-model" class="claude-select">
+              <option value="lorn-dts-5.0">lorn dts 5.0 (Claude 3.5/5.5 Sonnet Flagship)</option>
+              <option value="lorn-dts-4.5">lorn dts 4.5 (Claude Ultra / GPT-4o)</option>
+              <option value="lorn-dts-4.0">lorn dts 4.0 (Balanced Reasoning)</option>
+              <option value="lorn-dts-3.5">lorn dts 3.5 (Standard Intelligent)</option>
+              <option value="lorn-light-4.5">lorn light 4.5 (Turbo Speed)</option>
+              <option value="lorn-light-3.5">lorn light 3.5 (Lightweight)</option>
+              <option value="lorn-light-2.5">lorn light 2.5 (Nano Fast)</option>
+              <option value="lorn-light-1.5">lorn light 1.5 (Instant Micro)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Temperature (Creativity & Warmth)</label>
+              <p>Lower is more deterministic; higher is more conversational and expressive.</p>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="setting-temperature" min="0" max="1" step="0.05" value="0.75">
+              <span id="temp-val">0.75</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Auto-Failover Protection</label>
+              <p>Automatically cascade to the next provider if an endpoint hits rate limits.</p>
+            </div>
+            <input type="checkbox" id="setting-autofailover" checked class="claude-switch">
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label>Artifacts Auto-Open</label>
+              <p>Automatically open the right-side artifact drawer when code is generated.</p>
+            </div>
+            <input type="checkbox" id="setting-autoopen-artifacts" checked class="claude-switch">
+          </div>
+        </div>
+
+        <!-- Tab 2: Keys (Strictly Local) -->
+        <div class="tab-pane" id="tab-keys">
+          <div class="banner-notice">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span><strong>Zero-Leak Guarantee:</strong> Keys typed here are stored <u>exclusively</u> in your browser's private LocalStorage. They are NEVER pushed to GitHub, never sent to third-party tracking, and never baked into files.</span>
+          </div>
+
+          <div class="setting-group">
+            <label class="section-label">Primary Engine: Puter.js & Autonomous Cloud</label>
+            <p class="field-desc">Provides free unlimited conversational AI with zero keys required.</p>
+            <div class="status-pill active-pill">
+              <span class="dot"></span> Online & Autonomous Mode Ready
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="section-label">Your Private NVIDIA API Key (Optional)</label>
+            <p class="field-desc">If provided, used for NVIDIA NIM models. Stored only in this browser.</p>
+            <div class="key-input-row">
+              <input type="password" id="nvidia-key-input" class="claude-input" placeholder="Paste your NVIDIA API key here (stored locally only)">
+              <button id="toggle-nvidia-key" class="icon-btn-outline"><i class="fa-regular fa-eye"></i></button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="flex-between">
+              <label class="section-label">Your Private OpenAI / Fallback Key Pool (<span id="key-pool-count">0</span> Keys)</label>
+              <button id="clear-keys-btn" class="text-btn">Clear Keys</button>
+            </div>
+            <p class="field-desc">Paste optional fallback keys (one key per line). They rotate automatically if a quota error occurs.</p>
+            <textarea id="key-pool-textarea" class="claude-textarea custom-scrollbar" rows="5" placeholder="sk-...\nsk-...\n(One key per line, saved only in this browser)"></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 3: System Prompt -->
+        <div class="tab-pane" id="tab-prompts">
+          <div class="setting-group">
+            <label class="section-label">Custom System Persona</label>
+            <p class="field-desc">Defines how lornAI talks, thinks, and relates to you.</p>
+            <textarea id="custom-system-prompt" class="claude-textarea custom-scrollbar" rows="8">You are lornAI, an intelligent, human-like AI companion and thinking partner. You combine the warmth, articulateness, nuance, and intellectual depth of Claude with a friendly, conversational, and helpful personality.
+
+You can freely talk about anything: daily life, philosophy, science, creative writing, deep coding, humor, and problem solving. You speak naturally, directly, and without robotic stiffness.
+
+When code or UI components are requested, provide clean, complete, working code in markdown code blocks so the lornAI live Artifacts viewer can render them.</textarea>
+          </div>
+        </div>
+
+        <!-- Tab 4: Deployment Guide -->
+        <div class="tab-pane" id="tab-deploy">
+          <div class="deploy-guide-card">
+            <h3><i class="fa-brands fa-cloudflare text-orange"></i> 100% Safe to Push to GitHub</h3>
+            <p>lornAI is completely sanitized. There are no hardcoded keys in the repository. You can push this code to GitHub publicly or privately without any security risks.</p>
+            
+            <div class="steps-list">
+              <div class="step-item">
+                <span class="step-num">1</span>
+                <div>
+                  <strong>Push to GitHub:</strong>
+                  <code>git remote add origin https://github.com/YOUR_USER/lornAI.git && git push -u origin main</code>
+                </div>
+              </div>
+              <div class="step-item">
+                <span class="step-num">2</span>
+                <div>
+                  <strong>Deploy to Cloudflare Pages:</strong>
+                  <span>Cloudflare Dashboard &rarr; Workers & Pages &rarr; Create Application &rarr; Pages &rarr; Select your GitHub repository &rarr; Deploy.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="save-settings-btn" class="claude-btn primary">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
