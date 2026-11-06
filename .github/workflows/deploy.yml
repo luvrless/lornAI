@@ -18,8 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: cfac04926d19976f4dbc17d2addb32cc
-          command: pages deploy . --project-name=lornai --commit-dirty=true
+        run: npx wrangler pages deploy ./ --project-name=lornai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: cfac04926d19976f4dbc17d2addb32cc
