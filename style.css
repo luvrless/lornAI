@@ -633,6 +633,8 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 /* ══ Main area uses remaining space regardless of sidebar state ══ */
 /* ══ Main area uses remaining space regardless of sidebar state ══ */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+.artifact-drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(600px, 92vw);
   background: rgba(30, 29, 27, 0.94); backdrop-filter: blur(36px) saturate(180%);
   -webkit-backdrop-filter: blur(36px) saturate(180%);
@@ -1026,4 +1028,237 @@ body.no-fx * { animation-duration: 0.001ms !important; }
     border-top: 1px solid var(--line);
     padding-top: 8px;
   }
+}
+
+
+/* ══ Stable Settings Modal (No Resize on Tab Switch) ══ */
+#settingsModal .modal-card {
+  width: min(620px, 94vw);
+  height: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#settingsModal .modal-head {
+  flex-shrink: 0;
+}
+#settingsModal .modal-tabs {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+#settingsModal .tab-pane {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+#settingsModal .tab-pane.active {
+  display: block;
+}
+
+
+/* ══ Sidebar Clean Slide-Out on Desktop & Mobile ══ */
+.sidebar {
+  width: var(--side-w);
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 150;
+  transform: translateX(0);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--side-w);
+  transition: margin-left 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* When collapsed / closed on desktop or mobile: sidebar completely disappears */
+.app.collapsed .sidebar {
+  transform: translateX(-100%) !important;
+  pointer-events: none;
+}
+
+.app.collapsed .main {
+  margin-left: 0 !important;
+}
+
+/* 3-bars hamburger button in topbar */
+#menuBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+@media (min-width: 769px) {
+  /* On desktop, hide topbar hamburger when sidebar is already open */
+  .app:not(.collapsed) #menuBtn {
+    display: none;
+  }
+}
+
+
+/* ══ App Intro Screen (Smooth Logo Spin & Fade) ══ */
+.app-intro {
+  position: fixed;
+  inset: 0;
+  background: #0f0e0d;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.65s;
+  pointer-events: auto;
+}
+.app-intro.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  transform: translateY(-8px);
+}
+.intro-logo {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.spinning-star {
+  width: 62px;
+  height: 62px;
+  animation: lornLogoSpin 3.4s linear infinite;
+  transform-origin: center;
+}
+@keyframes lornLogoSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.intro-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 38px;
+  color: #f7f4ee;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+.intro-subtitle {
+  font-size: 13px;
+  color: rgba(247, 244, 238, 0.45);
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+
+/* ══ Download Desktop App Button & Modal ══ */
+.download-app-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  background: rgba(217, 119, 87, 0.12);
+  border: 1px solid rgba(217, 119, 87, 0.3);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.download-app-btn:hover {
+  background: rgba(217, 119, 87, 0.22);
+  border-color: rgba(217, 119, 87, 0.5);
+  transform: translateY(-1px);
+}
+.download-app-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+  /* Remove artifact preview on mobile completely */
+  .artifact-drawer {
+    display: none !important;
+  }
+}
+
+.download-platforms {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.platform-download-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.platform-download-card:hover {
+  background: rgba(217, 119, 87, 0.1);
+  border-color: rgba(217, 119, 87, 0.35);
+  transform: translateY(-1px);
+}
+.platform-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.platform-icon svg {
+  width: 28px;
+  height: 28px;
+}
+.platform-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.platform-details b {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.platform-details small {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+.dl-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(217, 119, 87, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(217, 119, 87, 0.3);
 }

@@ -28,7 +28,15 @@
     pen:    '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
     up:     '<svg viewBox="0 0 24 24"><path d="M7 10v11M2 10h5v11H2zM7 10l4-8a3 3 0 0 1 3 3v4h6a2 2 0 0 1 2 2.3l-1.4 8A2 2 0 0 1 18.6 21H7"/></svg>',
     preview:'<svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
-    lock:   '<svg viewBox="0 0 24 24" stroke-width="1.6"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+    lock:   '<svg viewBox="0 0 24 24" stroke-width="1.6"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    image:   '<svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+    globe:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg>',
+    code:    '<svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+    game:    '<svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/></svg>',
+    file:    '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    search:  '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    paperclip:'<svg viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+    alert:   '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   };
 
   /* ═══════════════════════════════════════════════
@@ -117,12 +125,12 @@ You have access to real-time awareness (time, date, location context provided be
      DEFAULT PLUGINS
   ═══════════════════════════════════════════════ */
   const DEFAULT_PLUGINS = [
-    { id: 'flux-image',   name: 'Flux Ultra Image Studio',     icon: '🎨', desc: 'High-resolution AI image generation on demand',                     enabled: true  },
-    { id: 'web-search',   name: 'Web Live Inspector',          icon: '🌐', desc: 'Real-time web facts, news, weather and sports',                      enabled: true  },
-    { id: 'code-sandbox', name: 'Code Runner & Sandbox',       icon: '💻', desc: 'Interactive artifact preview for HTML, JS, SVG, CSS',                enabled: true  },
-    { id: 'roblox-luau',  name: 'Roblox Luau Toolkit',         icon: '🎮', desc: 'Roblox Studio integration & Luau script generation',                 enabled: true  },
-    { id: 'doc-analyst',  name: 'Document & File Analyst',     icon: '📄', desc: 'Deep analysis of CSV, JSON, PDF, Python, JS and text files',         enabled: true  },
-    { id: 'img-finder',   name: 'Global Image Fetcher',        icon: '🔍', desc: 'Retrieves real photos of people, places and objects online',          enabled: true  }
+    { id: 'flux-image',   name: 'Flux Ultra Image Studio',     iconKey: 'image',  desc: 'High-resolution AI image generation on demand',             enabled: true  },
+    { id: 'web-search',   name: 'Web Live Inspector',          iconKey: 'globe',  desc: 'Real-time web facts, news, weather and sports',              enabled: true  },
+    { id: 'code-sandbox', name: 'Code Runner & Sandbox',       iconKey: 'code',   desc: 'Interactive artifact preview for HTML, JS, SVG, CSS',        enabled: true  },
+    { id: 'roblox-luau',  name: 'Roblox Luau Toolkit',         iconKey: 'game',   desc: 'Roblox Studio integration & Luau script generation',         enabled: true  },
+    { id: 'doc-analyst',  name: 'Document & File Analyst',     iconKey: 'file',   desc: 'Deep analysis of CSV, JSON, PDF, Python, JS and text files', enabled: true  },
+    { id: 'img-finder',   name: 'Global Image Fetcher',        iconKey: 'search', desc: 'Retrieves real photos of people, places and objects online',  enabled: true  }
   ];
 
   /* ═══════════════════════════════════════════════
@@ -324,7 +332,7 @@ You have access to real-time awareness (time, date, location context provided be
         }
       }
       if (msg.error) {
-        content.insertAdjacentHTML('beforeend', `<p class="err-text">⚠️ ${esc(msg.error)}</p>`);
+        content.insertAdjacentHTML('beforeend', `<p class="err-text">${ICON.alert} ${esc(msg.error)}</p>`);
       }
     }
   }
@@ -355,7 +363,7 @@ You have access to real-time awareness (time, date, location context provided be
     thread.innerHTML = '';
     const msgs = currentChat?.messages || [];
     if (appEl) appEl.classList.toggle('chatting', msgs.length > 0);
-    if (ct) ct.textContent = currentChat?.title || 'New chat';
+    if (ct) ct.textContent = (currentChat && currentChat.messages && currentChat.messages.length > 0) ? (currentChat.title || '') : '';
     msgs.forEach((m, i) => {
       if (m.role === 'user') addUser(m.content, m.files);
       else paintAI(addAI(i), m, false);
@@ -381,12 +389,12 @@ You have access to real-time awareness (time, date, location context provided be
     }
     const promptTokens     = charsToTokens(promptChars);
     const completionTokens = charsToTokens(completionChars);
-    const systemTokens     = currentUser ? 480 : 80;
-    const totalTokens      = promptTokens + completionTokens + systemTokens;
+    // Start cleanly at 0 if no messages have been sent yet (no phantom 86 tokens)
     const isGuest          = !currentUser;
     const capacity         = isGuest ? 4000 : (currentModel.contextLimit || 200000);
-    const percent          = Math.min(100, (totalTokens / capacity) * 100).toFixed(1);
-    return { promptTokens, completionTokens, systemTokens, totalTokens, capacity, percent, isGuest };
+    const totalTokens      = (promptTokens + completionTokens === 0) ? 0 : (promptTokens + completionTokens);
+    const percent          = (totalTokens === 0) ? '0.0' : Math.min(100, (totalTokens / capacity) * 100).toFixed(1);
+    return { promptTokens, completionTokens, systemTokens: 0, totalTokens, capacity, percent, isGuest };
   }
 
   function updateContextMeter() {
@@ -417,7 +425,7 @@ You have access to real-time awareness (time, date, location context provided be
         const banner = document.createElement('div');
         banner.className = 'guest-limit-banner';
         banner.id = 'guestLimitBanner';
-        banner.innerHTML = `<span>⚠️ Guest session limit reached. Sign in for unlimited tokens and all models!</span><button type="button" class="guest-limit-btn" id="guestBannerLoginBtn">Sign In</button>`;
+        banner.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${ICON.alert} Guest limit reached. Sign in for unlimited tokens!</span><button type="button" class="guest-limit-btn" id="guestBannerLoginBtn">Sign In</button>`;
         composerParent.insertBefore(banner, $('#composer'));
         $('#guestBannerLoginBtn')?.addEventListener('click', () => openModal('#authModal'));
       }
@@ -542,7 +550,7 @@ You have access to real-time awareness (time, date, location context provided be
   function renderMemoryList() {
     const box = $('#memoryList');
     if (!box) return;
-    if (!currentUser) { box.innerHTML = '🔒 Memory Brain requires sign-in.'; return; }
+    if (!currentUser) { box.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;">' + ICON.lock + ' Memory Brain requires sign-in.</span>'; return; }
     const mems = store.getMemory();
     box.innerHTML = mems.length
       ? mems.map(m => `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">• ${esc(m)}</div>`).join('')
@@ -559,7 +567,7 @@ You have access to real-time awareness (time, date, location context provided be
     list.innerHTML = plugins.map((p, i) => `
       <div class="plugin-item">
         <div class="plugin-info">
-          <div class="plugin-icon">${p.icon || '🧩'}</div>
+          <div class="plugin-icon">${p.iconKey && ICON[p.iconKey] ? ICON[p.iconKey] : (p.icon && !/\p{Emoji}/u.test(p.icon) ? p.icon : ICON.code)}</div>
           <div class="plugin-meta"><b>${esc(p.name)}</b><small>${esc(p.desc)}</small></div>
         </div>
         <input type="checkbox" class="switch plugin-toggle" data-idx="${i}" ${p.enabled ? 'checked' : ''} />
@@ -907,7 +915,7 @@ IMPORTANT RULES:
     } else if (lo.match(/\bhello\b|\bhi\b|\bhey\b/)) {
       const h = new Date().getHours();
       const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-      reply = `${greet}! 👋 I'm lornAI, your intelligent assistant by Frail. How can I help you today?`;
+      reply = `${greet}! I'm lornAI, your intelligent assistant by Frail. How can I help you today?`;
     } else {
       reply = `I'm here and ready to help! Could you tell me more about what you need? I can assist with writing, coding, analysis, math, creative work, and much more.`;
     }
@@ -994,6 +1002,18 @@ IMPORTANT RULES:
     saveChat();
     updateContextMeter();
     scrollBottom();
+
+    /* Auto show artifact preview when using code model on desktop */
+    if (window.innerWidth > 768 && (currentModel.id === 'fabel-4-architect' || currentModel.id.includes('code') || currentModel.badge.includes('Coding'))) {
+      const firstCode = el?.querySelector('pre > code');
+      if (firstCode) {
+        const lang = (firstCode.className.match(/language-([\w+-]+)/) || [])[1] || 'html';
+        const rawCode = firstCode.innerText || firstCode.textContent || '';
+        if (rawCode.length > 30) {
+          setTimeout(() => openArtifactDrawer(lang, rawCode), 200);
+        }
+      }
+    }
   }
 
   async function sendMessage(text) {
@@ -1004,7 +1024,7 @@ IMPORTANT RULES:
     const m = calculateTokenMetrics();
     if (m.isGuest && m.totalTokens >= 4000) {
       openModal('#authModal');
-      toast('⚠️ Guest limit reached. Sign in for unlimited tokens!');
+      toast('Guest limit reached. Sign in for unlimited tokens!');
       return;
     }
 
@@ -1229,6 +1249,7 @@ IMPORTANT RULES:
   let currentArtifact = { lang: '', code: '' };
 
   function openArtifactDrawer(lang, code) {
+    if (window.innerWidth <= 768) return; // Hide artifact preview on mobile
     currentArtifact = { lang, code };
     const title   = $('#artifactTitle');
     const codeEl  = $('#artifactCodeView')?.querySelector('code');
@@ -1428,7 +1449,16 @@ IMPORTANT RULES:
     const app = $('#app');
     if (app) { app.classList.toggle('collapsed'); store.set('collapsed', app.classList.contains('collapsed') ? '1' : ''); }
   });
-  on('#menuBtn', 'click', () => $('#app')?.classList.add('side-open'));
+  on('#menuBtn', 'click', () => {
+    const app = $('#app');
+    if (!app) return;
+    if (window.innerWidth <= 768) {
+      app.classList.add('side-open');
+    } else {
+      app.classList.remove('collapsed');
+      store.set('collapsed', '');
+    }
+  });
   on('#scrim',   'click', () => $('#app')?.classList.remove('side-open'));
   on('#searchInput', 'input', renderHistory);
 
@@ -1450,7 +1480,7 @@ IMPORTANT RULES:
   function setGreeting() {
     const h = new Date().getHours();
     const greet = $('#greet');
-    if (greet) greet.textContent = h < 5 ? 'Hello, night owl 🌙' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    if (greet) greet.textContent = h < 5 ? 'Hello, night owl' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   }
 
   /* ═══════════════════════════════════════════════
@@ -1505,3 +1535,26 @@ IMPORTANT RULES:
   else initApp();
 
 })();
+
+
+  /* ══ APP INTRO SCREEN ══ */
+  (function initIntro() {
+    const intro = $('#appIntro');
+    const greeting = $('#introGreeting');
+    if (!intro || !greeting) return;
+
+    const hasLaunched = localStorage.getItem('lorn_has_launched');
+    if (hasLaunched) {
+      greeting.textContent = 'Welcome, Back';
+    } else {
+      greeting.textContent = 'Welcome';
+      try { localStorage.setItem('lorn_has_launched', '1'); } catch {}
+    }
+
+    setTimeout(() => {
+      intro.classList.add('fade-out');
+    }, 1400);
+  })();
+
+  /* ══ DOWNLOAD DESKTOP APP MODAL ══ */
+  on('#downloadAppBtn', 'click', () => openModal('#downloadModal'));
