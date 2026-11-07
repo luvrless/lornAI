@@ -1515,6 +1515,7 @@ IMPORTANT RULES:
      INIT
   ═══════════════════════════════════════════════ */
   function initApp() {
+    runIntroIfDesktop();
     injectLockStyles();
     checkAuthCallback();
     updateAuthUI();
@@ -1531,30 +1532,50 @@ IMPORTANT RULES:
     $('#input')?.focus();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
-  else initApp();
-
-})();
-
-
-  /* ══ APP INTRO SCREEN ══ */
-  (function initIntro() {
+  
+  /* ══ APP INTRO SCREEN (Desktop App Only — Exactly 1.5s) ══ */
+  function runIntroIfDesktop() {
     const intro = $('#appIntro');
     const greeting = $('#introGreeting');
-    if (!intro || !greeting) return;
+    if (!intro) return;
 
-    const hasLaunched = localStorage.getItem('lorn_has_launched');
-    if (hasLaunched) {
-      greeting.textContent = 'Welcome, Back';
-    } else {
-      greeting.textContent = 'Welcome';
-      try { localStorage.setItem('lorn_has_launched', '1'); } catch {}
+    const isDesktop = Boolean(window.IS_LORN_DESKTOP || window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+    if (!isDesktop) {
+      // On Web: Never show intro screen
+      intro.style.display = 'none';
+      intro.remove();
+      return;
     }
 
+    // In Desktop App: Show intro for exactly 1.5 seconds
+    intro.style.display = 'flex';
+    intro.setAttribute('aria-hidden', 'false');
+
+    if (greeting) {
+      const hasLaunched = localStorage.getItem('lorn_has_launched');
+      if (hasLaunched) {
+        greeting.textContent = 'Welcome, Back';
+      } else {
+        greeting.textContent = 'Welcome';
+        try { localStorage.setItem('lorn_has_launched', '1'); } catch {}
+      }
+    }
+
+    // Exactly 1.5 seconds (1500ms)
     setTimeout(() => {
       intro.classList.add('fade-out');
-    }, 1400);
-  })();
+      setTimeout(() => {
+        intro.style.display = 'none';
+        intro.remove();
+      }, 450);
+    }, 1500);
+  }
 
   /* ══ DOWNLOAD DESKTOP APP MODAL ══ */
   on('#downloadAppBtn', 'click', () => openModal('#downloadModal'));
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
+  else initApp();
+
+
+})();

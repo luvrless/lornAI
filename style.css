@@ -1109,7 +1109,7 @@ body.no-fx * { animation-duration: 0.001ms !important; }
   inset: 0;
   background: #0f0e0d;
   z-index: 99999;
-  display: flex;
+  display: none; /* Only displayed in Desktop App */
   align-items: center;
   justify-content: center;
   opacity: 1;
