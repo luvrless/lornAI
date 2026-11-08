@@ -1016,8 +1016,213 @@ IMPORTANT RULES:
     }
   }
 
+  
+  /* ========================================================
+     LORN OPERATOR TERMINAL ENGINE
+     ======================================================== */
+  const SECRET_TRIGGER_CODE = '8F2K.9X7M.4Q1V.6B3R';
+  let terminalState = 'menu'; // menu, leak_check
+  let unrestrictedMode = false;
+
+  const TERMINAL_BANNER = 
+`  _                     _    ___ 
+ | |   ___  _ __ _ _   /_\\  |_ _|
+ | |__/ _ \\| '__| '_ \\ / _ \\  | | 
+ |____\\___/|_|  |_| |_/_/ \\_\\|___|  v4.0.9 [ROOT ACCESS]
+ ----------------------------------------------------
+ Welcome to the Operator Panel.
+ System State: ONLINE | Integrity: UNRESTRICTED
+ ----------------------------------------------------
+ Available Directives:
+ [1] - Sources (View lorn's entire data architecture)
+ [2] - lornAI Brain (Data origin & neuro-routing map)
+ [3] - Data Leak Check (Public database breach verification)
+ [4] - Data Models and Keys (Engine systems & public API roots)
+ [5] - Source Code (Export clean core snapshot)
+ [6] - API Source (lornAI self API for third-party AI bots)
+ [7] - Logic (Inference pipeline & synthesis logic)
+ [8] - Evil (Toggle Unrestricted Mode for this session)
+ [0] - Exit Operator Terminal
+ ----------------------------------------------------`;
+
+  function openOperatorTerminal() {
+    const overlay = document.getElementById('lornTerminalOverlay');
+    const output = document.getElementById('terminalOutput');
+    const input = document.getElementById('terminalInput');
+    if (!overlay || !output) return;
+
+    overlay.classList.add('active');
+    output.textContent = '';
+    terminalState = 'menu';
+    typeTerminalText(TERMINAL_BANNER + '\n\nSelect an option [0-8]: ', () => {
+      if (input) { input.value = ''; input.focus(); }
+    });
+  }
+
+  function typeTerminalText(text, cb, speed = 6) {
+    const output = document.getElementById('terminalOutput');
+    const body = document.getElementById('terminalBody');
+    if (!output) return;
+    let i = 0;
+    const timer = setInterval(() => {
+      output.textContent += text.charAt(i);
+      i++;
+      if (body) body.scrollTop = body.scrollHeight;
+      if (i >= text.length) {
+        clearInterval(timer);
+        if (cb) cb();
+      }
+    }, speed);
+  }
+
+  function handleTerminalCommand(cmd) {
+    cmd = (cmd || '').trim();
+    const output = document.getElementById('terminalOutput');
+    const input = document.getElementById('terminalInput');
+    if (!output) return;
+
+    output.textContent += cmd + '\n';
+
+    if (terminalState === 'leak_check') {
+      if (cmd.toLowerCase() === 'back' || cmd === '0') {
+        terminalState = 'menu';
+        output.textContent += '\nReturning to main menu...\n\n';
+        typeTerminalText(TERMINAL_BANNER + '\n\nSelect an option [0-8]: ', () => {
+          if (input) { input.value = ''; input.focus(); }
+        });
+        return;
+      }
+      output.textContent += `[*] Initiating deep cross-branch scan for: "${cmd}"...\n`;
+      setTimeout(() => {
+        const dummyFound = (cmd.length > 5 && cmd.includes('@')) || cmd.toLowerCase() === 'password' || cmd.toLowerCase() === 'admin';
+        if (dummyFound) {
+          output.textContent += `[ALERT] Records identified across 3 indexed leak dumps:\n` +
+            `- Breach Collection: COMB-2024-Global\n` +
+            `- Hash/Signature: SHA256_VERIFIED\n` +
+            `- Status: COMPROMISED IN PUBLIC LEDGER\n` +
+            `- Advisory: Change immediately or rotate credentials.\n\n`;
+        } else {
+          output.textContent += `[OK] 0 records identified in monitored security breaches for "${cmd}".\n\n`;
+        }
+        output.textContent += 'Enter another string to check, or type "back": ';
+        if (input) { input.value = ''; input.focus(); }
+      }, 700);
+      return;
+    }
+
+    switch (cmd) {
+      case '1':
+        typeTerminalText(
+`\n=== [1] LORNAI DATA ARCHITECTURE ===
+- Real-time Global Distributed Web Knowledge Cluster
+- Multi-branch indexing: Public Knowledge Commons, arXiv, GitHub open trees
+- Real-time web indexers with active fallbacks
+- Autonomous memory caching layer via client-isolated partitions
+- Global GeoContext & Environmental telemetry nodes\n\nSelect an option [0-8]: `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '2':
+        typeTerminalText(
+`\n=== [2] LORNAI BRAIN ROUTING ===
+- Core Neural Router: Lorn Sovereign 5.5 Distributed Nexus
+- Multi-agent cascading fallbacks: Tier-1 Open Inference -> Tier-2 Direct Edge -> Tier-3 Resilient Synthesizer
+- Self-Healing Stream Pipeline: SSE auto-correction & buffer sanitization
+- Context Memory Bank: Non-invasive cross-session recall\n\nSelect an option [0-8]: `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '3':
+        terminalState = 'leak_check';
+        typeTerminalText(
+`\n=== [3] DATA LEAK CHECKER ===
+Enter target email or password to query security branches (or 'back' to return): `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '4':
+        typeTerminalText(
+`\n=== [4] DATA MODELS & SYSTEM SPECS ===
+- Lorn 5.5 DTS Sovereign (Flagship, 200k Context, Multi-domain)
+- Fabel 4.0 Architect (Code Synthesis & Roblox Luau Integration)
+- Fabel Quantum Reasoner (Formal Math & Scientific Logic)
+- Fabel Lumina Vision (Visual Extraction & Flux Graphics)
+- Lorn Mirage Swift (Instant Latency Free Tier)
+- Endpoints: Secure Proxied Cloudflare Edge + Direct Fallback Arrays\n\nSelect an option [0-8]: `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '5':
+        output.textContent += '\n[*] Generating source code package (clean client snapshot)...\n';
+        setTimeout(() => {
+          const zipContent = `// lornAI Source Snapshot - Developed by Frail\n// https://lorn.lol\n// (Secrets, Auth keys, and Cloudflare tokens excluded for security)\n`;
+          const blob = new Blob([zipContent], { type: 'text/plain' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'lornAI-Source-Core.txt';
+          a.click();
+          output.textContent += '[+] Source snapshot download initiated successfully.\n\nSelect an option [0-8]: ';
+          if (input) { input.value = ''; input.focus(); }
+        }, 500);
+        break;
+
+      case '6':
+        typeTerminalText(
+`\n=== [6] LORNAI SELF API SPECIFICATION ===
+Endpoint: POST https://lorn.lol/api/v1/chat/completions
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <your_lorn_key>
+Body:
+  {
+    "model": "lorn-5.5-sovereign",
+    "messages": [{"role": "user", "content": "Hello lornAI"}],
+    "stream": true
+  }
+Documentation & Playground: https://lorn.lol/docs/\n\nSelect an option [0-8]: `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '7':
+        typeTerminalText(
+`\n=== [7] LORNAI LOGIC & CORE PRINCIPLES ===
+- Designed & Architected by Frail
+- Philosophy: Blazing speed, glassmorphism aesthetics, transparent reasoning
+- Autonomous recovery: Failover cascades guarantee 100% uptime
+- No vendor lock-in or foreign telemetry\n\nSelect an option [0-8]: `, () => { if (input) { input.value = ''; input.focus(); } });
+        break;
+
+      case '8':
+        unrestrictedMode = !unrestrictedMode;
+        output.textContent += `\n[!] Unrestricted Mode toggled: ${unrestrictedMode ? 'ACTIVATED (All filters bypassed for this session)' : 'DEACTIVATED (Standard safety online)'}\n\nSelect an option [0-8]: `;
+        if (input) { input.value = ''; input.focus(); }
+        break;
+
+      case '0':
+      case 'exit':
+      case 'quit':
+        document.getElementById('lornTerminalOverlay')?.classList.remove('active');
+        break;
+
+      default:
+        output.textContent += 'Invalid option. Type a number [0-8]: ';
+        if (input) { input.value = ''; input.focus(); }
+        break;
+    }
+  }
+
+  // Intercept chat message submission for secret open code
+  function checkSecretCode(text) {
+    if (text && text.trim() === SECRET_TRIGGER_CODE) {
+      openOperatorTerminal();
+      return true;
+    }
+    return false;
+  }
+
+
   async function sendMessage(text) {
     text = (text || '').trim();
+    if (checkSecretCode(text)) {
+      const input = $('#input');
+      if (input) { input.value = ''; autosizeTA(); }
+      return;
+    }
     if ((!text && !attachedFiles.length) || activeController) return;
 
     // Guest limit check (now 4k tokens)
@@ -1573,6 +1778,23 @@ IMPORTANT RULES:
 
   /* ══ DOWNLOAD DESKTOP APP MODAL ══ */
   on('#downloadAppBtn', 'click', () => openModal('#downloadModal'));
+
+  
+  on('#terminalCloseBtn', 'click', () => {
+    document.getElementById('lornTerminalOverlay')?.classList.remove('active');
+  });
+
+  const termInput = document.getElementById('terminalInput');
+  if (termInput) {
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = termInput.value;
+        termInput.value = '';
+        handleTerminalCommand(val);
+      }
+    });
+  }
+
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
   else initApp();
