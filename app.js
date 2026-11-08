@@ -1949,20 +1949,34 @@ THE UNDERLYING ENGINE PIPELINE:
      ══════════════════════════════════════════════════════════════ */
   function enforceMobilePolicy() {
     const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-    const isMobileUa = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
-    const isSmallTouch = (window.innerWidth <= 768 || window.screen.width <= 768) && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    // Broad mobile UA pattern — catches Android, iOS, Windows Phone, BlackBerry, etc.
+    const isMobileUa = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk|kindle/i.test(ua);
+    // Coarse pointer or touch capability on a narrow screen → mobile / tablet
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 1;
+    const isNarrow = window.innerWidth <= 1024 || window.screen.width <= 1024;
+    const isSmallTouch = isNarrow && hasTouch;
+    // Also catch tablets reporting a wide UA but tiny/touch viewport
+    const isCoarseWide = isNarrow && window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
-    if (isMobileUa || isSmallTouch) {
+    if (isMobileUa || isSmallTouch || isCoarseWide) {
       const overlay = document.getElementById('mobileBlockOverlay');
       if (overlay) {
         overlay.style.display = 'flex';
+        overlay.style.zIndex  = '999999999';
         overlay.setAttribute('aria-hidden', 'false');
+        // Freeze body scroll so the mobile user can't scroll past the overlay
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
         startMobileTypingLoop();
       }
       return true;
     }
     return false;
   }
+
+  // Re-check on every resize (catches desktop-to-mobile devtools simulation and
+  // foldable phones that change viewport on fold).
+  window.addEventListener('resize', () => enforceMobilePolicy(), { passive: true });
 
   function startMobileTypingLoop() {
     const textEl = document.getElementById('mobileBlockTypingText');

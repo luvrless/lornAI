@@ -1577,6 +1577,28 @@ body.no-fx * { animation-duration: 0.001ms !important; }
 /* ══════════════════════════════════════════════════════════════
    MOBILE ACCESS BLOCK SCREEN & TYPING ANIMATION
    ══════════════════════════════════════════════════════════════ */
+/* ── CSS-FIRST mobile block: fires BEFORE JS loads, cannot be bypassed by
+   disabling JS. Any touch device with width ≤ 1024px is blocked.
+   The overlay is hidden on desktop (display:none default) and forced visible
+   here. JS enforcement is a second layer on top. ── */
+@media (max-width: 1024px) and (pointer: coarse) {
+  #mobileBlockOverlay {
+    display: flex !important;
+  }
+  #app, .app-shell, body > *:not(#mobileBlockOverlay):not(script):not(style):not(link) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Also block narrow viewport regardless of pointer type (tablet in landscape, etc.) */
+@media (max-width: 768px) {
+  #mobileBlockOverlay {
+    display: flex !important;
+  }
+}
+
 .mobile-block-screen {
   display: none;
   position: fixed;
