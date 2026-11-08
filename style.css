@@ -1411,3 +1411,164 @@ body.no-fx * { animation-duration: 0.001ms !important; }
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
 }
+
+/* ========================================================
+   FUTURISTIC ADVANCED LORNAI OPERATING SYSTEM (LOS) UI
+   ======================================================== */
+.lorn-terminal-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(35, 20, 15, 0.75), rgba(8, 8, 8, 0.96) 80%);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  z-index: 999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: lornTerminalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lorn-terminal-overlay.active {
+  display: flex;
+}
+@keyframes lornTerminalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lorn-terminal-window {
+  width: min(920px, 96vw);
+  height: min(680px, 92vh);
+  background: rgba(20, 18, 17, 0.78);
+  border: 1px solid rgba(217, 119, 87, 0.38);
+  border-radius: 18px;
+  box-shadow: 0 0 70px rgba(217, 119, 87, 0.22), 0 30px 60px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  color: #eedccf;
+  position: relative;
+}
+.lorn-terminal-window::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217, 119, 87, 0.8), transparent);
+}
+
+.lorn-terminal-header {
+  background: rgba(30, 26, 24, 0.65);
+  backdrop-filter: blur(12px);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lorn-terminal-title {
+  font-size: 13.5px;
+  color: #f5efe6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.lorn-terminal-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: lornLogoSpin 6s linear infinite;
+}
+.lorn-terminal-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lorn-term-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(217, 119, 87, 0.16);
+  color: var(--accent);
+  border: 1px solid rgba(217, 119, 87, 0.3);
+}
+
+.lorn-terminal-body {
+  flex: 1;
+  padding: 18px 22px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.65;
+  background: rgba(12, 11, 10, 0.55);
+}
+.lorn-terminal-body::-webkit-scrollbar {
+  width: 5px;
+}
+.lorn-terminal-body::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 87, 0.35);
+  border-radius: 999px;
+}
+
+.lorn-terminal-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #d8cec4;
+}
+.lorn-terminal-output .term-green { color: #55efc4; }
+.lorn-terminal-output .term-orange { color: #ff7675; }
+.lorn-terminal-output .term-accent { color: #d97757; font-weight: bold; }
+.lorn-terminal-output .term-cyan { color: #74b9ff; }
+.lorn-terminal-output .term-dim { color: #7f8c8d; }
+
+.lorn-terminal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(217, 119, 87, 0.18);
+  padding-top: 12px;
+}
+.lorn-terminal-prompt {
+  color: var(--accent);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lorn-terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+}
+
+@media (max-width: 768px) {
+  .lorn-terminal-overlay {
+    padding: 0;
+  }
+  .lorn-terminal-window {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+  .lorn-terminal-header {
+    padding: 10px 14px;
+  }
+  .lorn-terminal-body {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+  .lorn-terminal-input {
+    font-size: 12px;
+  }
+}
