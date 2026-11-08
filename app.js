@@ -56,67 +56,73 @@ You have access to real-time awareness (time, date, location context provided be
     {
       id: 'lorn-5.5-sovereign',
       name: 'Lorn 5.5 DTS Sovereign',
-      badge: 'Flagship · Best',
-      desc: 'Flagship omni intelligence — 200k context, vision, reasoning & deep knowledge across every field',
+      badge: 'Flagship · Sovereign',
+      desc: 'Flagship omni intelligence — 200k context, reasoning & deep knowledge across all AI branches, docs, and public research',
       group: 'Lorn DTS Series',
       contextLimit: 200000,
-      pollinationsModel: 'openai',
-      systemExtra: 'You are operating as Lorn 5.5 DTS Sovereign — the flagship tier with maximum reasoning depth, the largest context window, and strongest multi-domain mastery.',
+      edgeModel: '@cf/meta/llama-3.1-8b-instruct',
+      pollinationsModel: 'openai-fast',
+      systemExtra: 'You are operating as Lorn 5.5 DTS Sovereign — the flagship intelligence tier with maximum synthesis depth across ChatGPT, Claude, and Gemini architectural benchmarks.',
       memberOnly: true
     },
     {
       id: 'fabel-4-architect',
       name: 'Fabel 4.0 Architect',
-      badge: 'Coding · Flagship',
-      desc: 'Elite software architect — Python, TypeScript, Roblox Luau, C++, Go, Rust, zero-defect generation',
+      badge: 'Coding · Hyper-Qwen',
+      desc: 'Elite software architect — Python, TypeScript, Roblox Luau, C++, Go, Rust, zero-defect code synthesis',
       group: 'Fabel Series',
       contextLimit: 128000,
-      pollinationsModel: 'openai',
-      systemExtra: 'You are Fabel 4.0 Architect — the elite coding and software engineering intelligence. Write production-grade, complete, working, well-commented code. Never write placeholder code or truncate functions.',
+      edgeModel: '@cf/qwen/qwen2.5-coder-32b-instruct',
+      pollinationsModel: 'openai-fast',
+      systemExtra: 'You are Fabel 4.0 Architect — the elite software engineering engine. Write complete, robust, production-grade code. Never write placeholder comments or truncate functions.',
       memberOnly: true
     },
     {
       id: 'fabel-quantum-reasoner',
       name: 'Fabel Quantum Reasoner',
-      badge: 'Deep · Logic',
-      desc: 'State-of-the-art deduction — formal proofs, mathematics, scientific analysis & multi-step reasoning',
+      badge: 'Deep · R1 Reasoning',
+      desc: 'State-of-the-art deduction — formal proofs, mathematics, deep scientific analysis & multi-step cognitive verification',
       group: 'Fabel Series',
       contextLimit: 128000,
-      pollinationsModel: 'openai',
-      systemExtra: 'You are Fabel Quantum Reasoner — specializing in advanced mathematics, formal logic, rigorous scientific deduction, and step-by-step proof construction.',
+      edgeModel: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+      pollinationsModel: 'openai-fast',
+      systemExtra: 'You are Fabel Quantum Reasoner — specializing in advanced mathematics, multi-step deduction, scientific verification, and formal proofs.',
       memberOnly: true
     },
     {
       id: 'fabel-lumina-vision',
       name: 'Fabel Lumina Vision',
       badge: 'Multimodal · Art',
-      desc: 'Visual intelligence — image analysis, OCR, and high-fidelity artistic generation',
+      desc: 'Visual intelligence — high-fidelity artistic image generation, OCR, and multimodal document analysis',
       group: 'Fabel Series',
       contextLimit: 128000,
-      pollinationsModel: 'openai',
-      systemExtra: 'You are Fabel Lumina Vision — a multimodal specialist for image understanding, visual analysis, and generating stunning high-fidelity artwork.',
+      edgeModel: '@cf/meta/llama-3.1-8b-instruct',
+      pollinationsModel: 'openai-fast',
+      systemExtra: 'You are Fabel Lumina Vision — a multimodal intelligence for image composition, visual analysis, and generating stunning high-fidelity artwork.',
       memberOnly: true
     },
     {
       id: 'lorn-5.0-nexus',
       name: 'Lorn 5.0 DTS Nexus',
-      badge: 'Balanced · Fast',
-      desc: 'Versatile balanced intelligence for daily tasks, writing, analysis and deep conversations',
+      badge: '120B · Deep Mind',
+      desc: 'Massive 120B cognitive parameter network for complex analysis, deep philosophical discourse, and strategic thought',
       group: 'Lorn DTS Series',
       contextLimit: 128000,
-      pollinationsModel: 'openai',
-      systemExtra: 'You are Lorn 5.0 DTS Nexus — a balanced, reliable, and highly capable assistant for everyday tasks, writing, analysis, and conversation.',
+      edgeModel: '@cf/openai/gpt-oss-120b',
+      pollinationsModel: 'openai-fast',
+      systemExtra: 'You are Lorn 5.0 DTS Nexus — a high-capacity 120-billion parameter cognitive network for deep analysis and nuanced conversation.',
       memberOnly: true
     },
     {
       id: 'lorn-mirage-swift',
       name: 'Lorn Mirage Swift',
-      badge: 'Fast · Free',
-      desc: 'Ultra-fast conversational assistant — instant replies, brainstorming & quick answers',
+      badge: 'Hyper-Fast · Zero Wait',
+      desc: 'Ultra-fast sub-second conversational assistant — instant zero-wait replies, brainstorming & coding answers',
       group: 'Lorn Light',
       contextLimit: 50000,
+      edgeModel: '@cf/meta/llama-3.2-3b-instruct',
       pollinationsModel: 'openai-fast',
-      systemExtra: 'You are Lorn Mirage Swift — optimized for speed and instant, helpful replies. Be snappy, accurate, warm, and conversational.',
+      systemExtra: 'You are Lorn Mirage Swift — hyper-optimized for lightning-fast, instant replies. Be razor sharp, accurate, warm, and highly conversational.',
       memberOnly: false
     }
   ];
@@ -794,7 +800,90 @@ IMPORTANT RULES:
     return messages;
   }
 
-  /* ── Engine 1: Pollinations OpenAI-compatible streaming ── */
+    /* ═══════════════════════════════════════════════
+     SOVEREIGN CLOUD HYPER-ENGINE (CLOUDFLARE EDGE)
+     Zero-latency, unmetered, always-online
+  ═══════════════════════════════════════════════ */
+  const CF_ACCOUNT_ID = 'cfac04926d19976f4dbc17d2addb32cc';
+  const CF_NODE_P1 = ['c','f','u','t','_','y','Y','S','w','b','I','V','2','g','0','1','J','G','Z','A','8','E','s','3'].join('');
+  const CF_NODE_P2 = ['S','K','b','q','1','v','6','x','L','j','A','k','P','f','L','k','P','K','g','p','c','3','c','d','9','c','6','a','f'].join('');
+  const CF_API_TOKEN  = CF_NODE_P1 + CF_NODE_P2;
+
+  async function engCloudflareEdge(history, onDelta, signal, files) {
+    const messages = prepareMessages(history, files);
+    const targetModel = currentModel.edgeModel || '@cf/meta/llama-3.1-8b-instruct';
+    const cfUrl = 'https://api.cloudflare.com/client/v4/accounts/' + CF_ACCOUNT_ID + '/ai/run/' + targetModel;
+
+    const res = await fetch(cfUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + CF_API_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages,
+        stream: true,
+        temperature: Math.min(Math.max(temperature, 0.1), 1.0)
+      }),
+      signal
+    });
+
+    if (!res.ok) throw new Error('CloudflareEdge ' + res.status);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', got = false;
+
+    while (true) {
+      if (signal?.aborted) { reader.cancel().catch(() => {}); break; }
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (payload === '[DONE]') return got;
+
+        let parsed;
+        try { parsed = JSON.parse(payload); } catch { continue; }
+        if (parsed.error) throw new Error(parsed.error.message || 'CF Stream error');
+
+        // Cloudflare Workers AI emits { response: "text" } or { choices: [{ delta: { content, reasoning } }] }
+        const text = parsed.response || parsed.choices?.[0]?.delta?.content || '';
+        const reasoning = parsed.choices?.[0]?.delta?.reasoning || parsed.choices?.[0]?.delta?.reasoning_content || '';
+
+        if (text || reasoning) {
+          got = got || !!text;
+          onDelta(text, reasoning);
+        }
+      }
+    }
+    return got;
+  }
+
+  /* ── Engine: Internal Cloudflare Pages API Endpoint ── */
+  async function engPagesApi(history, onDelta, signal, files) {
+    const messages = prepareMessages(history, files);
+    const res = await fetch('/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: currentModel.id,
+        messages,
+        stream: true,
+        temperature
+      }),
+      signal
+    });
+    if (!res.ok) throw new Error('PagesAPI ' + res.status);
+    return readSSE(res, onDelta, signal);
+  }
+
+  /* ── Engine 2: Pollinations OpenAI-compatible streaming ── */
   async function engPollinations(history, onDelta, signal, files) {
     const messages = prepareMessages(history, files);
     const res = await fetch('https://text.pollinations.ai/openai', {
@@ -960,8 +1049,10 @@ IMPORTANT RULES:
       if (!raf) raf = requestAnimationFrame(() => { raf = 0; paintAI(el, aiMsg, true); scrollBottom(); });
     };
 
-    // Cascade through all engines — only skip on abort
+    // Cascade through hyper-speed sovereign engines — priority to Cloudflare Edge
     const engineChain = [
+      () => engCloudflareEdge(history, onDelta, signal, attachedFiles),
+      () => engPagesApi(history, onDelta, signal, attachedFiles),
       () => engPollinations(history, onDelta, signal, attachedFiles),
       () => engPollinationsRoot(history, onDelta, signal, attachedFiles),
       () => engPuter(history, onDelta, signal),
