@@ -30,6 +30,23 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- Mobile Block Overlay -->
+  <div id="mobileBlockOverlay" class="mobile-block-screen" aria-hidden="true">
+    <div class="mobile-block-card glass">
+      <div class="mobile-block-logo">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#d97757" stroke-width="2.2">
+          <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
+        </svg>
+      </div>
+      <h1 class="mobile-block-title">lornAI</h1>
+      <div class="mobile-block-typing-box">
+        <span id="mobileBlockTypingText"></span><span class="mobile-block-cursor">|</span>
+      </div>
+      <p class="mobile-block-sub">Please access lornAI from a desktop workstation or terminal device.</p>
+    </div>
+  </div>
+
   <!-- App Intro Screen (Spinning Logo with Welcome / Welcome Back) -->
   <div class="app-intro" id="appIntro" style="display: none;" aria-hidden="true">
     <div class="intro-content">

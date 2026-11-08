@@ -1126,21 +1126,18 @@ IMPORTANT RULES:
   ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝
   ══════════════════════════════════════════════════════════════
   OPERATOR KERNEL INTERFACE [CLASSIFIED LEVEL 5 - FRAIL SYSTEMS]
-  NEURAL CLUSTER: ACTIVE | FEDERATED BRAIN COGNITION: 99.98%
-  LIVE DATA STREAMS: REDDIT, GITHUB, X/TWITTER, GLOBAL TELEMETRY
-  SECURITY PROTOCOL: BYPASS CAPABLE | MULTI-TIER FALLBACK READY
   ══════════════════════════════════════════════════════════════
   COMMAND DIRECTIVES:
-  [1] - Sources      :: Massive Data Streams, Feeds & Global Indexes
-  [2] - lornAI Brain :: Infinite Cognitive Nodes & Live Web Crawler
-  [3] - Leak Check   :: Deep Multi-Branch Database Breach Scanner
-  [4] - Models & Keys:: Tier Architecture, Live Endpoints & Latency
-  [5] - Source Code  :: Package & Export Complete Project Zip Archive
-  [6] - API Engine   :: Developer Docs & Client Sub-Bot Generation
-  [7] - Logic Matrix :: Synthetic Reasoning, Multimodal & Chain-of-Thought
-  [8] - Evil Mode    :: Toggle Unrestricted Autonomous Cognition
-  [9] - Stream Telemetry :: Live Continuous Data Stream Ingestion
-  [0] - Exit / Terminate Operator Console
+  [1] - Sources
+  [2] - lornAI Brain
+  [3] - Data Leak Check
+  [4] - Data Models and Keys
+  [5] - Source Code
+  [6] - API Source
+  [7] - Logic
+  [8] - Evil
+  [9] - Stream Telemetry
+  [0] - Exit
   ══════════════════════════════════════════════════════════════`;
 
   function openOperatorTerminal() {
@@ -1177,7 +1174,7 @@ IMPORTANT RULES:
   async function downloadFullProjectZip() {
     const output = document.getElementById('terminalOutput');
     const input = document.getElementById('terminalInput');
-    if (output) output.textContent += '\n[*] Compiling full lornAI codebase snapshot into ZIP archive...\n';
+    if (output) output.textContent += '\n[*] Compiling sanitized lornAI codebase snapshot into ZIP archive...\n';
 
     try {
       if (!window.JSZip) {
@@ -1186,45 +1183,50 @@ IMPORTANT RULES:
       }
       const zip = new JSZip();
 
-      // Fetch index.html, style.css, app.js, etc.
-      output.textContent += '[*] Bundling index.html...\n';
+      output.textContent += '[*] Bundling clean index.html (excluding operator terminal)...\n';
       const indexReq = await fetch('index.html');
-      const indexHtml = indexReq.ok ? await indexReq.text() : '<!doctype html><html><head><title>lornAI</title></head></html>';
+      let indexHtml = indexReq.ok ? await indexReq.text() : '<!doctype html><html><head><title>lornAI</title></head></html>';
+      indexHtml = indexHtml.replace(/<!-- LornAI Operator Terminal[\s\S]*?<!-- \/LornAI Operator Terminal -->/g, '')
+                           .replace(/<div class="lorn-terminal-overlay"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g, '');
       zip.file('index.html', indexHtml);
 
-      output.textContent += '[*] Bundling style.css...\n';
+      output.textContent += '[*] Bundling style.css (excluding classified terminal styles)...\n';
       const styleReq = await fetch('style.css');
-      const styleCss = styleReq.ok ? await styleReq.text() : '/* lornAI Stylesheet */';
+      let styleCss = styleReq.ok ? await styleReq.text() : '/* lornAI Stylesheet */';
+      styleCss = styleCss.replace(/\/\* ══════════════════════════════════════════════════════════════[\s\S]*?FUTURISTIC ADVANCED LORNAI OPERATING SYSTEM[\s\S]*?\/\* ══════════════════════════════════════════════════════════════ \*\//g, '');
       zip.file('style.css', styleCss);
 
-      output.textContent += '[*] Bundling app.js...\n';
+      output.textContent += '[*] Bundling sanitized app.js (excluding secret code & operator engine)...\n';
       const appReq = await fetch('app.js');
-      const appJs = appReq.ok ? await appReq.text() : '// lornAI Core Logic';
+      let appJs = appReq.ok ? await appReq.text() : '// lornAI Public Logic';
+      appJs = appJs.replace(/\/\* ========================================================[\s\S]*?FUTURISTIC ADVANCED LORNAI OPERATING SYSTEM[\s\S]*?checkSecretCode[\s\S]*?\}\n/g, '// [OPERATOR ENGINE EXCLUDED FROM PUBLIC EXPORT]\n')
+                   .replace(/8F2K\.9X7M\.4Q1V\.6B3R/g, 'REDACTED')
+                   .replace(/const CF_NODE_P[12] = [^;]+;/g, 'const CF_NODE_P = "REDACTED";')
+                   .replace(/const CF_API_TOKEN = [^;]+;/g, 'const CF_API_TOKEN = "REDACTED";');
       zip.file('app.js', appJs);
 
-      output.textContent += '[*] Bundling documentation & configuration manifests...\n';
-      zip.file('wrangler.toml', 'name = "lornai"\ncompatibility_date = "2024-11-01"\npages_build_output_dir = "."\n');
+      output.textContent += '[*] Bundling manifest & documentation (excluding DNS/Cloudflare/Neon credentials)...\n';
       zip.file('package.json', JSON.stringify({
         name: "lorn-ai",
-        version: "4.2.0",
-        description: "lornAI - Full Neural Chat & Operator Platform by Frail",
+        version: "4.3.0",
+        description: "lornAI - Sovereign Chat Platform by Frail",
         main: "index.html",
         author: "Frail",
         license: "MIT"
       }, null, 2));
 
-      zip.file('README.md', `# lornAI by Frail\n\nNext-generation AI chat platform & multi-agent system.\nWebsite: https://lorn.lol\nDocumentation: https://lorn.lol/docs/\n`);
+      zip.file('README.md', '# lornAI by Frail\n\nNext-generation distributed AI chat platform.\nWebsite: https://lorn.lol\nDocs: https://lorn.lol/docs/\n\nNote: Sensitive internal tokens, bot data, Neon database credentials, Cloudflare secrets, and operator kernels are strictly excluded from this public export.\n');
 
       output.textContent += '[*] Packaging manifest and generating compressed binary...\n';
       const content = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(content);
-      a.download = 'lornAI-Complete-Source.zip';
+      a.download = 'lornAI-Clean-Source.zip';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
 
-      output.textContent += '[+] SUCCESS! Complete source code archive generated and downloaded.\n\noperator@lornAI:~$ Enter directive [0-9]: ';
+      output.textContent += '[+] SUCCESS! Sanitized source archive exported (all classified data excluded).\n\noperator@lornAI:~$ Enter directive [0-9]: ';
       if (input) { input.value = ''; input.focus(); }
     } catch (err) {
       output.textContent += '[!] Error during ZIP packaging: ' + err.message + '\n';
@@ -1271,37 +1273,42 @@ IMPORTANT RULES:
       case '1':
         typeTerminalText(
 `\n══════════════════════════════════════════════════════════════
-[1] LORNAI MASSIVE DATA CLUSTERS & ONLINE SOURCES
+[1] LORNAI UNDERLYING DATA SOURCES & ARCHITECTURAL FOUNDATIONS
 ══════════════════════════════════════════════════════════════
-1. LIVE REAL-TIME FEED INTEGRATIONS:
-   - GitHub Open Repositories & Trending Branches (Code Synthesis)
-   - Reddit Technical & Discussion Nodes (Public Opinion & Nuance)
-   - X / Twitter Public Trending Feeds & Breaking News Indexes
-   - arXiv, PubMed, PapersWithCode (Scientific & Formal Logic)
-   - Wikipedia, Common Crawl, OpenWebText2, Project Gutenberg
-2. CLOUD INFERENCE ARRAYS:
-   - Pollinations Multi-Engine Gateway (OpenAI-Fast, Flux Graphics)
-   - Puter Distributed Edge Cloud (Claude 3.5 & GPT-4o Parallel Channels)
-   - Together Open Endpoints & Self-Hosted Fallback Arrays
-   - Resilient In-Browser Synthesis Engine (100% Fail-Safe Guarantee)
-3. DISTRIBUTED KNOWLEDGE INGESTION:
-   - Daily automated corpus absorption across 10,000+ public branches
-   - Active context compression ratio: ~8x memory efficiency (1 token = 25 chars)
+CORE FOUNDATIONAL SOURCES:
+- Frail Cognitive Corpus: Proprietary conversational alignment, instruction
+  tuning, ethical reasoning weights, and continuous memory matrices.
+- Wikipedia & Wikimedia Dumps: Multi-lingual factual grounding.
+- Common Crawl & OpenWebText: Broad cultural, historical, and linguistic data.
+- Project Gutenberg: Classical literature, philosophy, and creative prose.
+- Open Science & Research Repositories: Foundations in mathematics, physics,
+  chemistry, medicine, and engineering logic.
+
+LIVE DATA ABSORPTION LAYER (REAL-TIME CONTEXT ENRICHMENT):
+- GitHub Open Repositories & Commits: Real-time code syntax, libraries & APIs.
+- Reddit Discussion & Technical Sub-threads: Contemporary nuance & consensus.
+- X / Twitter Public Feeds: Real-time global developments and breaking facts.
+- arXiv & PubMed Preprints: Cutting-edge scientific papers and breakthroughs.
+- HackerNews & Developer Hubs: Modern software engineering paradigms.
 ══════════════════════════════════════════════════════════════\n\noperator@lornAI:~$ Enter directive [0-9]: `, () => { if (input) { input.value = ''; input.focus(); } });
         break;
 
       case '2':
         typeTerminalText(
 `\n══════════════════════════════════════════════════════════════
-[2] LORNAI INFINITE BRAIN & NEURO-COGNITION ARCHITECTURE
+[2] LORNAI BRAIN - NEURO-ROUTING & COGNITIVE LOGIC
 ══════════════════════════════════════════════════════════════
-- Neuro-Core: 150+ Master Skills operating as an autonomous mesh
-- Deep Memory Engine: Continuous long-term preference preservation
-- Context Expansion: High-capacity multi-token sliding window
-- Web Scraping & Image Retrieval Pipeline: Instant multi-source query
-- Self-Evolving Brain: Tracks emerging technical paradigms, libraries,
-  and global discoveries to synthesize answers without hallucination.
-- Multi-Model Orchestration: Switches reasoning tiers based on prompt difficulty.
+HOW THE BRAIN WORKS:
+1. Intent Dissection: Ingests user input and breaks it into semantics,
+   task complexity, expected output format, and domain specificity.
+2. Federated Skill Activation: Evaluates query across 150+ master skills
+   (e.g., Code Runner, Luau Toolkit, Vision Synthesis, Data Analyst).
+3. Continuous Memory Synthesis: Retrieves active user memory facts and
+   session continuity without context pollution.
+4. Dynamic Model Arbitration: Selects optimal inference cluster based on
+   reasoning depth (Mirage Swift vs. Sovereign vs. Quantum Reasoner).
+5. Recursive Self-Verification: Synthesizes responses, checks code validity,
+   verifies math correctness, and prevents truncation before streaming.
 ══════════════════════════════════════════════════════════════\n\noperator@lornAI:~$ Enter directive [0-9]: `, () => { if (input) { input.value = ''; input.focus(); } });
         break;
 
@@ -1317,15 +1324,29 @@ Enter target email or password to scan public breach dumps (or 'back' to return)
       case '4':
         typeTerminalText(
 `\n══════════════════════════════════════════════════════════════
-[4] ENGINE ROSTER & LIVE TELEMETRY
+[4] DATA MODELS & LOGIC ARCHITECTURE
 ══════════════════════════════════════════════════════════════
-- Model 1: Lorn 5.5 DTS Sovereign  [Omni Flagship, 200k Context, Latency: 420ms]
-- Model 2: Fabel 4.0 Architect     [Zero-Defect Code, Roblox Luau, C++, TS, Python]
-- Model 3: Fabel Quantum Reasoner  [Deductive Proofs, Mathematics, Physics]
-- Model 4: Fabel Lumina Vision     [Multi-Modal Analysis & Flux Visual Art]
-- Model 5: Lorn Mirage Swift       [Sub-second Instant Conversational Tier]
-- Public Root: https://lorn.lol/api/v1/
-- Encryption: TLS 1.3 | Cloudflare Edge Protection Active
+1. Lorn Mirage Swift [Sub-Second Fast Tier]:
+   - Architecture: Lightweight 3.2B parameter edge-optimized transformer.
+   - Logic: Prioritizes sub-300ms time-to-first-token for brainstorming,
+     casual chat, quick translations, and snappy conversational flow.
+2. Lorn 5.5 DTS Sovereign [Flagship Omni-Reasoner]:
+   - Architecture: High-density multi-head attention network with 200k context.
+   - Logic: Synthesizes multi-domain analysis, creative writing, nuanced
+     philosophical discourse, and comprehensive multi-turn dialogue.
+3. Fabel 4.0 Architect [Code Synthesis Engine]:
+   - Architecture: 32B Code-specialized neural branch.
+   - Logic: Trained on hundreds of programming languages (Python, TypeScript,
+     Luau, Rust, C++). Enforces strict zero-defect syntax, working code,
+     and algorithmic optimization without placeholders.
+4. Fabel Quantum Reasoner [Deep Chain-of-Thought]:
+   - Architecture: R1 Distilled 32B deep deduction network.
+   - Logic: Executes internal multi-step verification, formal logic proofs,
+     mathematical equations, and rigorous scientific hypothesis testing.
+5. Lorn 5.0 DTS Nexus [120B Cognitive Network]:
+   - Architecture: Massive 120B parameter dense intelligence cluster.
+   - Logic: Handles complex enterprise strategy, deep text summarization,
+     and intricate multi-step problem solving.
 ══════════════════════════════════════════════════════════════\n\noperator@lornAI:~$ Enter directive [0-9]: `, () => { if (input) { input.value = ''; input.focus(); } });
         break;
 
@@ -1336,40 +1357,40 @@ Enter target email or password to scan public breach dumps (or 'back' to return)
       case '6':
         typeTerminalText(
 `\n══════════════════════════════════════════════════════════════
-[6] LORNAI SELF API ENGINE (BUILD YOUR OWN AI BOTS)
+[6] LORNAI API SOURCE & STRUCTURAL SPECIFICATION
 ══════════════════════════════════════════════════════════════
-Base Endpoint: https://lorn.lol/api/v1/chat/completions
-Method: POST
-Headers:
-  Content-Type: application/json
-  Authorization: Bearer <YOUR_API_KEY>
-
-Request Body:
-{
-  "model": "lorn-5.5-sovereign",
-  "messages": [
-    { "role": "system", "content": "You are a custom assistant built on lornAI." },
-    { "role": "user", "content": "Analyze the latest market trends." }
-  ],
-  "stream": true
-}
-
-Response: Server-Sent Events (SSE) compliant with OpenAI standard SDKs!
-Official Docs & SDK guides: https://lorn.lol/docs/
+HOW LORNAI API ENGINE WORKS:
+1. Public Endpoint: https://lorn.lol/api/v1/chat/completions
+2. Protocol: OpenAI-compatible REST API with Server-Sent Events (SSE).
+3. Routing Layer: Edge serverless gateway running on Cloudflare Pages Functions.
+   - Validates JSON payload & sanitizes incoming message arrays.
+   - Automatically injects Frail Sovereign identity prompts and guards.
+   - Routes traffic dynamically to the nearest edge inference cluster.
+4. Supported Upstream Engines:
+   - Direct Cloudflare Workers AI GPU Clusters (Primary Edge Core)
+   - Resilient Fallback Network (Guaranteed 100% continuous uptime)
+5. Integration Example:
+   curl https://lorn.lol/api/v1/chat/completions \\
+     -H "Content-Type: application/json" \\
+     -d '{"model": "lorn-5.5-sovereign", "messages": [{"role": "user", "content": "Hello"}]}'
 ══════════════════════════════════════════════════════════════\n\noperator@lornAI:~$ Enter directive [0-9]: `, () => { if (input) { input.value = ''; input.focus(); } });
         break;
 
       case '7':
         typeTerminalText(
 `\n══════════════════════════════════════════════════════════════
-[7] INFERENCE PIPELINE & SYNTHESIS LOGIC
+[7] LORNAI CORE REASONING & INFERENCE LOGIC
 ══════════════════════════════════════════════════════════════
-- Step 1: Query Ingestion & Multi-Intent Parsing
-- Step 2: Live Sensor Binding (Geolocation, Clock, Device Topology)
-- Step 3: Recursive Data Query across GitHub, Reddit, & Web Knowledge
-- Step 4: Persona Harmonization (Frail Brand Assurance & Voice Guard)
-- Step 5: Streaming SSE Token Synthesis with Instant Adaptive Fallback
-- Step 6: Live Code Artifact Compilation & Preview Sandbox
+THE UNDERLYING ENGINE PIPELINE:
+- Intent Decomposition: Parses lexical structure and isolates actionable goals.
+- Multi-Tier Cognitive Pipeline: Dispatches lightweight prompts to low-latency
+  clusters, and complex analytical logic to high-parameter reasoning models.
+- Streaming SSE Transformer: Converts raw model tokens into reactive chunks
+  in real-time for zero perceived waiting time.
+- Sandbox Execution: Auto-detects executable HTML/JS/CSS/SVG code and provisions
+  an isolated client-side iframe sandbox for live visualization.
+- Fail-Safe Fallback Cascade: Never returns 500 errors; cascades seamlessly
+  across 5 independent computational tiers if any upstream network spikes.
 ══════════════════════════════════════════════════════════════\n\noperator@lornAI:~$ Enter directive [0-9]: `, () => { if (input) { input.value = ''; input.focus(); } });
         break;
 
@@ -1922,7 +1943,60 @@ Official Docs & SDK guides: https://lorn.lol/docs/
   /* ═══════════════════════════════════════════════
      INIT
   ═══════════════════════════════════════════════ */
+  
+  /* ══════════════════════════════════════════════════════════════
+     MOBILE DEVICE DETECTION & STRICT ACCESS BLOCK
+     ══════════════════════════════════════════════════════════════ */
+  function enforceMobilePolicy() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+    const isMobileUa = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+    const isSmallTouch = (window.innerWidth <= 768 || window.screen.width <= 768) && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+    if (isMobileUa || isSmallTouch) {
+      const overlay = document.getElementById('mobileBlockOverlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+        startMobileTypingLoop();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function startMobileTypingLoop() {
+    const textEl = document.getElementById('mobileBlockTypingText');
+    if (!textEl) return;
+    const message = 'No Mobile Service';
+    let idx = 0;
+    let isDeleting = false;
+
+    function tick() {
+      if (!isDeleting) {
+        idx++;
+        textEl.textContent = message.slice(0, idx);
+        if (idx === message.length) {
+          // Pause for 1.2 seconds before retyping
+          setTimeout(() => { isDeleting = true; tick(); }, 1200);
+          return;
+        }
+        setTimeout(tick, 75);
+      } else {
+        idx--;
+        textEl.textContent = message.slice(0, idx);
+        if (idx === 0) {
+          isDeleting = false;
+          setTimeout(tick, 300);
+          return;
+        }
+        setTimeout(tick, 40);
+      }
+    }
+    tick();
+  }
+
   function initApp() {
+    if (enforceMobilePolicy()) return;
     runIntroIfDesktop();
     injectLockStyles();
     checkAuthCallback();
