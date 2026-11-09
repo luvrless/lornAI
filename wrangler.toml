@@ -1,5 +1,0 @@
-name = "lornai"
-compatibility_date = "2024-11-01"
-
-[vars]
-CLOUDFLARE_ACCOUNT_ID = "cfac04926d19976f4dbc17d2addb32cc"
