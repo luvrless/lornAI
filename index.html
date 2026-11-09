@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Seraphion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lornAI</title>
     <link rel="icon" type="image/png" href="lornAI.png">
     <style>
         * {
@@ -27,7 +28,7 @@
             padding: 20px;
             opacity: 0;
             animation: fadeInPage 1.2s ease-out forwards;
-            color: #d97757;
+            color: #e0e0e0;
             position: relative;
             overflow: hidden;
             -webkit-user-select: none;
@@ -64,7 +65,7 @@
 
         .subtext {
             font-size: 1.1rem;
-            color: #d97757;
+            color: rgba(170, 170, 170, 0.8);
             margin-bottom: 40px;
             text-align: center;
             max-width: 500px;
@@ -72,31 +73,46 @@
             animation: slideInUp 0.8s ease-out 0.8s forwards;
             opacity: 0;
             font-style: italic;
-            border-left: 2px solid #d97757;
+            border-left: 2px solid #555;
             padding-left: 20px;
             margin-left: 20px;
         }
 
-        .subtext::before { content: "» "; color: #d97757; }
+        .subtext::before { content: "» "; color: #666; }
         .subtext::after {
             content: "_";
             animation: blink 1s infinite;
-            color: #d97757;
+            color: #666;
         }
 
         .archive-note {
             position: absolute;
             bottom: 30px;
             font-size: 0.8rem;
-            color: #d97757;
+            color: rgba(102, 102, 102, 0.6);
             text-align: center;
             width: 100%;
             animation: slideInUp 0.8s ease-out 1.2s forwards;
             opacity: 0;
         }
 
-        .archive-note::before { content: "[ "; color: #d97757; }
-        .archive-note::after { content: " ]"; color: #d97757; }
+        .archive-note::before { content: "[ "; }
+        .archive-note::after { content: " ]"; }
+
+        /* Mobile readability adjustments */
+        @media (max-width: 600px) {
+            .subtext {
+                font-size: 1.15rem;
+                padding-left: 14px;
+                margin-left: 0;
+                margin-right: 0;
+                max-width: 90vw;
+            }
+            .archive-note {
+                font-size: 0.85rem;
+                bottom: 24px;
+            }
+        }
 
         /* CRT effects */
         body.crt::after {
@@ -196,6 +212,9 @@
         const threshold = 160; // pixels difference when DevTools is docked
 
         function detectDevTools() {
+            // Mobile browser URL bar / keyboards cause height differences; ignore on touch/mobile
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
             const widthDiff = window.outerWidth - window.innerWidth;
             const heightDiff = window.outerHeight - window.innerHeight;
 
