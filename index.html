@@ -2,42 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>lornAI</title>
+    <title>Seraphion</title>
     <link rel="icon" type="image/png" href="lornAI.png">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-
-        :root {
-            --bg-void:      #050504;
-            --bg-deep:      #0d0c0b;
-            --bg-base:      #161514;
-            --bg-surface:   #1e1c1a;
-            --bg-raised:    #252320;
-            --accent:       #d97757;
-            --accent-dim:   #b85f3f;
-            --accent-glow:  rgba(217, 119, 87, 0.18);
-            --accent-glow2: rgba(217, 119, 87, 0.08);
-            --text-primary: #f3efe6;
-            --text-secondary: #c4bdb5;
-            --text-dim:     #8e8880;
-            --text-muted:   #55504a;
-            --border:       rgba(217, 119, 87, 0.15);
-            --border-dim:   rgba(255, 255, 255, 0.06);
-            --grid-dot:     rgba(255, 255, 255, 0.045);
+            font-family: 'Courier New', 'Times New Roman', serif;
         }
 
         body {
-            background: var(--bg-void);
-            background-image:
-                radial-gradient(var(--grid-dot) 1px, transparent 1px),
-                radial-gradient(var(--grid-dot) 1px, transparent 1px);
+            background: #000000;
+            background-image: 
+                radial-gradient(#2a2a2a 1px, transparent 1px),
+                radial-gradient(#2a2a2a 1px, transparent 1px);
             background-size: 40px 40px;
             background-position: 0 0, 20px 20px;
             min-height: 100vh;
@@ -47,8 +26,8 @@
             flex-direction: column;
             padding: 20px;
             opacity: 0;
-            animation: fadeInPage 1.4s ease-out forwards, flicker 6s infinite;
-            color: var(--text-primary);
+            animation: fadeInPage 1.2s ease-out forwards;
+            color: #d97757;
             position: relative;
             overflow: hidden;
             -webkit-user-select: none;
@@ -56,330 +35,207 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
         }
 
-        /* ── Warm radial vignette ── */
         body::before {
             content: "";
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 80% 60% at 50% 40%, rgba(217, 119, 87, 0.05) 0%, transparent 70%),
-                radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.75) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* ── CRT scanlines ── */
-        body::after {
-            content: " ";
-            position: fixed;
-            inset: 0;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: repeating-linear-gradient(
                 0deg,
                 transparent,
                 transparent 2px,
-                rgba(0, 0, 0, 0.18) 2px,
-                rgba(0, 0, 0, 0.18) 4px
+                rgba(42, 42, 42, 0.3) 2px,
+                rgba(42, 42, 42, 0.3) 4px
             );
             pointer-events: none;
-            z-index: 1;
-            animation: scanlines 10s linear infinite;
+            animation: scanlines 8s linear infinite;
         }
 
-        /* ── Warm horizontal glow band behind content ── */
-        .glow-band {
-            position: fixed;
-            left: 0; right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 320px;
-            background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(217,119,87,0.07) 0%, transparent 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* ── Animations ── */
-        @keyframes fadeInPage {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
-
+        @keyframes fadeInPage { to { opacity: 1; } }
         @keyframes slideInUp {
-            from { transform: translateY(28px); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
-
         @keyframes scanlines {
-            0%   { background-position: 0 0; }
+            0% { background-position: 0 0; }
             100% { background-position: 0 4px; }
         }
 
+        .subtext {
+            font-size: 1.1rem;
+            color: #d97757;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
+            animation: slideInUp 0.8s ease-out 0.8s forwards;
+            opacity: 0;
+            font-style: italic;
+            border-left: 2px solid #d97757;
+            padding-left: 20px;
+            margin-left: 20px;
+        }
+
+        .subtext::before { content: "» "; color: #d97757; }
+        .subtext::after {
+            content: "_";
+            animation: blink 1s infinite;
+            color: #d97757;
+        }
+
+        .archive-note {
+            position: absolute;
+            bottom: 30px;
+            font-size: 0.8rem;
+            color: #d97757;
+            text-align: center;
+            width: 100%;
+            animation: slideInUp 0.8s ease-out 1.2s forwards;
+            opacity: 0;
+        }
+
+        .archive-note::before { content: "[ "; color: #d97757; }
+        .archive-note::after { content: " ]"; color: #d97757; }
+
+        /* CRT effects */
+        body.crt::after {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            opacity: 0.15;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        body.crt::before {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.9) 100%);
+            z-index: 998;
+            pointer-events: none;
+        }
+
+        body {
+            animation: fadeInPage 1.2s ease-out forwards, flicker 5s infinite;
+        }
+
         @keyframes flicker {
-            0%, 93%, 100% { opacity: 1; }
-            95%            { opacity: 0.97; }
-            97%            { opacity: 1; }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.98; }
+        }
+
+        .nav-button:hover { animation: glitch 0.3s ease; }
+
+        @keyframes glitch {
+            0% { transform: translateY(-2px) translateX(0); }
+            20% { transform: translateY(-2px) translateX(-1px); color: #0f0; }
+            40% { transform: translateY(-2px) translateX(1px); color: #f0f; }
+            60% { transform: translateY(-2px) translateX(-1px); }
+            80% { transform: translateY(-2px) translateX(1px); }
+            100% { transform: translateY(-2px) translateX(0); color: #fff; }
         }
 
         @keyframes blink {
             0%, 100% { opacity: 1; }
-            50%       { opacity: 0; }
+            50% { opacity: 0; }
         }
-
-        @keyframes logoSpin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-        }
-
-        @keyframes glitch {
-            0%   { transform: translateY(-2px) translateX(0); }
-            20%  { transform: translateY(-2px) translateX(-2px); color: var(--accent); }
-            40%  { transform: translateY(-2px) translateX(2px);  color: #c084a0; }
-            60%  { transform: translateY(-2px) translateX(-1px); }
-            80%  { transform: translateY(-2px) translateX(1px); }
-            100% { transform: translateY(-2px) translateX(0);  color: var(--text-primary); }
-        }
-
-        @keyframes pulseAccent {
-            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow), 0 0 24px var(--accent-glow2); }
-            50%       { box-shadow: 0 0 0 6px transparent, 0 0 40px rgba(217,119,87,0.14); }
-        }
-
-        /* ── Main card ── */
-        .card {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            max-width: 520px;
-            width: 100%;
-            padding: 48px 36px 40px;
-            background: rgba(22, 21, 20, 0.72);
-            backdrop-filter: blur(32px) saturate(160%);
-            -webkit-backdrop-filter: blur(32px) saturate(160%);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            box-shadow:
-                0 32px 80px rgba(0,0,0,0.65),
-                0 0 0 1px var(--border-dim),
-                inset 0 1px 0 rgba(255,255,255,0.05);
-            animation: slideInUp 1s ease-out 0.3s both;
-        }
-
-        /* ── Logo ── */
-        .logo-wrap {
-            width: 72px;
-            height: 72px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(217, 119, 87, 0.1);
-            border: 1px solid rgba(217, 119, 87, 0.22);
-            box-shadow: 0 0 32px rgba(217,119,87,0.14);
-            animation: pulseAccent 4s ease-in-out infinite;
-        }
-
-        .logo-wrap img {
-            width: 44px;
-            height: 44px;
-            object-fit: contain;
-            animation: logoSpin 20s linear infinite;
-            filter: drop-shadow(0 0 8px rgba(217,119,87,0.35));
-        }
-
-        /* ── Title ── */
-        .title {
-            font-family: 'Instrument Serif', Georgia, serif;
-            font-size: 2.4rem;
-            font-weight: 400;
-            letter-spacing: -0.025em;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-            line-height: 1;
-        }
-
-        .title span {
-            color: var(--accent);
-        }
-
-        /* ── Divider ── */
-        .divider {
-            width: 48px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-            margin: 20px auto;
-            opacity: 0.6;
-        }
-
-        /* ── Subtext ── */
-        .subtext {
-            font-size: 1.0rem;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            max-width: 400px;
-            margin-bottom: 28px;
-            font-weight: 400;
-            border-left: 2px solid rgba(217, 119, 87, 0.35);
-            padding-left: 18px;
-            text-align: left;
-            font-style: italic;
-        }
-
-        .subtext::after {
-            content: "_";
-            animation: blink 1s infinite;
-            color: var(--accent);
-            font-style: normal;
-        }
-
-        /* ── Status badge ── */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 6px 16px;
-            background: rgba(217, 119, 87, 0.1);
-            border: 1px solid rgba(217, 119, 87, 0.25);
-            border-radius: 999px;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            color: var(--accent);
-            text-transform: uppercase;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 6px var(--accent);
-            animation: blink 2s infinite;
-        }
-
-        /* ── Bottom note ── */
-        .archive-note {
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            letter-spacing: 0.18em;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            animation: slideInUp 0.9s ease-out 1.1s both;
-        }
-
-        .archive-note::before { content: "[ "; color: rgba(217,119,87,0.3); }
-        .archive-note::after  { content: " ]"; color: rgba(217,119,87,0.3); }
-
-        /* ── Hover glitch on card ── */
-        .card:hover .title {
-            animation: glitch 0.4s ease;
-        }
-
-        /* ── Corner accents ── */
-        .corner {
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            border-color: rgba(217, 119, 87, 0.4);
-            border-style: solid;
-        }
-        .corner-tl { top: -1px; left: -1px;   border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
-        .corner-tr { top: -1px; right: -1px;  border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
-        .corner-bl { bottom: -1px; left: -1px;  border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
-        .corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
     </style>
 </head>
-<body>
-    <div class="glow-band"></div>
+<body class="crt">
 
-    <div class="card">
-        <!-- Corner accents -->
-        <div class="corner corner-tl"></div>
-        <div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div>
-        <div class="corner corner-br"></div>
-
-        <!-- Logo -->
-        <div class="logo-wrap">
-            <img src="lornAI.png" alt="lornAI logo">
-        </div>
-
-        <!-- Title -->
-        <h1 class="title">lorn<span>AI</span></h1>
-
-        <!-- Divider -->
-        <div class="divider"></div>
-
-        <!-- Message -->
-        <p class="subtext">lornAI will no longer be available.</p>
-
-        <!-- Status badge -->
-        <div class="status-badge">
-            <div class="status-dot"></div>
-            Archived
-        </div>
-    </div>
-
-    <!-- Footer -->
+    <div class="subtext">lornAI will no longer be available.</div>
+    
     <div class="archive-note">ARCHIVED</div>
 
     <script>
         // === Block right-click and text selection ===
         document.addEventListener('contextmenu', e => { e.preventDefault(); return false; });
         document.addEventListener('selectstart', e => { e.preventDefault(); return false; });
-        document.addEventListener('dragstart',   e => { e.preventDefault(); return false; });
+        document.addEventListener('dragstart', e => { e.preventDefault(); return false; });
 
         // === Block common DevTools hotkeys ===
         document.addEventListener('keydown', function(e) {
             const key = e.keyCode || e.which;
-            if (key === 123) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.shiftKey && (key === 73 || key === 74 || key === 67)) { e.preventDefault(); return false; }
-            if (e.ctrlKey && (key === 85 || key === 83)) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.shiftKey && key === 75) { e.preventDefault(); return false; }
+
+            // F12
+            if (key === 123) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Ctrl+Shift+I, J, C
+            if (e.ctrlKey && e.shiftKey && (key === 73 || key === 74 || key === 67)) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Ctrl+U (view source)
+            if (e.ctrlKey && (key === 85 || key === 83)) { // U or S
+                e.preventDefault();
+                return false;
+            }
+
+            // Ctrl+Shift+K (console in some browsers)
+            if (e.ctrlKey && e.shiftKey && key === 75) {
+                e.preventDefault();
+                return false;
+            }
         });
 
-        // === DevTools detection (dimension-based) ===
+        // === DevTools Detection (dimension-based + loop) ===
         let devtoolsOpen = false;
-        const threshold = 160;
+        const threshold = 160; // pixels difference when DevTools is docked
 
         function detectDevTools() {
-            const widthDiff  = window.outerWidth  - window.innerWidth;
+            const widthDiff = window.outerWidth - window.innerWidth;
             const heightDiff = window.outerHeight - window.innerHeight;
+
             if (widthDiff > threshold || heightDiff > threshold) {
-                if (!devtoolsOpen) { devtoolsOpen = true; triggerProtection(); }
+                if (!devtoolsOpen) {
+                    devtoolsOpen = true;
+                    triggerProtection();
+                }
             } else {
                 devtoolsOpen = false;
             }
         }
 
         function triggerProtection() {
+            // Strong reaction when DevTools is detected
             document.body.innerHTML = `
-                <div style="
-                    position:fixed;inset:0;background:#050504;
-                    display:flex;flex-direction:column;align-items:center;justify-content:center;
-                    font-family:'JetBrains Mono',monospace;text-align:center;gap:12px;
-                ">
-                    <div style="font-size:2.2rem;font-weight:600;color:#d97757;letter-spacing:-0.02em;">ACCESS DENIED</div>
-                    <div style="font-size:0.85rem;color:#55504a;letter-spacing:0.14em;text-transform:uppercase;">Developer Tools detected</div>
-                </div>`;
+                <div style="color:#f00; font-size:2rem; text-align:center; padding:50px;">
+                    ACCESS DENIED<br>
+                    <span style="font-size:1rem; color:#888;">Developer Tools detected</span>
+                </div>
+            `;
+            document.body.style.background = '#000';
+            
+            // Optional: redirect instead
+            // window.location.href = "about:blank";
         }
 
+        // Run detection frequently
         setInterval(detectDevTools, 300);
 
-        // Silence console
+        // Extra console clearing (makes it harder to use console)
         console.clear();
-        ['log','warn','error','info','debug','table','dir'].forEach(m => { try { console[m] = function(){}; } catch{} });
+        console.log = function() {};
+        console.warn = function() {};
+        console.error = function() {};
+        console.info = function() {};
+
+        // Optional: spam debugger statement (very aggressive - can freeze the tab)
+        // setInterval(() => { debugger; }, 100);
     </script>
+
 </body>
 </html>
