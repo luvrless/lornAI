@@ -4,15 +4,18 @@ import { migrate } from "./db/migrate.ts";
 import { configFromUrl } from "./db/pg.ts";
 import { buildServer } from "./server.ts";
 import { closeHashPool } from "./lib/password.ts";
+import { startWorker } from "./modules/jobs/runner.ts";
 
 const cfg = loadConfig();
 const app = createApp(cfg);
 await migrate(configFromUrl(cfg.databaseUrl), (m) => app.log.info(m));
 const { server } = await buildServer(app);
+const stopWorker = process.env.DISABLE_WORKER === "true" ? () => {} : startWorker(app);
 server.listen(cfg.port, () => app.log.info("listening", { port: cfg.port, url: cfg.appUrl }));
 
 const shutdown = async () => {
   app.log.info("shutting down");
+  stopWorker();
   server.close();
   await app.db.end();
   await closeHashPool();

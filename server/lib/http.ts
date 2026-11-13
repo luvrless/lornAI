@@ -5,7 +5,7 @@
  */
 import http from "node:http";
 import crypto from "node:crypto";
-import { z, ZodType } from "zod";
+import { z, ZodTypeAny } from "zod";
 import { HttpError, badRequest, forbidden, tooMany, unauthorized, notFound } from "./errors.ts";
 import type { RateLimitRule, RateLimitStore } from "./ratelimit.ts";
 import type { Permission } from "../modules/authz/registry.ts";
@@ -67,7 +67,7 @@ export class Ctx {
   get ua() { return String(this.req.headers["user-agent"] ?? "").slice(0, 512); }
   get query() { return Object.fromEntries(this.url.searchParams); }
 
-  async body<T>(schema: ZodType<T>): Promise<T> {
+  async body<S extends ZodTypeAny>(schema: S): Promise<z.output<S>> {
     if (this.bodyCache === undefined) this.bodyCache = await readJson(this.req);
     return validate(schema, this.bodyCache);
   }
@@ -113,7 +113,7 @@ export class Ctx {
   }
 }
 
-export function validate<T>(schema: ZodType<T>, data: unknown): T {
+export function validate<S extends ZodTypeAny>(schema: S, data: unknown): z.output<S> {
   const r = schema.safeParse(data);
   if (!r.success) {
     throw new HttpError(422, "validation_failed", "Some fields are invalid",

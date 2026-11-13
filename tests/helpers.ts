@@ -145,3 +145,41 @@ export async function lastEmailToken(app: App, to: string, template: string) {
   const r = (await app.db.query("SELECT text_body FROM email_outbox WHERE to_address = $1 AND template = $2 ORDER BY id DESC LIMIT 1", [to, template])).rows[0];
   return r ? /token=([A-Za-z0-9_-]+)/.exec(r.text_body)?.[1] ?? null : null;
 }
+
+/** Register a password user and return a signed-in client. */
+export async function newUser(h: Harness, username: string, password = "Sunset-Driver-77") {
+  const c = new Client(h.base);
+  const r = await c.post("/api/auth/register", { username, email: `${username.toLowerCase()}@example.com`, password, acceptTos: true });
+  if (r.status !== 200) throw new Error(`register ${username} failed: ${JSON.stringify(r.body)}`);
+  return Object.assign(c, { userId: (await h.app.db.query("SELECT id FROM users WHERE username = $1", [username])).rows[0].id as string, uid: r.body.user.uid as number });
+}
+
+/** Owner signed up through Discord and elevated to an admin session. */
+export async function ownerClient(h: Harness) {
+  const c = new Client(h.base);
+  await c.discord(h, OWNER_ID, "q5", "admin");
+  if ((await c.get("/api/auth/me")).body.user === null) await c.post("/api/auth/signup/complete", { username: "q5", acceptTos: true });
+  await c.discord(h, OWNER_ID, "q5", "admin");
+  await c.refreshCsrf();
+  return c;
+}
+
+/** Staff/admin by Discord ID (owner must have authorized them). */
+export async function staffClient(h: Harness, owner: Client, discordId: string, username: string, role: "ADMIN" | "STAFF") {
+  await owner.post("/api/admin/staff", { discordId, role });
+  const c = new Client(h.base);
+  await c.discord(h, discordId, username, "admin");
+  await c.post("/api/auth/signup/complete", { username, acceptTos: true });
+  await c.discord(h, discordId, username, "admin");
+  await c.refreshCsrf();
+  return c;
+}
+
+/** Full upload flow: start → PUT bytes → complete. */
+export async function upload(c: Client, buf: Buffer, filename: string, mime: string, extra: Record<string, unknown> = {}, paths = { start: "/api/media/uploads", complete: (id: string) => `/api/media/uploads/${id}/complete` }) {
+  const s = await c.post(paths.start, { filename, mime, size: buf.length, ...extra });
+  if (s.status !== 200) return s;
+  const put = await fetch(c.base + s.body.target.url, { method: "PUT", body: new Uint8Array(buf), headers: s.body.target.headers });
+  if (put.status !== 200) return { status: put.status, body: await put.json() };
+  return c.post(paths.complete(s.body.uploadId), {});
+}
