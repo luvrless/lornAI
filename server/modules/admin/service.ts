@@ -453,6 +453,8 @@ export async function dashboardStats(app: App, c: Ctx, from: Date, to: Date) {
   for (const [k, v] of Object.entries(configStatus(app.cfg))) if (String(v).startsWith("not_configured")) alerts.push({ level: "warning", message: `${k}: ${v}` });
   const { paymentStatus } = await import("../monetization/service.ts");
   if (paymentStatus().startsWith("not_configured")) alerts.push({ level: "warning", message: `payments: ${paymentStatus()}` });
+  const { boosterStatus } = await import("../badges/booster.ts");
+  if (boosterStatus().startsWith("not_configured")) alerts.push({ level: "warning", message: `serverBooster: ${boosterStatus()}` });
   if (infra.jobs.some((j: any) => j.status === "dead")) alerts.push({ level: "critical", message: "Some background jobs failed permanently — see System Health" });
   return { platform, moderation, monetization, infra, charts, recent, alerts };
 }

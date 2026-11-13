@@ -5,7 +5,8 @@ import { get, post, setCsrf } from "./api.ts";
 export interface Me {
   user: { id: string; uid: number; username: string; email: string | null; emailVerified: boolean; displayName: string | null; createdAt: string; hasPassword: boolean; twoFactor: boolean } | null;
   connections?: { provider: string; providerUserId: string; username: string | null; avatar: string | null; linkedAt: string }[];
-  staffRole?: "OWNER" | "ADMIN" | "STAFF" | null;
+  staffRole?: "OWNER" | "ADMIN" | null;
+  adminPanel?: boolean;
   mfaPending?: boolean;
 }
 

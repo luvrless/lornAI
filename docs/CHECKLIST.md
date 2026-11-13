@@ -4,7 +4,7 @@ Everything below was built and checked in this environment. "Verified" means a t
 against the real server and a real PostgreSQL database; browser items are driven in Chromium
 through the production client bundle.
 
-**Test totals:** 84 API/security/subsystem tests + 6 browser end-to-end tests, all passing.
+**Test totals:** 92 API/security/subsystem tests + 7 browser end-to-end tests, all passing.
 Both TypeScript configs (`tsconfig.json`, `tsconfig.web.json`) typecheck clean.
 
 ## Phase 1 — Foundation, accounts, authorization
@@ -86,6 +86,20 @@ Browser tests found and fixed these real bugs:
 - Server-side rendering needed the JSX runtime declared per file to run outside the bundler.
 - Added an error boundary so one broken screen shows a recoverable message instead of a blank app.
 
+## Phase 8 — Badge catalogue and admin link
+
+| Area | State | How it's verified |
+|---|---|---|
+| Admin panel link shown only to the owner and owner-appointed admins (not staff, not users) | Done | `phase8`, browser (absent for a user, present for the owner) |
+| All badges: Staff, Helper, Premium, Verified, Donor, OG, Gifter, Server Booster, Winner, Second/Third Place, Image Host, Bug Hunter, Easter 2027, Christmas 2026, The Million | Done | `phase8`, browser catalogue |
+| "All badges" list with status (Unlocked / Purchased / Verified / Boosted / Donated) and actions | Done | browser |
+| Donations (minimum $10) → Donor badge after the verified webhook | Done | `phase8` |
+| Gifting Premium (30 days), Verified or a badge pack → recipient gets it, buyer gets Gifter | Done | `phase8` |
+| Sale badges: buy anything during Christmas 2026 / Easter 2027 | Done | `phase8` |
+| Server Booster: checked with Discord, removed daily once the boost ends | Done | `phase8` with a Discord stand-in |
+| The Million: fires once at 1,000,000 registrations | Done | `phase8` |
+| Bug Hunter "Report" opens a bug ticket; Winner/places are given by staff | Done | browser, `phase8` |
+
 ## Needs real credentials before launch
 
 These are built and tested against local stand-ins, but have not touched the real service here:
@@ -95,9 +109,13 @@ These are built and tested against local stand-ins, but have not touched the rea
 - **Stripe** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`; then turn payments on in the admin panel.
 - **SMTP** — `SMTP_URL`, `MAIL_FROM`. Without it, emails queue and the admin panel says so.
 - **S3/R2 storage** — optional; local disk works out of the box.
+- **Server Booster** — a bot in your Discord server: `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`.
 - **Integrations** — Steam, Twitch, YouTube keys. GitHub, Roblox, weather and Discord invites work without keys.
 
 ## Known limitations (honest list)
+
+- **Image Host** has a badge but no product: there's no image host yet, so it can't be bought.
+- Staff can still open `/admin` by typing the address; only the link is hidden from them.
 
 - **Spotify "now playing"** is not implemented. Spotify embeds work; the integrations page says now-playing isn't available.
 - **Custom domains** exist only as a feature flag; there is no domain verification or TLS provisioning.

@@ -21,7 +21,7 @@ import { hex } from "../../../shared/profile-schema.ts";
 export const BADGE_CATEGORIES = ["verified", "premium", "staff", "developer", "founder", "early_supporter", "og", "community", "helper", "event", "milestone", "custom", "special"] as const;
 export const RARITIES = ["common", "uncommon", "rare", "epic", "legendary", "mythic"] as const;
 export const AVAILABILITY = ["assignable", "restricted", "event_only", "purchase_only", "automatic"] as const;
-export const ICON_PRESETS = ["crown", "check", "shield", "code", "star", "flame", "snowflake", "egg", "sun", "gem", "heart", "bolt", "trophy", "globe", "bug", "sparkles", "rocket", "music", "gamepad", "medal"] as const;
+export const ICON_PRESETS = ["crown", "check", "shield", "code", "star", "flame", "snowflake", "egg", "sun", "gem", "heart", "bolt", "trophy", "globe", "bug", "sparkles", "rocket", "music", "gamepad", "medal", "wrench", "bulb", "coins", "gift", "boost", "award", "image", "party"] as const;
 export type Method = "manual" | "automatic" | "event" | "purchase" | "milestone" | "admin_grant" | "custom";
 
 export const badgeInput = z.object({
@@ -56,19 +56,27 @@ export type BadgeInput = z.infer<typeof badgeInput>;
 
 /** Initial registry rows (editable afterwards like any other badge). */
 const SEED: Partial<BadgeInput>[] = [
-  { key: "owner", name: "Founder", category: "founder", rarity: "mythic", iconPreset: "crown", color: "#facc15", gradientFrom: "#fde68a", gradientTo: "#f59e0b", availability: "restricted", tooltip: "Founder", sortOrder: 1 },
-  { key: "verified", name: "Verified", category: "verified", rarity: "epic", iconPreset: "check", color: "#3b82f6", availability: "restricted", tooltip: "Verified", sortOrder: 2 },
-  { key: "staff", name: "Staff", category: "staff", rarity: "legendary", iconPreset: "shield", color: "#a78bfa", availability: "restricted", tooltip: "Staff", sortOrder: 3 },
-  { key: "developer", name: "Developer", category: "developer", rarity: "legendary", iconPreset: "code", color: "#22d3ee", availability: "restricted", tooltip: "Developer", sortOrder: 4 },
-  { key: "premium", name: "Premium", category: "premium", rarity: "rare", iconPreset: "gem", color: "#c084fc", availability: "purchase_only", tooltip: "Premium", sortOrder: 10 },
-  { key: "og", name: "OG", category: "og", rarity: "legendary", iconPreset: "flame", color: "#fb923c", availability: "automatic", tooltip: "OG — one of the first 150", sortOrder: 20 },
-  { key: "early_supporter", name: "Early Supporter", category: "early_supporter", rarity: "rare", iconPreset: "heart", color: "#f472b6", availability: "assignable", tooltip: "Early Supporter", sortOrder: 21 },
-  { key: "milestone_1k", name: "1K", category: "milestone", rarity: "rare", iconPreset: "trophy", color: "#34d399", availability: "automatic", tooltip: "Here for 1,000 users", sortOrder: 30 },
-  { key: "bug_hunter", name: "Bug Hunter", category: "helper", rarity: "uncommon", iconPreset: "bug", color: "#4ade80", availability: "assignable", tooltip: "Bug Hunter", sortOrder: 40 },
-  { key: "helper", name: "Helper", category: "helper", rarity: "uncommon", iconPreset: "sparkles", color: "#38bdf8", availability: "assignable", tooltip: "Helper", sortOrder: 41 },
-  { key: "christmas_2026", name: "Christmas 2026", category: "event", rarity: "rare", iconPreset: "snowflake", color: "#7dd3fc", availability: "event_only", tooltip: "Snowflake", sortOrder: 50 },
-  { key: "easter_2027", name: "Easter 2027", category: "event", rarity: "rare", iconPreset: "egg", color: "#fda4af", availability: "event_only", tooltip: "Easter 2027", sortOrder: 51 },
-  { key: "summer_2027", name: "Summer 2027", category: "event", rarity: "rare", iconPreset: "sun", color: "#fbbf24", availability: "event_only", tooltip: "Summer 2027", sortOrder: 52 },
+  { key: "owner", name: "Founder", description: "The founder of LORN.LOL.", category: "founder", rarity: "mythic", iconPreset: "crown", color: "#facc15", gradientFrom: "#fde68a", gradientTo: "#f59e0b", availability: "restricted", tooltip: "Founder", sortOrder: 1 },
+  { key: "staff", name: "Staff", description: "Be a part of the LORN.LOL staff team.", category: "staff", rarity: "legendary", iconPreset: "wrench", color: "#60a5fa", availability: "restricted", tooltip: "Staff", sortOrder: 2 },
+  { key: "helper", name: "Helper", description: "Be active and help users in the community.", category: "helper", rarity: "uncommon", iconPreset: "bulb", color: "#fbbf24", availability: "assignable", tooltip: "Helper", sortOrder: 3 },
+  { key: "premium", name: "Premium", description: "Purchase the Premium package.", category: "premium", rarity: "rare", iconPreset: "gem", color: "#c084fc", availability: "purchase_only", tooltip: "Premium", sortOrder: 4 },
+  { key: "verified", name: "Verified", description: "Purchase or be a known content creator.", category: "verified", rarity: "epic", iconPreset: "check", color: "#3b82f6", availability: "restricted", tooltip: "Verified", sortOrder: 5 },
+  { key: "donor", name: "Donor", description: "Donate at least $10 to LORN.LOL.", category: "special", rarity: "rare", iconPreset: "coins", color: "#22c55e", availability: "purchase_only", tooltip: "Donor", sortOrder: 6 },
+  { key: "og", name: "OG", description: "Be one of the first 150 people on LORN.LOL.", category: "og", rarity: "legendary", iconPreset: "flame", color: "#fb923c", availability: "automatic", tooltip: "OG — one of the first 150", sortOrder: 7 },
+  { key: "gifter", name: "Gifter", description: "Gift a LORN.LOL product to another user.", category: "special", rarity: "rare", iconPreset: "gift", color: "#f59e0b", availability: "automatic", tooltip: "Gifter", sortOrder: 8 },
+  { key: "server_booster", name: "Server Booster", description: "Boost the LORN.LOL Discord server.", category: "community", rarity: "rare", iconPreset: "boost", color: "#f472b6", availability: "automatic", tooltip: "Server Booster", sortOrder: 9 },
+  { key: "winner", name: "Winner", description: "Win a LORN.LOL event.", category: "event", rarity: "legendary", iconPreset: "trophy", color: "#facc15", availability: "assignable", tooltip: "Winner", sortOrder: 10 },
+  { key: "second_place", name: "Second Place", description: "Get second place in a LORN.LOL event.", category: "event", rarity: "epic", iconPreset: "award", color: "#cbd5e1", availability: "assignable", tooltip: "Second Place", sortOrder: 11 },
+  { key: "third_place", name: "Third Place", description: "Get third place in a LORN.LOL event.", category: "event", rarity: "rare", iconPreset: "award", color: "#d97706", availability: "assignable", tooltip: "Third Place", sortOrder: 12 },
+  { key: "image_host", name: "Image Host", description: "Purchase the Image Host.", category: "special", rarity: "rare", iconPreset: "image", color: "#34d399", availability: "purchase_only", tooltip: "Image Host", sortOrder: 13 },
+  { key: "bug_hunter", name: "Bug Hunter", description: "Report a bug to the LORN.LOL team.", category: "helper", rarity: "uncommon", iconPreset: "bug", color: "#4ade80", availability: "assignable", tooltip: "Bug Hunter", sortOrder: 14 },
+  { key: "easter_2027", name: "Easter 2027", description: "Exclusive badge from the Easter 2027 sale.", category: "event", rarity: "rare", iconPreset: "egg", color: "#fda4af", availability: "event_only", tooltip: "Easter 2027", sortOrder: 15 },
+  { key: "christmas_2026", name: "Christmas 2026", description: "Exclusive badge from the Christmas 2026 sale.", category: "event", rarity: "rare", iconPreset: "snowflake", color: "#ef4444", availability: "event_only", tooltip: "Christmas 2026", sortOrder: 16 },
+  { key: "the_million", name: "The Million", description: "Celebration badge for 1M users.", category: "milestone", rarity: "mythic", iconPreset: "party", color: "#38bdf8", availability: "automatic", tooltip: "Here for 1,000,000 users", sortOrder: 17 },
+  { key: "developer", name: "Developer", description: "Builds LORN.LOL.", category: "developer", rarity: "legendary", iconPreset: "code", color: "#22d3ee", availability: "restricted", tooltip: "Developer", sortOrder: 30 },
+  { key: "early_supporter", name: "Early Supporter", description: "Supported LORN.LOL early on.", category: "early_supporter", rarity: "rare", iconPreset: "heart", color: "#f472b6", availability: "assignable", tooltip: "Early Supporter", sortOrder: 31 },
+  { key: "milestone_1k", name: "1K", description: "Here when LORN.LOL reached 1,000 users.", category: "milestone", rarity: "rare", iconPreset: "trophy", color: "#34d399", availability: "automatic", tooltip: "Here for 1,000 users", sortOrder: 32 },
+  { key: "summer_2027", name: "Summer 2027", description: "Exclusive badge from Summer 2027.", category: "event", rarity: "rare", iconPreset: "sun", color: "#fbbf24", availability: "event_only", tooltip: "Summer 2027", sortOrder: 33 },
 ];
 
 export async function seedBadges(db: Queryable) {
@@ -335,4 +343,57 @@ export async function reviewCustomBadge(app: App, c: Ctx, id: string, decision: 
     return { status: decision === "approve" ? "approved" : "rejected", badgeId };
   });
   return res;
+}
+
+// ------------------------------------------------------------------ catalogue
+
+export type CatalogueAction = "premium" | "verified" | "donate" | "gift" | "claim_boost" | "report_bug";
+
+/**
+ * Every public badge with how to get it, for the dashboard's "All badges" list.
+ * Status labels and actions are derived from real state (ownership, products,
+ * event windows, milestones); nothing here grants anything.
+ */
+export async function badgeCatalogue(app: App, userId: string) {
+  const rows = (await app.db.query(
+    `SELECT b.*, a.storage_key AS icon_key, ub.method AS owned_method, ub.acquired_at
+     FROM badges b LEFT JOIN assets a ON a.id = b.icon_asset_id AND a.status = 'ready'
+     LEFT JOIN user_badges ub ON ub.badge_id = b.id AND ub.user_id = $1
+     WHERE b.enabled AND b.visibility = 'public' AND b.archived_at IS NULL
+     ORDER BY b.sort_order, b.name`, [userId])).rows;
+  const products = new Map((await app.db.query("SELECT key, enabled FROM products")).rows.map((p) => [p.key, p.enabled as boolean]));
+  const events = new Map((await app.db.query("SELECT b.key, e.starts_at, e.ends_at FROM badge_events e JOIN badges b ON b.id = e.badge_id WHERE e.enabled")).rows.map((e) => [e.key, e]));
+  const milestones = new Map((await app.db.query("SELECT badge_key, kind, threshold, triggered_at FROM platform_milestones")).rows.map((m) => [m.badge_key, m]));
+  const registered = Number((await app.db.query("SELECT last FROM uid_counter")).rows[0].last);
+  const now = Date.now();
+
+  return rows.map((b) => {
+    const owned = !!b.owned_method;
+    let status: string | null = null;
+    if (owned) status = b.key === "verified" ? "Verified" : b.key === "server_booster" ? "Boosted" : b.key === "donor" ? "Donated"
+      : b.owned_method === "purchase" ? "Purchased" : "Unlocked";
+
+    let action: CatalogueAction | null = null;
+    if (!owned) {
+      if (b.key === "premium" && products.get("premium")) action = "premium";
+      else if (b.key === "verified" && products.get("verified")) action = "verified";
+      else if (b.key === "donor" && products.get("donation")) action = "donate";
+      else if (b.key === "gifter") action = "gift";
+      else if (b.key === "server_booster") action = "claim_boost";
+      else if (b.key === "bug_hunter") action = "report_bug";
+    }
+
+    // When a badge can no longer be earned, say so instead of offering nothing.
+    let note: string | null = null;
+    const ev = events.get(b.key), ms = milestones.get(b.key);
+    if (owned) { /* status says it all */ } else if (ev) {
+      if (new Date(ev.ends_at).getTime() < now) note = "No longer obtainable";
+      else if (new Date(ev.starts_at).getTime() > now) note = `Available ${new Date(ev.starts_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
+      else note = "Available now";
+    } else if (ms) {
+      if (ms.kind === "first_n" ? registered >= ms.threshold : !!ms.triggered_at) note = "No longer obtainable";
+    } else if (b.key === "image_host" && !products.get("image_host")) note = "Not available yet";
+
+    return { ...present(app, b), owned, acquiredAt: b.acquired_at ?? null, status, action, note };
+  });
 }

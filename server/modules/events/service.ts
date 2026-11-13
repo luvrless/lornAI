@@ -26,6 +26,8 @@ export const eligibilitySchema = z.object({
   requireVerifiedEmail: z.boolean().default(false),
   requireLoginDuringEvent: z.boolean().default(false),
   premiumOnly: z.boolean().default(false),
+  /** Sale events: only users who completed a purchase (any product, incl. gifts and donations) during the event. */
+  requirePurchaseDuringEvent: z.boolean().default(false),
   maxUid: z.number().int().positive().nullable().default(null),
 }).default({});
 
@@ -42,21 +44,23 @@ export const eventInput = z.object({
 });
 
 const SEED_EVENTS = [
-  { key: "christmas_2026", name: "Christmas 2026", badge: "christmas_2026", starts: "2026-12-24T00:00:00Z", ends: "2026-12-27T00:00:00Z", cutoff: "2026-12-26T23:59:59Z" },
-  { key: "easter_2027", name: "Easter 2027", badge: "easter_2027", starts: "2027-03-28T00:00:00Z", ends: "2027-03-30T00:00:00Z", cutoff: "2027-03-29T23:59:59Z" },
-  { key: "summer_2027", name: "Summer 2027", badge: "summer_2027", starts: "2027-06-21T00:00:00Z", ends: "2027-09-22T00:00:00Z", cutoff: "2027-09-21T23:59:59Z" },
+  { key: "christmas_2026", name: "Christmas 2026", badge: "christmas_2026", starts: "2026-12-24T00:00:00Z", ends: "2026-12-27T00:00:00Z", cutoff: "2026-12-26T23:59:59Z", sale: true },
+  { key: "easter_2027", name: "Easter 2027", badge: "easter_2027", starts: "2027-03-28T00:00:00Z", ends: "2027-03-30T00:00:00Z", cutoff: "2027-03-29T23:59:59Z", sale: true },
+  { key: "summer_2027", name: "Summer 2027", badge: "summer_2027", starts: "2027-06-21T00:00:00Z", ends: "2027-09-22T00:00:00Z", cutoff: "2027-09-21T23:59:59Z", sale: false },
 ];
 
 export async function seedEventsAndMilestones(db: Queryable) {
   for (const e of SEED_EVENTS) {
     await db.query(
-      `INSERT INTO badge_events (key, name, description, badge_id, starts_at, ends_at, registration_cutoff)
-       SELECT $1, $2, $3, b.id, $4, $5, $6 FROM badges b WHERE b.key = $7 ON CONFLICT (key) DO NOTHING`,
-      [e.key, e.name, `One-time ${e.name} edition. Not repeated in future years.`, e.starts, e.ends, e.cutoff, e.badge]);
+      `INSERT INTO badge_events (key, name, description, badge_id, starts_at, ends_at, registration_cutoff, eligibility)
+       SELECT $1, $2, $3, b.id, $4, $5, $6, $8 FROM badges b WHERE b.key = $7 ON CONFLICT (key) DO NOTHING`,
+      [e.key, e.name, e.sale ? `Exclusive badge from the ${e.name} sale: buy anything on LORN.LOL while it runs.` : `One-time ${e.name} edition. Not repeated in future years.`,
+       e.starts, e.ends, e.cutoff, e.badge, asJson(e.sale ? { requirePurchaseDuringEvent: true } : {})]);
   }
   await db.query(`INSERT INTO platform_milestones (key, name, kind, threshold, badge_key) VALUES
     ('og', 'OG — first 150 registrations', 'first_n', 150, 'og'),
-    ('1k', '1,000 registrations', 'total_reached', 1000, 'milestone_1k') ON CONFLICT DO NOTHING`);
+    ('1k', '1,000 registrations', 'total_reached', 1000, 'milestone_1k'),
+    ('1m', '1,000,000 registrations', 'total_reached', 1000000, 'the_million') ON CONFLICT DO NOTHING`);
 }
 
 // ------------------------------------------------------------------ eligibility
@@ -72,8 +76,9 @@ function eligibilitySql(e: any, ev: any) {
       AND ($5 = false OR EXISTS (SELECT 1 FROM login_history l WHERE l.user_id = u.id AND l.success AND l.at BETWEEN $6 AND $7))
       AND ($8 = false OR EXISTS (SELECT 1 FROM entitlements en WHERE en.user_id = u.id AND en.kind = 'premium' AND en.revoked_at IS NULL AND (en.expires_at IS NULL OR en.expires_at > now())))
       AND ($9::bigint IS NULL OR u.uid <= $9)
+      AND ($10 = false OR EXISTS (SELECT 1 FROM purchases p WHERE p.user_id = u.id AND p.status IN ('paid','partially_refunded') AND p.paid_at BETWEEN $6 AND $7))
       ORDER BY u.uid`,
-    params: [cutoff, ev.ends_at, rules.minAccountAgeDays, rules.requireVerifiedEmail, rules.requireLoginDuringEvent, ev.starts_at, ev.ends_at, rules.premiumOnly, rules.maxUid],
+    params: [cutoff, ev.ends_at, rules.minAccountAgeDays, rules.requireVerifiedEmail, rules.requireLoginDuringEvent, ev.starts_at, ev.ends_at, rules.premiumOnly, rules.maxUid, rules.requirePurchaseDuringEvent],
   };
 }
 
@@ -223,26 +228,30 @@ onRegistered(async (app, tx, user) => {
       await tx.query("UPDATE platform_milestones SET failures = failures + 1 WHERE key = 'og'");
     }
   }
-  const k = (await tx.query("SELECT threshold FROM platform_milestones WHERE key = '1k' AND triggered_at IS NULL")).rows[0];
-  if (k && user.uid >= k.threshold) {
-    // Exactly-once: only the transaction that flips triggered_at enqueues.
-    const t = await tx.query("UPDATE platform_milestones SET triggered_at = now() WHERE key = '1k' AND triggered_at IS NULL", []);
-    if (t.rowCount) await enqueue(tx, "milestone.1k", {}, { idempotencyKey: "milestone:1k" });
+  // 1K, 1M, …: exactly-once — only the transaction that flips triggered_at enqueues.
+  const due = (await tx.query("SELECT key FROM platform_milestones WHERE kind = 'total_reached' AND triggered_at IS NULL AND threshold <= $1", [user.uid])).rows;
+  for (const m of due) {
+    const t = await tx.query("UPDATE platform_milestones SET triggered_at = now() WHERE key = $1 AND triggered_at IS NULL", [m.key]);
+    if (t.rowCount) await enqueue(tx, "milestone.total", { key: m.key }, { idempotencyKey: `milestone:${m.key}` });
   }
 });
 
-registerJob("milestone.1k", async (app) => {
-  const m = (await app.db.query("SELECT threshold FROM platform_milestones WHERE key = '1k'")).rows[0];
+async function distributeMilestone(app: App, key: string) {
+  const m = (await app.db.query("SELECT name, threshold, badge_key FROM platform_milestones WHERE key = $1", [key])).rows[0];
+  if (!m?.badge_key) return;
   const users = (await app.db.query("SELECT id FROM users WHERE deleted_at IS NULL AND uid <= $1 ORDER BY uid", [m.threshold])).rows;
   let ok = 0, fail = 0;
   for (const u of users) {
     try {
-      if (await app.db.tx((tx) => assignBadge(app, tx, u.id, "milestone_1k", { method: "milestone", actor: null, reason: "Platform reached 1,000 registrations", idempotencyKey: `milestone:1k:${u.id}` }))) ok++;
+      if (await app.db.tx((tx) => assignBadge(app, tx, u.id, m.badge_key, { method: "milestone", actor: null, reason: `Platform reached ${m.name}`, idempotencyKey: `milestone:${key}:${u.id}` }))) ok++;
     } catch { fail++; }
   }
-  await app.db.query("UPDATE platform_milestones SET recipients = recipients + $1, failures = $2 WHERE key = '1k'", [ok, fail]);
-  if (fail) throw new Error(`${fail} 1K assignments failed; will retry`);
-});
+  await app.db.query("UPDATE platform_milestones SET recipients = recipients + $1, failures = $2 WHERE key = $3", [ok, fail, key]);
+  if (fail) throw new Error(`${fail} ${key} milestone assignments failed; will retry`);
+}
+registerJob("milestone.total", async (app, payload: { key: string }) => distributeMilestone(app, payload.key));
+/** Jobs queued before milestones were generalised. */
+registerJob("milestone.1k", async (app) => distributeMilestone(app, "1k"));
 
 /** Repairs OG assignments that failed during registration (idempotent). */
 registerJob("milestone.og_reconcile", async (app) => {

@@ -5,6 +5,7 @@ import { sendMail } from "../../lib/smtp.ts";
 import { cleanupOrphans } from "../media/service.ts";
 import { pruneAnalytics } from "../analytics/service.ts";
 import "../events/service.ts"; // registers event tick + milestone jobs
+import { recheckBoosters } from "../badges/booster.ts";
 
 export async function deliverEmails(app: App, limit = 20) {
   if (!app.cfg.smtp) return 0;
@@ -31,6 +32,7 @@ every(86_400_000, async (app) => {
   await app.db.query("DELETE FROM oauth_states WHERE expires_at < now()");
   await app.db.query("DELETE FROM oauth_signups WHERE expires_at < now()");
   await app.db.query("DELETE FROM integration_cache WHERE expires_at < now() - interval '1 day'");
+  await recheckBoosters(app).catch((e) => app.log.warn?.("booster recheck failed", e));
   await enqueue(app.db, "milestone.og_reconcile", {}, { idempotencyKey: `og-reconcile:${new Date().toISOString().slice(0, 10)}` });
 });
 

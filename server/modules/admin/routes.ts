@@ -22,10 +22,12 @@ const range = (q: Record<string, string>) => {
   return { from, to };
 };
 
+import { boosterStatus } from "../badges/booster.ts";
+
 export function adminPanelRoutes(app: App, r: Router) {
   r.get("/api/admin/dashboard", async (c) => { const { from, to } = range(c.query); return S.dashboardStats(app, c, from, to); }, { perm: [] });
   r.get("/api/admin/system", async () => ({
-    config: configStatus(app.cfg), storage: app.storageStatus, payments: $.paymentStatus(), jobs: await jobStats(app.db),
+    config: configStatus(app.cfg), storage: app.storageStatus, payments: $.paymentStatus(), serverBooster: boosterStatus(), jobs: await jobStats(app.db),
     deadJobs: (await app.db.query("SELECT id, kind, attempts, last_error, created_at FROM jobs WHERE status = 'dead' ORDER BY id DESC LIMIT 50")).rows,
     integrations: await healthCheck(app), db: { pool: app.db.stats }, node: process.version, uptimeSec: Math.round(process.uptime()),
   }), { perm: "settings.view" });

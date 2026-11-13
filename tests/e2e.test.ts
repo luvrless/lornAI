@@ -27,9 +27,16 @@ before(async () => {
 after(async () => { await browser?.close(); await h.close(); await closeHashPool(); });
 
 const watch = (p: Page) => {
+  if (process.env.RECORD_API) p.on("response", async (r) => {
+    const u = new URL(r.url());
+    if (!u.pathname.startsWith("/api/")) return;
+    let body: unknown = null;
+    try { body = (r.headers()["content-type"] ?? "").includes("json") ? await r.json() : null; } catch {}
+    fs.appendFileSync(process.env.RECORD_API!, JSON.stringify({ m: r.request().method(), p: u.pathname + u.search, req: r.request().postData(), s: r.status(), body }) + "\n");
+  });
   p.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
   p.on("response", (r) => { if (r.status() === 429) errors.push(`429: ${r.request().method()} ${new URL(r.url()).pathname}`); });
-  p.on("console", (m) => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)|ERR_TUNNEL|ERR_NAME|net::ERR|status of 40[13]/.test(m.text() + m.location().url)) errors.push(`console: ${m.text()}`); });
+  p.on("console", (m) => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)|ERR_TUNNEL|ERR_NAME|net::ERR|status of (40[13]|503)/.test(m.text() + m.location().url)) errors.push(`console: ${m.text()}`); });
   return p;
 };
 const saved = (p: Page) => p.waitForSelector(".save-state:not(.dirty):not(.saving) >> text=Draft saved", { timeout: 15_000 });
@@ -233,6 +240,8 @@ test("53: a regular user can't get into the admin panel", async () => {
   await p.getByLabel("Password").fill("Sunset-Driver-77");
   await p.click("button:has-text('Log in')");
   await p.waitForURL("**/dashboard");
+  await p.locator(".sidebar a[href='/dashboard/badges']").waitFor();
+  assert.equal(await p.locator(".sidebar a[href='/admin']").count(), 0, "no admin link for regular users");
   await p.goto(`${h.base}/admin`);
   await p.getByText("Confirm it's you").waitFor();
   h.discord.users.set("777777777777777777", { id: "777777777777777777", username: "jaydiscord" });
@@ -252,6 +261,7 @@ test("every dashboard and admin screen opens without crashing", async () => {
   await p.goto(`${h.base}/login`);
   await p.click("text=Continue with Discord");
   await p.waitForURL("**/dashboard");
+  await p.locator(".sidebar a[href='/admin']").waitFor(); // the owner does see it
   const visit = async (prefix: string) => {
     await p.locator(`.sidebar a[href^="${prefix}"]`).first().waitFor();
     const hrefs = [...new Set(await p.locator(`.sidebar a[href^="${prefix}"]`).evaluateAll((as) => as.map((a) => a.getAttribute("href")!)))];
@@ -274,6 +284,35 @@ test("every dashboard and admin screen opens without crashing", async () => {
   console.log(`swept ${d} dashboard + ${a} admin screens`);
   const storms = [...calls].filter(([, n]) => n > 12);
   assert.deepEqual(storms, [], "no endpoint is requested in a loop");
+  await ctx.close();
+});
+
+test("badges page: the full catalogue, with working actions", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const p = watch(await ctx.newPage());
+  await p.goto(`${h.base}/login`);
+  await p.getByLabel("Username or email").fill("jay");
+  await p.getByLabel("Password").fill("Sunset-Driver-77");
+  await p.click("button:has-text('Log in')");
+  await p.waitForURL("**/dashboard");
+  await p.click(".sidebar >> text=Badges");
+  await p.getByRole("button", { name: "All badges" }).waitFor();
+  for (const name of ["Staff", "Helper", "Premium", "Verified", "Donor", "OG", "Gifter", "Server Booster", "Winner", "Second Place", "Third Place", "Image Host", "Bug Hunter", "Easter 2027", "Christmas 2026", "The Million"]) {
+    await p.locator(".badge-card", { has: p.locator(`b:text-is("${name}")`) }).waitFor();
+  }
+  assert.equal(await p.locator(".badge-card", { hasText: "OG" }).first().locator(".badge-status").innerText(), "Unlocked");
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: "/tmp/shots/e2e-badges.png", fullPage: true });
+  // Claim without the bot configured: an honest message, nothing granted.
+  await p.locator(".badge-card", { hasText: "Server Booster" }).getByRole("button", { name: "Claim" }).click();
+  await p.getByText("Server Booster checks aren't set up").waitFor();
+  // Gift opens the gift form; Report opens a bug ticket.
+  await p.locator(".badge-card", { hasText: "Gifter" }).getByRole("button", { name: "Gift" }).click();
+  await p.getByRole("heading", { name: "Gift a product" }).waitFor();
+  await p.keyboard.press("Escape");
+  await p.locator(".badge-card", { hasText: "Bug Hunter" }).getByRole("button", { name: "Report" }).click();
+  await p.getByRole("heading", { name: "New support ticket" }).waitFor();
+  assert.equal(await p.locator(".modal select").first().inputValue(), "bug");
   await ctx.close();
 });
 

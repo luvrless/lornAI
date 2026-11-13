@@ -23,7 +23,10 @@ export function authRoutes(app: App, r: Router) {
     return {
       user: { ...u, createdAt: row.created_at, hasPassword: row.has_password, twoFactor: !!row.totp_enabled_at },
       connections: links.map((l) => ({ provider: l.provider, providerUserId: l.provider_user_id, username: l.provider_username, avatar: l.provider_avatar, linkedAt: l.linked_at })),
-      staffRole: staff?.role ?? null,
+      // The admin panel link is shown only to the owner and owner-appointed admins.
+      // Staff (and everyone else) get no hint that the panel exists.
+      adminPanel: staff?.role === "OWNER" || staff?.role === "ADMIN",
+      staffRole: staff?.role === "OWNER" || staff?.role === "ADMIN" ? staff.role : null,
       mfaPending: c.session.mfaPending,
       csrf: c.session.csrf,
     };

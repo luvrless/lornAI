@@ -124,7 +124,7 @@ test("47: the 1K milestone triggers exactly once, by permanent registration coun
   const c = await newUser(h, "k1000");
   assert.equal(c.uid, 1000);
   await newUser(h, "k1001");
-  const jobs = (await h.app.db.query("SELECT count(*)::int AS n FROM jobs WHERE kind = 'milestone.1k'")).rows[0].n;
+  const jobs = (await h.app.db.query("SELECT count(*)::int AS n FROM jobs WHERE kind = 'milestone.total'")).rows[0].n;
   assert.equal(jobs, 1);
   await drain(h.app);
   await drain(h.app);
@@ -138,7 +138,7 @@ test("47: the 1K milestone triggers exactly once, by permanent registration coun
   assert.equal(k.status, "triggered");
   assert.equal(ms.totalRegistrations, 1001);
   // Re-running the job doesn't duplicate.
-  await h.app.db.query("UPDATE jobs SET status = 'queued', run_at = now() WHERE kind = 'milestone.1k'");
+  await h.app.db.query("UPDATE jobs SET status = 'queued', run_at = now() WHERE kind = 'milestone.total'");
   await drain(h.app);
   assert.equal((await h.app.db.query("SELECT count(*)::int AS n FROM badge_assignments h JOIN badges b ON b.id = h.badge_id WHERE b.key = 'milestone_1k' AND h.user_id = $1", [c.userId])).rows[0].n, 1);
 });

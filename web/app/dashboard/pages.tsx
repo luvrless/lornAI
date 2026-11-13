@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 import { useEffect, useMemo, useState } from "react";
-import { LuExternalLink, LuGripVertical, LuEye, LuEyeOff, LuArrowUp, LuArrowDown, LuDownload, LuStar, LuHeart, LuTrash2, LuPlus, LuShieldCheck, LuKeyRound, LuMonitor, LuLogOut, LuMegaphone, LuCircleAlert, LuTicket, LuSend } from "react-icons/lu";
+import { LuChevronDown, LuExternalLink, LuGripVertical, LuEye, LuEyeOff, LuArrowUp, LuArrowDown, LuDownload, LuStar, LuHeart, LuTrash2, LuPlus, LuShieldCheck, LuKeyRound, LuMonitor, LuLogOut, LuMegaphone, LuCircleAlert, LuTicket, LuSend } from "react-icons/lu";
 import { SiDiscord, SiGoogle } from "react-icons/si";
 import { get, post, put, patch, del, qs, fmtDate, fmtMoney, fmtBytes, ago } from "../api.ts";
 import { Link, navigate } from "../router.tsx";
@@ -97,6 +97,7 @@ export function Badges() {
           </div>
         ))}</div> : <Empty title="No badges yet">Badges come from events, milestones and the community. The first 150 accounts get OG automatically.</Empty>}
       </div>
+      <AllBadges onChange={q.reload} />
       <div className="panel pad stack-16">
         <div className="spread"><div><h3>Custom badges</h3><p className="small muted">Design your own badge. Each one uses a credit and is reviewed by staff. You have {q.data.credits} credit{q.data.credits === 1 ? "" : "s"}.</p></div>
           <div className="row"><Link className="btn sm" to="/dashboard/premium">Get credits</Link><Button size="sm" kind="primary" disabled={q.data.credits < 1} onClick={() => setCreating(true)}><LuPlus />Request a badge</Button></div></div>
@@ -106,6 +107,78 @@ export function Badges() {
       </div>
       {creating && <CustomBadgeForm onClose={() => setCreating(false)} onDone={() => { setCreating(false); q.reload(); }} />}
     </div>
+  );
+}
+
+const ACTION_LABEL: Record<string, string> = { premium: "Get Premium", verified: "Get verified", donate: "Donate", gift: "Gift", claim_boost: "Claim", report_bug: "Report" };
+
+/** Every badge on LORN.LOL, how to get it, and a button where there's something you can do. */
+function AllBadges({ onChange }: { onChange: () => void }) {
+  const q = useQuery<any[]>("/api/badges/catalogue");
+  const [open, setOpen] = useState(true);
+  const [modal, setModal] = useState<"donate" | "gift" | null>(null);
+  const { busy, run } = useAction();
+  const act = (b: any) => {
+    if (b.action === "premium" || b.action === "verified") return navigate("/dashboard/premium");
+    if (b.action === "report_bug") return navigate("/dashboard/support?new=bug");
+    if (b.action === "donate" || b.action === "gift") return setModal(b.action);
+    if (b.action === "claim_boost") run(() => post("/api/badges/server-booster/claim"), "Server Booster badge added").then((r) => { if (r) { q.reload(); onChange(); } });
+  };
+  return (
+    <section className="panel pad stack-16" aria-label="All badges">
+      <button className="all-badges-head" aria-expanded={open} onClick={() => setOpen(!open)}><h3>All badges</h3><LuChevronDown className={open ? "" : "flip"} aria-hidden /></button>
+      {open && (q.error ? <ErrorBlock error={q.error} retry={q.reload} /> : !q.data ? <LoadingBlock /> : (
+        <div className="badge-catalogue">{q.data.map((b) => (
+          <div key={b.key} className={`badge-card ${b.owned ? "owned" : ""}`}>
+            <BadgeIcon b={b} size={26} />
+            <div className="grow"><b>{b.name}</b><div className="small muted">{b.description}</div>{b.note && !b.owned && <div className="small dim">{b.note}</div>}</div>
+            {b.status ? <span className="badge-status">{b.status}</span>
+              : b.action ? <Button size="sm" busy={busy && b.action === "claim_boost"} onClick={() => act(b)}>{ACTION_LABEL[b.action]}</Button> : null}
+          </div>
+        ))}</div>
+      ))}
+      {modal === "donate" && <DonateModal onClose={() => setModal(null)} />}
+      {modal === "gift" && <GiftModal onClose={() => setModal(null)} />}
+    </section>
+  );
+}
+
+function DonateModal({ onClose }: { onClose: () => void }) {
+  const store = useQuery<any>("/api/billing");
+  const [amount, setAmount] = useState("10");
+  const { busy, run } = useAction();
+  const p = store.data?.products.find((x: any) => x.key === "donation");
+  const min = p ? p.price_cents / 100 : 10;
+  const cents = Math.round(Number(amount) * 100);
+  const valid = Number.isFinite(cents) && cents >= min * 100 && cents <= 100_000;
+  const blocked = p && !p.available ? p.unavailableReason : null;
+  return (
+    <Modal title="Donate to LORN.LOL" onClose={onClose} footer={<><Button kind="ghost" onClick={onClose}>Cancel</Button><Button kind="primary" busy={busy} disabled={!valid || !!blocked || !p}
+      onClick={() => run(() => post("/api/billing/checkout", { product: "donation", amountCents: cents })).then((r) => { if (r?.url) location.href = r.url; })}>{blocked ?? `Donate ${valid ? fmtMoney(cents, p?.currency) : ""}`}</Button></>}>
+      <p className="small muted">Donations keep LORN.LOL running. Any amount from {fmtMoney(min * 100, p?.currency)} earns the Donor badge once the payment is confirmed.</p>
+      <TextField label={`Amount (${(p?.currency ?? "usd").toUpperCase()})`} value={amount} onChange={setAmount} inputMode="decimal" error={amount && !valid ? `Enter between ${min} and 1000` : undefined} />
+    </Modal>
+  );
+}
+
+function GiftModal({ onClose }: { onClose: () => void }) {
+  const store = useQuery<any>("/api/billing");
+  const [product, setProduct] = useState("");
+  const [to, setTo] = useState("");
+  const { busy, run } = useAction();
+  const d = store.data;
+  const giftable = (d?.products ?? []).filter((p: any) => p.giftable && p.enabled && (p.key !== "premium" || d.premiumEnabled));
+  useEffect(() => { if (!product && giftable[0]) setProduct(giftable[0].key); }, [giftable.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const payments = d && !String(d.provider).startsWith("not_configured");
+  return (
+    <Modal title="Gift a product" onClose={onClose} footer={<><Button kind="ghost" onClick={onClose}>Cancel</Button><Button kind="primary" busy={busy} disabled={!payments || !product || !to.trim()}
+      onClick={() => run(() => post("/api/billing/checkout", { product, giftTo: to.trim() })).then((r) => { if (r?.url) location.href = r.url; })}>{payments ? "Continue to payment" : "Payments aren't set up yet"}</Button></>}>
+      <p className="small muted">They get it as soon as the payment is confirmed, and you get the Gifter badge. A gifted Premium lasts 30 days.</p>
+      {!d ? <LoadingBlock /> : giftable.length ? <>
+        <div className="field"><label>Product</label><Select value={product} onChange={setProduct} options={giftable.map((p: any) => ({ value: p.key, label: `${p.name} · ${fmtMoney(p.price_cents, p.currency)}` }))} /></div>
+        <TextField label="Recipient" placeholder="Username or UID" value={to} onChange={setTo} />
+      </> : <p className="small">There's nothing available to gift right now.</p>}
+    </Modal>
   );
 }
 
@@ -468,7 +541,7 @@ export function Premium() {
       <div className="page-head"><div><h1>Premium and purchases</h1><p>Video backgrounds, music and the full editor are free. Premium adds custom fonts and cursors, more pages and tracks, and more storage.</p></div></div>
       {params.get("checkout") === "success" && <div className="banner">Thanks! Your purchase activates as soon as the payment provider confirms it — usually within a few seconds. <Button size="sm" onClick={q.reload}>Refresh</Button></div>}
       {String(d.provider).startsWith("not_configured") && <div className="banner warn small">Payments aren't set up on this server yet, so purchases are unavailable.</div>}
-      <div className="grid-3">{d.products.map((p: any) => (
+      <div className="grid-3">{d.products.filter((p: any) => p.key !== "donation" && !(p.key === "image_host" && !p.enabled)).map((p: any) => (
         <div key={p.key} className="panel pad col">
           <h3>{p.name}</h3>
           <div style={{ font: "600 28px var(--font-display)" }}>{fmtMoney(p.price_cents, p.currency)}<span className="small muted">{p.billing === "monthly" ? " / month" : " once"}</span></div>
@@ -488,7 +561,7 @@ export function Premium() {
           {d.subscription?.status === "active" && !d.subscription.cancel_at_period_end && <Button size="sm" onClick={async () => { if (await confirm({ title: "Cancel Premium?", body: "You keep Premium until the end of the current period.", confirm: "Cancel subscription", danger: true })) run(() => post("/api/billing/cancel"), "Subscription will end at the period end").then(q.reload); }}>Cancel subscription</Button>}
         </div>
         <div className="panel"><div className="panel-head"><h3>Purchase history</h3></div><div className="table-wrap"><table className="t"><tbody>
-          {d.purchases.map((p: any) => <tr key={p.id}><td>{p.name}</td><td>{fmtMoney(p.amount_cents, p.currency)}</td><td><span className={`chip ${p.status === "paid" ? "ok" : p.status.includes("refund") ? "warn" : "dim"}`}>{humanize(p.status)}</span></td><td className="small dim">{fmtDate(p.created_at)}</td></tr>)}
+          {d.purchases.map((p: any) => <tr key={p.id}><td>{p.name}{p.gift_to && <span className="small dim"> · gift to @{p.gift_to}</span>}</td><td>{fmtMoney(p.amount_cents, p.currency)}</td><td><span className={`chip ${p.status === "paid" ? "ok" : p.status.includes("refund") ? "warn" : "dim"}`}>{humanize(p.status)}</span></td><td className="small dim">{fmtDate(p.created_at)}</td></tr>)}
           {!d.purchases.length && <tr><td className="muted">No purchases yet</td></tr>}
         </tbody></table></div></div>
       </div>
@@ -502,7 +575,8 @@ export function Support() {
   const q = useQuery<any[]>("/api/support/tickets");
   const reports = useQuery<any[]>("/api/reports/mine");
   const [open, setOpen] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const preset = new URLSearchParams(location.search).get("new");
+  const [creating, setCreating] = useState(preset === "bug");
   const [reporting, setReporting] = useState(false);
   return (
     <div className="stack-24" style={{ maxWidth: 980 }}>
@@ -514,15 +588,15 @@ export function Support() {
       {reports.data && reports.data.length > 0 && <div className="panel"><div className="panel-head"><h3>Your reports</h3></div><div className="table-wrap"><table className="t"><tbody>
         {reports.data.map((r) => <tr key={r.id}><td>{r.target ?? "—"}</td><td>{humanize(r.category)}</td><td><span className="chip">{humanize(r.status)}</span></td><td className="small muted">{r.resolution}</td><td className="small dim">{fmtDate(r.created_at)}</td></tr>)}
       </tbody></table></div></div>}
-      {creating && <NewTicket onClose={() => setCreating(false)} onDone={(id) => { setCreating(false); q.reload(); setOpen(id); }} />}
+      {creating && <NewTicket category={preset === "bug" ? "bug" : undefined} onClose={() => setCreating(false)} onDone={(id) => { setCreating(false); q.reload(); setOpen(id); }} />}
       {reporting && <ReportForm onClose={() => { setReporting(false); reports.reload(); }} />}
       {open && <TicketThread id={open} onClose={() => { setOpen(null); q.reload(); }} />}
     </div>
   );
 }
 
-function NewTicket({ onClose, onDone }: { onClose: () => void; onDone: (id: string) => void }) {
-  const [f, setF] = useState({ category: "account", subject: "", body: "" });
+function NewTicket({ onClose, onDone, category }: { onClose: () => void; onDone: (id: string) => void; category?: string }) {
+  const [f, setF] = useState({ category: category ?? "account", subject: "", body: "" });
   const [files, setFiles] = useState<any[]>([]); const [pick, setPick] = useState(false);
   const { busy, run } = useAction();
   return (

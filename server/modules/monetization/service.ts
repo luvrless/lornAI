@@ -39,7 +39,7 @@ export async function listProducts(app: App) {
   return {
     premiumEnabled: await getSetting<boolean>(app, "premium.enabled", false),
     provider: paymentStatus(),
-    products: (await app.db.query("SELECT key, name, description, price_cents, currency, billing, enabled, grants, updated_at FROM products ORDER BY price_cents")).rows,
+    products: (await app.db.query("SELECT key, name, description, price_cents, currency, billing, enabled, grants, custom_amount, giftable, updated_at FROM products ORDER BY price_cents")).rows,
   };
 }
 
@@ -76,33 +76,62 @@ export async function storefront(app: App, userId: string) {
   };
 }
 
-export async function checkout(app: App, userId: string, productKey: string) {
+export const GIFT_PREMIUM_DAYS = 30;
+export const MAX_DONATION_CENTS = 100_000;
+
+export interface CheckoutOpts {
+  /** Donation amount in cents; only for products with a buyer-chosen amount. */
+  amountCents?: number;
+  /** Username or UID of the person receiving the purchase. */
+  giftTo?: string;
+}
+
+export async function checkout(app: App, userId: string, productKey: string, o: CheckoutOpts = {}) {
   const p = (await app.db.query("SELECT * FROM products WHERE key = $1", [productKey])).rows[0];
   if (!p || !p.enabled) throw notFound("Product not available");
+  let recipientId: string | null = null;
+  if (o.giftTo !== undefined) {
+    if (!p.giftable) throw badRequest(`${p.name} can't be gifted`);
+    const ref = o.giftTo.trim().replace(/^@/, "");
+    const r = (await app.db.query(`SELECT id FROM users WHERE deleted_at IS NULL AND ${/^\d+$/.test(ref) ? "uid = $1::bigint" : "username_lc = lower($1)"}`, [ref])).rows[0];
+    if (!r) throw notFound("No user with that username or UID");
+    if (r.id === userId) throw badRequest("You can't gift something to yourself. Buy it directly instead.");
+    recipientId = r.id;
+  }
+  const holder = recipientId ?? userId;
+  const who = recipientId ? "They already have" : "You already have";
   if (p.key === "premium" && !(await getSetting<boolean>(app, "premium.enabled", false))) throw new HttpError(403, "premium_disabled", "Premium isn't available for purchase right now");
-  if (p.key === "premium" && (await hasEntitlement(app.db, userId, "premium"))) throw conflict("You already have Premium");
-  if (p.key === "verified" && (await hasEntitlement(app.db, userId, "verified"))) throw conflict("You're already verified");
+  if (p.key === "premium" && (await hasEntitlement(app.db, holder, "premium"))) throw conflict(`${who} Premium`);
+  if (p.key === "verified" && (await hasEntitlement(app.db, holder, "verified"))) throw conflict(recipientId ? "They're already verified" : "You're already verified");
+  let amount = p.price_cents as number;
+  if (p.custom_amount) {
+    amount = o.amountCents ?? p.price_cents;
+    if (!Number.isInteger(amount) || amount < p.price_cents) throw badRequest(`The minimum is ${(p.price_cents / 100).toFixed(2)} ${p.currency.toUpperCase()}`);
+    if (amount > MAX_DONATION_CENTS) throw badRequest(`The maximum is ${(MAX_DONATION_CENTS / 100).toFixed(2)} ${p.currency.toUpperCase()}`);
+  } else if (o.amountCents !== undefined) throw badRequest(`${p.name} has a fixed price`);
   if (!stripe()) throw unavailable("Payments are not configured on this server", "payments_not_configured");
+  // Gifts are always one-time payments: a gifted Premium is a fixed period, not a subscription someone else pays for.
+  const recurring = p.billing === "monthly" && !recipientId;
   const purchase = (await app.db.query(
-    "INSERT INTO purchases (user_id, product_key, provider, amount_cents, currency) VALUES ($1,$2,'stripe',$3,$4) RETURNING id", [userId, p.key, p.price_cents, p.currency])).rows[0];
+    "INSERT INTO purchases (user_id, product_key, provider, amount_cents, currency, recipient_id) VALUES ($1,$2,'stripe',$3,$4,$5) RETURNING id", [userId, p.key, amount, p.currency, recipientId])).rows[0];
   const form: Record<string, string> = {
-    mode: p.billing === "monthly" ? "subscription" : "payment",
+    mode: recurring ? "subscription" : "payment",
     client_reference_id: purchase.id,
     "metadata[purchase_id]": purchase.id,
     success_url: `${app.cfg.appUrl}/dashboard/premium?checkout=success`,
     cancel_url: `${app.cfg.appUrl}/dashboard/premium?checkout=cancelled`,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": p.currency,
-    "line_items[0][price_data][unit_amount]": String(p.price_cents),
-    "line_items[0][price_data][product_data][name]": p.name,
+    "line_items[0][price_data][unit_amount]": String(amount),
+    "line_items[0][price_data][product_data][name]": recipientId ? `${p.name} (gift${p.billing === "monthly" ? `, ${GIFT_PREMIUM_DAYS} days` : ""})` : p.name,
   };
-  if (p.billing === "monthly") {
+  if (recurring) {
     form["line_items[0][price_data][recurring][interval]"] = "month";
     form["subscription_data[metadata][purchase_id]"] = purchase.id;
   } else form["payment_intent_data[metadata][purchase_id]"] = purchase.id;
   const s = await stripeCall(app, "checkout/sessions", form, `checkout-${purchase.id}`);
   await app.db.query("UPDATE purchases SET provider_session_id = $2 WHERE id = $1", [purchase.id, s.id]);
-  return { url: s.url as string, purchaseId: purchase.id };
+  return { url: s.url as string, purchaseId: purchase.id, amountCents: amount, gift: !!recipientId };
 }
 
 // ------------------------------------------------------------------ webhooks
@@ -121,8 +150,11 @@ async function fulfil(app: App, db: Queryable, purchaseId: string, paymentRef: s
   const pu = (await db.query("UPDATE purchases SET status = 'paid', paid_at = now() WHERE id = $1 AND status = 'pending' RETURNING *", [purchaseId])).rows[0];
   if (!pu) return false; // already fulfilled (duplicate or replayed event)
   await db.query("INSERT INTO payments (purchase_id, provider_payment_id, amount_cents, currency, status) VALUES ($1,$2,$3,$4,'succeeded') ON CONFLICT DO NOTHING", [purchaseId, paymentRef, amount, currency]);
-  const product = (await db.query("SELECT grants, name FROM products WHERE key = $1", [pu.product_key])).rows[0];
+  const product = (await db.query("SELECT grants, name, billing FROM products WHERE key = $1", [pu.product_key])).rows[0];
   const g = product.grants as { entitlement?: "premium" | "verified"; badge?: string; badge_credits?: number };
+  // A gift lands on the recipient; the buyer gets the Gifter badge.
+  const to: string = pu.recipient_id ?? pu.user_id;
+  const giftExpiry = pu.recipient_id && product.billing === "monthly" ? new Date(Date.now() + GIFT_PREMIUM_DAYS * 86400_000) : null;
   let subId: string | null = null;
   if (sub) {
     subId = (await db.query(
@@ -133,12 +165,19 @@ async function fulfil(app: App, db: Queryable, purchaseId: string, paymentRef: s
   if (g.entitlement) {
     await db.query(
       "INSERT INTO entitlements (user_id, kind, source, purchase_id, subscription_id, expires_at, reason) VALUES ($1,$2,$3,$4,$5,$6,'purchase') ON CONFLICT DO NOTHING",
-      [pu.user_id, g.entitlement, sub ? "subscription" : "purchase", pu.id, subId, sub?.periodEnd ?? null]);
-    if (g.entitlement === "premium") await assignBadge(app, db, pu.user_id, "premium", { method: "purchase", actor: null, idempotencyKey: `purchase:${pu.id}:premium` }).catch(() => {});
+      [to, g.entitlement, sub ? "subscription" : "purchase", pu.id, subId, sub?.periodEnd ?? giftExpiry]);
+    if (g.entitlement === "premium") await assignBadge(app, db, to, "premium", { method: "purchase", actor: null, idempotencyKey: `purchase:${pu.id}:premium` }).catch(() => {});
   }
-  if (g.badge) await assignBadge(app, db, pu.user_id, g.badge, { method: "purchase", actor: null, reason: "Purchased", idempotencyKey: `purchase:${pu.id}:${g.badge}` });
-  if (g.badge_credits) await addCredits(db, pu.user_id, g.badge_credits, "purchase", pu.id);
-  await notify(db, pu.user_id, "purchase", `Thanks! ${product.name} is now active`);
+  if (g.badge) await assignBadge(app, db, to, g.badge, { method: "purchase", actor: null, reason: pu.recipient_id ? "Gift" : "Purchased", idempotencyKey: `purchase:${pu.id}:${g.badge}` });
+  if (g.badge_credits) await addCredits(db, to, g.badge_credits, "purchase", pu.id);
+  if (pu.recipient_id) {
+    const buyer = (await db.query("SELECT username FROM users WHERE id = $1", [pu.user_id])).rows[0];
+    await assignBadge(app, db, pu.user_id, "gifter", { method: "automatic", actor: null, reason: "Gifted a product", idempotencyKey: `gifter:${pu.user_id}` }).catch(() => false);
+    await notify(db, to, "gift", `@${buyer.username} gifted you ${product.name}`);
+    await notify(db, pu.user_id, "purchase", `Your gift of ${product.name} was delivered`);
+  } else {
+    await notify(db, pu.user_id, "purchase", pu.product_key === "donation" ? "Thank you for donating to LORN.LOL" : `Thanks! ${product.name} is now active`);
+  }
   return true;
 }
 
@@ -190,7 +229,7 @@ export async function handleStripeWebhook(app: App, raw: Buffer, signature: stri
           if (full) {
             await tx.query("UPDATE entitlements SET revoked_at = now(), reason = 'refunded' WHERE purchase_id = $1 AND revoked_at IS NULL", [pu.id]);
             const g = (await tx.query("SELECT grants FROM products WHERE key = $1", [pu.product_key])).rows[0].grants;
-            if (g.badge) await tx.query("DELETE FROM user_badges ub USING badges b WHERE ub.badge_id = b.id AND b.key = $2 AND ub.user_id = $1 AND ub.method = 'purchase'", [pu.user_id, g.badge]);
+            if (g.badge) await tx.query("DELETE FROM user_badges ub USING badges b WHERE ub.badge_id = b.id AND b.key = $2 AND ub.user_id = $1 AND ub.method = 'purchase'", [pu.recipient_id ?? pu.user_id, g.badge]);
           }
         }
       }
@@ -256,7 +295,10 @@ export async function cancelSubscription(app: App, userId: string) {
 
 export async function billingSummary(app: App, userId: string) {
   return {
-    purchases: (await app.db.query("SELECT p.id, p.product_key, p.amount_cents, p.currency, p.status, p.created_at, p.paid_at, pr.name FROM purchases p JOIN products pr ON pr.key = p.product_key WHERE p.user_id = $1 AND p.status <> 'pending' ORDER BY p.created_at DESC", [userId])).rows,
+    purchases: (await app.db.query(
+      `SELECT p.id, p.product_key, p.amount_cents, p.currency, p.status, p.created_at, p.paid_at, pr.name, r.username AS gift_to
+       FROM purchases p JOIN products pr ON pr.key = p.product_key LEFT JOIN users r ON r.id = p.recipient_id
+       WHERE p.user_id = $1 AND p.status <> 'pending' ORDER BY p.created_at DESC`, [userId])).rows,
     subscription: (await app.db.query("SELECT status, current_period_end, cancel_at_period_end, product_key FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [userId])).rows[0] ?? null,
     entitlements: (await app.db.query("SELECT kind, source, starts_at, expires_at FROM entitlements WHERE user_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())", [userId])).rows,
     badgeCredits: Number((await app.db.query("SELECT balance FROM badge_credits WHERE user_id = $1", [userId])).rows[0]?.balance ?? 0),

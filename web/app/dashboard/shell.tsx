@@ -77,7 +77,7 @@ export function DashboardShell() {
     <div className="shell app-bg">
       <Sidebar nav={NAV} open={open} onNavigate={() => setOpen(false)} badgeCounts={{ "/dashboard/notifications": unread }} footer={
         <div className="col" style={{ gap: 4 }}>
-          {me.staffRole && <a className="nav-item" href="/admin"><LuShieldCheck />Admin panel</a>}
+          {me.adminPanel && <a className="nav-item" href="/admin"><LuShieldCheck />Admin panel</a>}
           <a className="nav-item" href={`/${me.user.username}`} target="_blank" rel="noreferrer"><LuExternalLink />View my page</a>
           <button className="nav-item" onClick={async () => { await logout(); navigate("/"); }}><LuLogOut />Log out</button>
           <div className="small dim" style={{ padding: "8px 10px" }}>@{me.user.username} · UID {me.user.uid}</div>

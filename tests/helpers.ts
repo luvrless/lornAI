@@ -15,13 +15,17 @@ import { clearSettingsCache } from "../server/modules/platform/service.ts";
 export const TEST_DB = process.env.TEST_DATABASE_URL ?? "postgres://lorn:lorn_dev_pw@127.0.0.1:5432/lorn_test";
 export const OWNER_ID = "409564774444171265";
 
-export interface FakeDiscord { url: string; users: Map<string, { id: string; username: string }>; codes: Map<string, string>; close(): void; tokenRequests: number; nextLogin: string | null }
+export interface FakeDiscord { url: string; users: Map<string, { id: string; username: string }>; codes: Map<string, string>; close(): void; tokenRequests: number; nextLogin: string | null;
+  /** Guild members for the bot API: discord id → premium_since (null = member, not boosting). */
+  guildMembers: Map<string, string | null>; botToken: string; guildId: string }
 
 export async function startFakeDiscord(clientId: string, clientSecret: string): Promise<FakeDiscord> {
   const users = new Map<string, { id: string; username: string }>();
   const codes = new Map<string, string>(); // code -> discord id
   const tokens = new Map<string, string>(); // access token -> discord id
   const state = { tokenRequests: 0, nextLogin: null as string | null };
+  const guildMembers = new Map<string, string | null>();
+  const BOT = "bot-token-test", GUILD = "100000000000000001";
   const srv = http.createServer(async (req, res) => {
     // Browser-facing consent page stand-in: immediately approves as `nextLogin`.
     if (req.url?.startsWith("/authorize")) {
@@ -50,6 +54,14 @@ export async function startFakeDiscord(clientId: string, clientSecret: string): 
       res.end(JSON.stringify({ access_token: at, refresh_token: "rt_x", expires_in: 604800, scope: "identify", token_type: "Bearer" }));
       return;
     }
+    const gm = /^\/guilds\/(\d+)\/members\/(\d+)$/.exec(req.url ?? "");
+    if (gm) {
+      if (req.headers.authorization !== `Bot ${BOT}`) { res.writeHead(401); res.end("{}"); return; }
+      if (gm[1] !== GUILD || !guildMembers.has(gm[2])) { res.writeHead(404, { "content-type": "application/json" }); res.end('{"message":"Unknown Member","code":10007}'); return; }
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ user: { id: gm[2] }, roles: [], premium_since: guildMembers.get(gm[2]) }));
+      return;
+    }
     if (req.url === "/users/@me") {
       const id = tokens.get(String(req.headers.authorization ?? "").replace("Bearer ", ""));
       if (!id) { res.writeHead(401); res.end("{}"); return; }
@@ -62,7 +74,7 @@ export async function startFakeDiscord(clientId: string, clientSecret: string): 
   });
   await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
   const url = `http://127.0.0.1:${(srv.address() as AddressInfo).port}`;
-  return { url, users, codes, close: () => srv.close(), get tokenRequests() { return state.tokenRequests; }, get nextLogin() { return state.nextLogin; }, set nextLogin(v) { state.nextLogin = v; } };
+  return { url, users, codes, guildMembers, botToken: BOT, guildId: GUILD, close: () => srv.close(), get tokenRequests() { return state.tokenRequests; }, get nextLogin() { return state.nextLogin; }, set nextLogin(v) { state.nextLogin = v; } };
 }
 
 export async function resetDatabase() {

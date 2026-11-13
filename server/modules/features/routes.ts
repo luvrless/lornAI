@@ -3,6 +3,7 @@ import type { App } from "../../app.ts";
 import { Router, z } from "../../lib/http.ts";
 import { HttpError } from "../../lib/errors.ts";
 import * as B from "../badges/service.ts";
+import { claimBoosterBadge } from "../badges/booster.ts";
 import * as T from "../templates/service.ts";
 import * as A from "../analytics/service.ts";
 import * as $ from "../monetization/service.ts";
@@ -52,6 +53,9 @@ export function featureRoutes(app: App, r: Router) {
   // ------------------------------------------------------------ badges
   r.get("/api/badges/me", async (c) => ({ badges: await B.myBadges(app, c.user!.id), credits: await B.creditBalance(app.db, c.user!.id),
     customRequests: (await app.db.query("SELECT id, name, color, status, review_note, created_at FROM custom_badges WHERE user_id = $1 ORDER BY created_at DESC", [c.user!.id])).rows }), { auth: "required" });
+  r.get("/api/badges/catalogue", async (c) => B.badgeCatalogue(app, c.user!.id), { auth: "required" });
+  r.post("/api/badges/server-booster/claim", async (c) => claimBoosterBadge(app, c.user!.id),
+    { auth: "required", rate: { name: "booster", rule: { capacity: 5, refillPerSec: 5 / 600 }, by: "user" } });
   r.put("/api/badges/me/arrangement", async (c) => {
     const b = await c.body(z.object({ order: z.array(z.string().uuid()).max(200), hidden: z.array(z.string().uuid()).max(200) }));
     await B.setUserBadgePrefs(app, c.user!.id, b.order, b.hidden);
@@ -92,7 +96,14 @@ export function featureRoutes(app: App, r: Router) {
 
   // ------------------------------------------------------------ billing
   r.get("/api/billing", async (c) => ({ ...(await $.storefront(app, c.user!.id)), ...(await $.billingSummary(app, c.user!.id)) }), { auth: "required" });
-  r.post("/api/billing/checkout", async (c) => $.checkout(app, c.user!.id, (await c.body(z.object({ product: z.enum(["premium", "badge_pack", "verified"]) }))).product),
+  r.post("/api/billing/checkout", async (c) => {
+    const b = await c.body(z.object({
+      product: z.enum(["premium", "badge_pack", "verified", "donation"]),
+      amountCents: z.number().int().positive().optional(),
+      giftTo: z.string().trim().min(1).max(32).optional(),
+    }));
+    return $.checkout(app, c.user!.id, b.product, { amountCents: b.amountCents, giftTo: b.giftTo });
+  },
     { auth: "required", rate: { name: "checkout", rule: { capacity: 10, refillPerSec: 10 / 3600 }, by: "user" } });
   r.post("/api/billing/cancel", async (c) => $.cancelSubscription(app, c.user!.id), { auth: "required" });
 

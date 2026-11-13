@@ -96,7 +96,7 @@ export function SystemHealth() {
   const { run } = useAction();
   return <div className="stack-24"><Head title="System health"><Button size="sm" onClick={q.reload}><LuRefreshCw />Refresh</Button></Head><Q q={q}>{(d) => <>
     <Table head={["Component", "Status", "Detail"]}>
-      {[...Object.entries(d.config), ["storage", d.storage], ["payments", d.payments]].map(([k, v]: any) => <tr key={k}><td><b>{humanize(k)}</b></td><td>{String(v).startsWith("not_configured") ? <span className="chip warn">Not configured</span> : <span className="chip ok">OK</span>}</td><td className="small muted">{String(v)}</td></tr>)}
+      {[...Object.entries(d.config), ["storage", d.storage], ["payments", d.payments], ["serverBooster", d.serverBooster]].map(([k, v]: any) => <tr key={k}><td><b>{humanize(k)}</b></td><td>{String(v).startsWith("not_configured") ? <span className="chip warn">Not configured</span> : <span className="chip ok">OK</span>}</td><td className="small muted">{String(v)}</td></tr>)}
       <tr><td><b>Node</b></td><td><span className="chip ok">OK</span></td><td className="small muted">{d.node} · up {Math.round(d.uptimeSec / 60)} min · pool {JSON.stringify(d.db.pool)}</td></tr>
     </Table>
     <h3>Background jobs (7 days)</h3>
@@ -343,7 +343,7 @@ function TicketAdmin({ id, onClose }: { id: string; onClose: () => void }) {
 // ------------------------------------------------------------------ badges
 
 const BLANK_BADGE = { key: "", name: "", description: "", tooltip: "", category: "special", rarity: "rare", iconAssetId: null as string | null, iconPreset: "star" as string | null, color: "#60a5fa", gradientFrom: null as string | null, gradientTo: null as string | null, borderColor: null as string | null, glow: 20, hover: "lift", displaySize: 22, sortOrder: 100, enabled: true, visibility: "public", availability: "assignable", eligibility: { method: "manual", minAccountAgeDays: null, registeredBefore: null, maxUid: null, note: "" } };
-const PRESETS = ["crown", "check", "shield", "code", "star", "flame", "snowflake", "egg", "sun", "gem", "heart", "bolt", "trophy", "globe", "bug", "sparkles", "rocket", "music", "gamepad", "medal"];
+const PRESETS = ["crown", "check", "shield", "code", "star", "flame", "snowflake", "egg", "sun", "gem", "heart", "bolt", "trophy", "globe", "bug", "sparkles", "rocket", "music", "gamepad", "medal", "wrench", "bulb", "coins", "gift", "boost", "award", "image", "party"];
 
 export function BadgeManager() {
   const [search, setSearch] = useState(""); const [arch, setArch] = useState(false);
@@ -487,7 +487,7 @@ function EventEditor({ ev, badges, onClose, onSaved }: { ev: any; badges: any[];
   const isNew = !ev.id;
   const a = useAdmin();
   const local = (d: string | null) => (d ? new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
-  const [f, setF] = useState<any>({ key: ev.key ?? "", name: ev.name ?? "", description: ev.description ?? "", badgeId: ev.badge_id ?? "", startsAt: local(ev.starts_at), endsAt: local(ev.ends_at), registrationCutoff: local(ev.registration_cutoff), enabled: ev.enabled ?? true, eligibility: { minAccountAgeDays: 0, requireVerifiedEmail: false, requireLoginDuringEvent: false, premiumOnly: false, maxUid: null, registeredBefore: null, ...(ev.eligibility ?? {}) } });
+  const [f, setF] = useState<any>({ key: ev.key ?? "", name: ev.name ?? "", description: ev.description ?? "", badgeId: ev.badge_id ?? "", startsAt: local(ev.starts_at), endsAt: local(ev.ends_at), registrationCutoff: local(ev.registration_cutoff), enabled: ev.enabled ?? true, eligibility: { minAccountAgeDays: 0, requireVerifiedEmail: false, requireLoginDuringEvent: false, premiumOnly: false, requirePurchaseDuringEvent: false, maxUid: null, registeredBefore: null, ...(ev.eligibility ?? {}) } });
   const [override, setOverride] = useState(false); const [reason, setReason] = useState("");
   const started = ev.starts_at && new Date(ev.starts_at) <= new Date();
   const { busy, run } = useAction();
@@ -525,6 +525,7 @@ function EventEditor({ ev, badges, onClose, onSaved }: { ev: any; badges: any[];
       <ToggleRow label="Require verified email" checked={f.eligibility.requireVerifiedEmail} onChange={setE("requireVerifiedEmail")} />
       <ToggleRow label="Require a sign-in during the event" checked={f.eligibility.requireLoginDuringEvent} onChange={setE("requireLoginDuringEvent")} />
       <ToggleRow label="Premium members only" checked={f.eligibility.premiumOnly} onChange={setE("premiumOnly")} />
+      <ToggleRow label="Require a purchase during the event (sale badge)" checked={f.eligibility.requirePurchaseDuringEvent} onChange={setE("requirePurchaseDuringEvent")} />
     </fieldset>
     <ToggleRow label="Enabled" hint="Disabled events never distribute." checked={f.enabled} onChange={set("enabled")} />
   </Modal>;

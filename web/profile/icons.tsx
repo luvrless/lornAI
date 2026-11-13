@@ -6,7 +6,7 @@ import {
 } from "react-icons/si";
 import {
   LuCrown, LuBadgeCheck, LuShield, LuCode, LuStar, LuFlame, LuSnowflake, LuEgg, LuSun, LuGem, LuHeart, LuZap, LuTrophy, LuGlobe,
-  LuBug, LuSparkles, LuRocket, LuMusic, LuGamepad2, LuMedal, LuMail, LuLink,
+  LuBug, LuSparkles, LuRocket, LuMusic, LuGamepad2, LuMedal, LuMail, LuLink, LuWrench, LuLightbulb, LuHandCoins, LuGift, LuAward, LuImage, LuPartyPopper,
 } from "react-icons/lu";
 
 export const PLATFORM_ICONS: Record<string, IconType> = {
@@ -24,5 +24,6 @@ export const BRAND_COLORS: Record<string, string> = {
 export const BADGE_GLYPHS: Record<string, IconType> = {
   crown: LuCrown, check: LuBadgeCheck, shield: LuShield, code: LuCode, star: LuStar, flame: LuFlame, snowflake: LuSnowflake, egg: LuEgg,
   sun: LuSun, gem: LuGem, heart: LuHeart, bolt: LuZap, trophy: LuTrophy, globe: LuGlobe, bug: LuBug, sparkles: LuSparkles, rocket: LuRocket,
-  music: LuMusic, gamepad: LuGamepad2, medal: LuMedal,
+  music: LuMusic, gamepad: LuGamepad2, medal: LuMedal, wrench: LuWrench, bulb: LuLightbulb, coins: LuHandCoins, gift: LuGift,
+  boost: LuGem, award: LuAward, image: LuImage, party: LuPartyPopper,
 };
