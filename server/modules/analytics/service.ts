@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import type { App, Queryable } from "../../app.ts";
 import { HttpError, notFound } from "../../lib/errors.ts";
 import { profileConfigSchema } from "../../../shared/profile-schema.ts";
+import { bumpCachedViews } from "../profiles/service.ts";
 
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|skype|headless|phantom|curl|wget|python|httpclient|axios|node-fetch|go-http|java\/|okhttp|lighthouse|pingdom|uptime|monitor/i;
 export const isBot = (ua: string) => !ua || ua.length < 20 || BOT.test(ua);
@@ -59,7 +60,7 @@ async function record(app: App, ownerId: string, kind: "view" | "click" | "play"
     [ownerId, kind, visitor, extra.linkId ?? null, h.page?.slice(0, 40) ?? null, refHost(h.referrer, app.cfg.appOrigin),
      h.utm?.source?.slice(0, 60) ?? null, h.utm?.medium?.slice(0, 60) ?? null, h.utm?.campaign?.slice(0, 80) ?? null,
      h.country && /^[A-Z]{2}$/.test(h.country) ? h.country : null, ua.device, ua.browser, ua.os]);
-  if (kind === "view") await app.db.query("UPDATE profiles SET view_count = view_count + 1 WHERE user_id = $1", [ownerId]);
+  if (kind === "view") { await app.db.query("UPDATE profiles SET view_count = view_count + 1 WHERE user_id = $1", [ownerId]); bumpCachedViews(ownerId); }
   return { recorded: true };
 }
 

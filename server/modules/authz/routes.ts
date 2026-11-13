@@ -152,6 +152,12 @@ export function adminRoutes(app: App, r: Router) {
        LEFT JOIN users u ON u.id = e.user_id ORDER BY e.id DESC LIMIT $1`, [limit])).rows;
   }, { perm: "security.view" });
 
+  r.get("/api/admin/security/logins", async (c) => (await app.db.query(
+    `SELECT l.id, l.method, l.success, l.failure_reason, l.suspicious, l.ip::text, l.user_agent, l.identifier, l.at, u.uid, u.username
+     FROM login_history l LEFT JOIN users u ON u.id = l.user_id
+     WHERE ($1::boolean IS NULL OR l.success = $1) AND ($2::boolean IS NULL OR l.suspicious = $2) ORDER BY l.id DESC LIMIT 300`,
+    [c.query.success ? c.query.success === "true" : null, c.query.suspicious === "true" ? true : null])).rows, { perm: "security.view" });
+
   r.get("/api/admin/security/admin-sessions", async () => (await app.db.query(
     `SELECT a.id, a.discord_id, a.ip::text, a.created_at, a.expires_at, u.uid, u.username FROM admin_sessions a JOIN users u ON u.id = a.user_id
      WHERE a.revoked_at IS NULL AND a.expires_at > now() ORDER BY a.created_at DESC`)).rows, { perm: "security.view" });

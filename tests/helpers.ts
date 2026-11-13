@@ -15,14 +15,23 @@ import { clearSettingsCache } from "../server/modules/platform/service.ts";
 export const TEST_DB = process.env.TEST_DATABASE_URL ?? "postgres://lorn:lorn_dev_pw@127.0.0.1:5432/lorn_test";
 export const OWNER_ID = "409564774444171265";
 
-export interface FakeDiscord { url: string; users: Map<string, { id: string; username: string }>; codes: Map<string, string>; close(): void; tokenRequests: number }
+export interface FakeDiscord { url: string; users: Map<string, { id: string; username: string }>; codes: Map<string, string>; close(): void; tokenRequests: number; nextLogin: string | null }
 
 export async function startFakeDiscord(clientId: string, clientSecret: string): Promise<FakeDiscord> {
   const users = new Map<string, { id: string; username: string }>();
   const codes = new Map<string, string>(); // code -> discord id
   const tokens = new Map<string, string>(); // access token -> discord id
-  const state = { tokenRequests: 0 };
+  const state = { tokenRequests: 0, nextLogin: null as string | null };
   const srv = http.createServer(async (req, res) => {
+    // Browser-facing consent page stand-in: immediately approves as `nextLogin`.
+    if (req.url?.startsWith("/authorize")) {
+      const q = new URL(req.url, "http://x").searchParams;
+      const code = "code_" + Math.random().toString(36).slice(2);
+      if (state.nextLogin) codes.set(code, state.nextLogin);
+      res.writeHead(302, { Location: `${q.get("redirect_uri")}?code=${code}&state=${encodeURIComponent(q.get("state") ?? "")}` });
+      res.end();
+      return;
+    }
     const chunks: Buffer[] = [];
     for await (const c of req) chunks.push(c as Buffer);
     const body = Buffer.concat(chunks).toString();
@@ -53,7 +62,7 @@ export async function startFakeDiscord(clientId: string, clientSecret: string): 
   });
   await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
   const url = `http://127.0.0.1:${(srv.address() as AddressInfo).port}`;
-  return { url, users, codes, close: () => srv.close(), get tokenRequests() { return state.tokenRequests; } };
+  return { url, users, codes, close: () => srv.close(), get tokenRequests() { return state.tokenRequests; }, get nextLogin() { return state.nextLogin; }, set nextLogin(v) { state.nextLogin = v; } };
 }
 
 export async function resetDatabase() {
@@ -67,18 +76,27 @@ export async function resetDatabase() {
 
 export interface Harness { app: App; base: string; discord: FakeDiscord; close(): Promise<void> }
 
-export async function startHarness(): Promise<Harness> {
+async function freePort() {
+  const s = http.createServer();
+  await new Promise<void>((r) => s.listen(0, "127.0.0.1", r));
+  const p = (s.address() as AddressInfo).port;
+  await new Promise((r) => s.close(r));
+  return p;
+}
+
+export async function startHarness(o: { realOrigin?: boolean } = {}): Promise<Harness> {
   await resetDatabase();
   const discord = await startFakeDiscord("test-client", "test-secret");
+  const port = o.realOrigin ? await freePort() : 0;
   Object.assign(process.env, {
-    NODE_ENV: "test", DATABASE_URL: TEST_DB, APP_URL: "http://localhost:3999",
+    NODE_ENV: "test", DATABASE_URL: TEST_DB, APP_URL: o.realOrigin ? `http://127.0.0.1:${port}` : "http://localhost:3999",
     LORN_OWNER_DISCORD_ID: OWNER_ID, TRUST_PROXY: "true", DISCORD_CLIENT_ID: "test-client", DISCORD_CLIENT_SECRET: "test-secret",
     DISCORD_API_BASE: discord.url, DISCORD_AUTHORIZE_URL: discord.url + "/authorize",
   });
   delete process.env.SMTP_URL;
   const app = createApp(loadConfig());
   const { server } = await buildServer(app);
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  await new Promise<void>((r) => server.listen(port, "127.0.0.1", r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   return {
     app, base, discord,

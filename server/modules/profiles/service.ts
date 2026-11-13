@@ -196,11 +196,16 @@ export function invalidateProfileCache(_app: App, userId: string) {
 
 export type PublicResult = { status: "ok"; payload: RenderPayload } | { status: "not_found" | "private" | "unpublished" | "hidden" | "banned" };
 
+/** Keep the cached view counter current without dropping the whole cache entry. */
+export function bumpCachedViews(userId: string) {
+  for (const v of cache.values()) if (v.userId === userId) v.payload.views += 1;
+}
+
 /** Resolve a username to its published profile. Never returns draft content. */
 export async function getPublicProfile(app: App, username: string): Promise<PublicResult> {
   const key = username.toLowerCase();
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_TTL) return { status: "ok", payload: { ...hit.payload, views: hit.payload.views } };
+  if (hit && Date.now() - hit.at < CACHE_TTL) return { status: "ok", payload: hit.payload };
   const row = (await app.db.query(
     `SELECT u.id AS user_id, u.uid, u.username, u.created_at, p.is_published, p.moderation_hidden, p.view_count, v.config,
        EXISTS (SELECT 1 FROM account_bans b WHERE b.user_id = u.id AND b.lifted_at IS NULL AND (b.expires_at IS NULL OR b.expires_at > now())) AS banned
