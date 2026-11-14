@@ -22,6 +22,8 @@ export interface Config {
   ownerDiscordId: string | null;
   discord: { clientId: string; clientSecret: string; apiBase: string; authorizeUrl: string } | null;
   google: { clientId: string; clientSecret: string; tokenUrl: string; authorizeUrl: string; userinfoUrl: string } | null;
+  /** Google sign-in brokered by Supabase Auth (used when GOOGLE_CLIENT_ID isn't set). */
+  supabaseAuth: { url: string; publishableKey: string } | null;
   smtp: { url: string; from: string } | null;
 }
 
@@ -48,6 +50,7 @@ export function loadConfig(): Config {
   const dId = env("DISCORD_CLIENT_ID"), dSecret = env("DISCORD_CLIENT_SECRET");
   const gId = env("GOOGLE_CLIENT_ID"), gSecret = env("GOOGLE_CLIENT_SECRET");
   const smtpUrl = env("SMTP_URL");
+  const sbUrl = env("SUPABASE_URL"), sbKey = env("SUPABASE_PUBLISHABLE_KEY");
 
   return {
     env: nodeEnv,
@@ -71,6 +74,7 @@ export function loadConfig(): Config {
       tokenUrl: env("GOOGLE_TOKEN_URL", "https://oauth2.googleapis.com/token")!,
       userinfoUrl: env("GOOGLE_USERINFO_URL", "https://openidconnect.googleapis.com/v1/userinfo")!,
     } : null,
+    supabaseAuth: sbUrl && sbKey ? { url: sbUrl.replace(/\/$/, ""), publishableKey: sbKey } : null,
     smtp: smtpUrl ? { url: smtpUrl, from: env("MAIL_FROM", "LORN.LOL <no-reply@lorn.lol>")! } : null,
   };
 }
@@ -79,7 +83,7 @@ export function loadConfig(): Config {
 export function configStatus(c: Config) {
   return {
     discordOAuth: c.discord ? "configured" : "not_configured: set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET",
-    googleOAuth: c.google ? "configured" : "not_configured: set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET",
+    googleOAuth: c.google ? "configured" : c.supabaseAuth ? "configured via Supabase Auth (enable the Google provider in Supabase)" : "not_configured: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY",
     email: c.smtp ? "configured" : "not_configured: set SMTP_URL (smtp[s]://user:pass@host:port) and MAIL_FROM",
     owner: c.ownerDiscordId ? "configured" : "not_configured: set LORN_OWNER_DISCORD_ID",
   };

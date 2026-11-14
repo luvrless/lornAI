@@ -5,6 +5,7 @@
  */
 import type { App } from "../../app.ts";
 import type { Ctx } from "../../lib/http.ts";
+import { emails } from "../../lib/email-templates.ts";
 import { asJson } from "../../db/pg.ts";
 import { HttpError, badRequest, conflict, forbidden, notFound } from "../../lib/errors.ts";
 import { audit, notify, queueEmail, securityEvent } from "../platform/service.ts";
@@ -143,7 +144,7 @@ export async function changeEmail(app: App, c: Ctx, userId: string, email: strin
       const { actor, t } = a(c, u);
       await audit(tx, actor, { action: "user.email_changed", ...t, previous: { email: u.email }, next: { email }, reason });
       await securityEvent(tx, userId, "email.changed_by_staff", "warning", { by: c.user!.uid });
-      if (u.email) await queueEmail(app, tx, { to: u.email, userId, template: "email_changed_notice", subject: "Your LORN.LOL email was changed", text: `Staff changed the email on your account to ${email}. Reason: ${reason}. Contact support if this is unexpected.` });
+      if (u.email) await queueEmail(app, tx, { to: u.email, userId, ...emails.emailChanged(app.cfg.appUrl, { username: u.username, newEmail: email, byStaff: { reason } }) });
     });
   } catch (e) {
     if (e instanceof PgError && e.code === "23505") throw conflict("Another account uses this email", "email_taken");

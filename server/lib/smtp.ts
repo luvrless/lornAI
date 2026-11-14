@@ -7,7 +7,7 @@ import net from "node:net";
 import tls from "node:tls";
 import crypto from "node:crypto";
 
-export interface Mail { from: string; to: string; subject: string; text: string }
+export interface Mail { from: string; to: string; subject: string; text: string; html?: string }
 
 class Conn {
   private buf = "";
@@ -82,11 +82,20 @@ export async function sendMail(url: string, m: Mail): Promise<string> {
     await c.cmd(`RCPT TO:<${addr(m.to)}>`, [250, 251]);
     await c.cmd("DATA", [354]);
     const id = `<${crypto.randomUUID()}@lorn.lol>`;
-    const body = Buffer.from(m.text.replace(/\r?\n/g, "\r\n")).toString("base64").replace(/.{76}/g, "$&\r\n");
-    const msg = [
-      `From: ${m.from}`, `To: ${m.to}`, `Subject: ${encodeHeader(m.subject)}`, `Date: ${new Date().toUTCString()}`, `Message-ID: ${id}`,
-      "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: base64", "", body,
-    ].join("\r\n").replace(/^\./gm, "..");
+    const b64 = (t: string) => Buffer.from(t.replace(/\r?\n/g, "\r\n")).toString("base64").replace(/.{76}/g, "$&\r\n");
+    const head = [`From: ${m.from}`, `To: ${m.to}`, `Subject: ${encodeHeader(m.subject)}`, `Date: ${new Date().toUTCString()}`, `Message-ID: ${id}`, "MIME-Version: 1.0"];
+    let parts: string[];
+    if (m.html) {
+      // multipart/alternative: plain text first, HTML last (clients show the last part they can render).
+      const boundary = `lorn-${crypto.randomUUID()}`;
+      parts = [...head, `Content-Type: multipart/alternative; boundary="${boundary}"`, "",
+        `--${boundary}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: base64", "", b64(m.text),
+        `--${boundary}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "", b64(m.html),
+        `--${boundary}--`];
+    } else {
+      parts = [...head, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: base64", "", b64(m.text)];
+    }
+    const msg = parts.join("\r\n").replace(/^\./gm, "..");
     await c.cmd(`${msg}\r\n.`, [250]);
     await c.cmd("QUIT", [221]).catch(() => {});
     return id;

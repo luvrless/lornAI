@@ -38,7 +38,7 @@ export function authRoutes(app: App, r: Router) {
   }, { allowMfaPending: true, maintenanceExempt: true });
 
   r.get("/api/auth/providers", async () => ({
-    discord: !!app.cfg.discord, google: !!app.cfg.google,
+    discord: !!app.cfg.discord, google: !!(app.cfg.google || app.cfg.supabaseAuth),
     registration: await getSetting(app, "registration.enabled", true),
   }), { maintenanceExempt: true });
 

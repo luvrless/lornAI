@@ -1,4 +1,5 @@
 import type { App, Queryable } from "../../app.ts";
+import { emails } from "../../lib/email-templates.ts";
 import { PgError, asJson } from "../../db/pg.ts";
 import { HttpError, badRequest, conflict, forbidden, unauthorized } from "../../lib/errors.ts";
 import { hashPassword, verifyPassword, needsRehash, burnVerify } from "../../lib/password.ts";
@@ -218,10 +219,7 @@ export async function recordLogin(app: App, userId: string, method: string, ip: 
     await notify(app.db, userId, "security", "New sign-in to your account", `A sign-in from a new device or network (${uaFamily(ua)}) was detected. If this wasn't you, change your password and revoke sessions.`);
     const u = await getUser(app.db, userId);
     if (u?.email) {
-      await queueEmail(app, app.db, {
-        to: u.email, userId, template: "login_new_device", subject: "New sign-in to your LORN.LOL account",
-        text: `Hi ${u.username},\n\nWe noticed a sign-in from a new device or network (${uaFamily(ua)}).\nIf this was you, no action is needed. Otherwise reset your password at ${app.cfg.appUrl}/forgot-password and revoke sessions from Security settings.`,
-      });
+      await queueEmail(app, app.db, { to: u.email, userId, ...emails.newSignIn(app.cfg.appUrl, { username: u.username, device: uaFamily(ua).replace("/", " on "), ip, at: app.now() }) });
     }
   }
   return suspicious;
@@ -385,10 +383,7 @@ export async function sendVerificationEmail(app: App, userId: string) {
   if (!u.email) throw badRequest("Add an email address first");
   if (u.email_verified_at) return { alreadyVerified: true, status: "verified" };
   const token = await issueToken(app.db, userId, "verify_email");
-  const m = await queueEmail(app, app.db, {
-    to: u.email, userId, template: "verify_email", subject: "Verify your LORN.LOL email",
-    text: `Hi ${u.username},\n\nConfirm your email address: ${app.cfg.appUrl}/verify-email?token=${token}\n\nThis link expires in 24 hours.`,
-  });
+  const m = await queueEmail(app, app.db, { to: u.email, userId, ...emails.verifyEmail(app.cfg.appUrl, { username: u.username, url: `${app.cfg.appUrl}/verify-email?token=${token}` }) });
   return { alreadyVerified: false, status: m.status };
 }
 
@@ -409,10 +404,7 @@ export async function requestPasswordReset(app: App, identifier: string, ip: str
   const lim = app.limiter.take(`reset:${u.id}`, { capacity: 3, refillPerSec: 3 / 3600 });
   if (!lim.ok && !createdBy) return { status: "accepted" };
   const token = await issueToken(app.db, u.id, "reset_password", {}, createdBy);
-  const m = await queueEmail(app, app.db, {
-    to: u.email, userId: u.id, template: "reset_password", subject: "Reset your LORN.LOL password",
-    text: `Hi ${u.username},\n\nReset your password: ${app.cfg.appUrl}/reset-password?token=${token}\n\nThis link expires in 1 hour. If you didn't ask for this, ignore this email.`,
-  });
+  const m = await queueEmail(app, app.db, { to: u.email, userId: u.id, ...emails.resetPassword(app.cfg.appUrl, { username: u.username, url: `${app.cfg.appUrl}/reset-password?token=${token}`, byStaff: !!createdBy }) });
   await securityEvent(app.db, u.id, createdBy ? "password.reset_initiated_by_staff" : "password.reset_requested", "info", { by: createdBy ?? null }, ip);
   return { status: "accepted", emailStatus: m.status };
 }
@@ -452,10 +444,7 @@ export async function requestEmailChange(app: App, userId: string, password: str
   const taken = await app.db.query("SELECT 1 FROM users WHERE email = $1 AND deleted_at IS NULL AND id <> $2", [newEmail, userId]);
   if (taken.rowCount) throw conflict("An account with this email already exists", "email_taken");
   const token = await issueToken(app.db, userId, "change_email", { email: newEmail });
-  const m = await queueEmail(app, app.db, {
-    to: newEmail, userId, template: "change_email", subject: "Confirm your new LORN.LOL email",
-    text: `Hi ${u.username},\n\nConfirm this address for your account: ${app.cfg.appUrl}/verify-email?change=1&token=${token}`,
-  });
+  const m = await queueEmail(app, app.db, { to: newEmail, userId, ...emails.changeEmail(app.cfg.appUrl, { username: u.username, newEmail, url: `${app.cfg.appUrl}/verify-email?change=1&token=${token}` }) });
   return { status: m.status };
 }
 
@@ -467,8 +456,7 @@ export async function confirmEmailChange(app: App, token: string) {
       await tx.query("UPDATE users SET email = $2, email_verified_at = now() WHERE id = $1", [t.user_id, t.data.email]);
       await securityEvent(tx, t.user_id, "email.changed", "warning", { from: old.email, to: t.data.email });
       if (old.email) {
-        await queueEmail(app, tx, { to: old.email, userId: t.user_id, template: "email_changed_notice", subject: "Your LORN.LOL email was changed",
-          text: `The email on your account was changed to ${t.data.email}. If you didn't do this, contact support immediately.` });
+        await queueEmail(app, tx, { to: old.email, userId: t.user_id, ...emails.emailChanged(app.cfg.appUrl, { username: old.username, newEmail: t.data.email }) });
       }
       return { userId: t.user_id };
     });

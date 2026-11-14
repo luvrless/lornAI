@@ -20,8 +20,11 @@ export type Intent = "login" | "link" | "admin";
 const STATE_COOKIE = "lorn_oauth";
 const SIGNUP_COOKIE = "lorn_signup";
 
+/** Google goes through Supabase Auth when there are no direct Google credentials. */
+const viaSupabase = (app: App, p: Provider) => p === "google" && !app.cfg.google && !!app.cfg.supabaseAuth;
+
 function providerCfg(app: App, p: Provider) {
-  const c = p === "discord" ? app.cfg.discord : app.cfg.google;
+  const c = p === "discord" ? app.cfg.discord : app.cfg.google ?? (app.cfg.supabaseAuth ? { clientId: "", clientSecret: "", authorizeUrl: "", tokenUrl: "", userinfoUrl: "" } : null);
   if (!c) throw unavailable(`${p === "discord" ? "Discord" : "Google"} sign-in is not configured on this server`, "oauth_not_configured");
   return c;
 }
@@ -42,7 +45,19 @@ export async function startOAuth(app: App, c: Ctx, p: Provider, intent: Intent, 
     `INSERT INTO oauth_states (state_hash, provider, intent, user_id, code_verifier, redirect_to, expires_at)
      VALUES ($1,$2,$3,$4,$5,$6, now() + interval '10 minutes')`,
     [sha256(state), p, intent, c.user?.id ?? null, verifier, safeRedirect(redirectTo)]);
-  c.setCookie(STATE_COOKIE, state, { maxAge: 600, sameSite: "Lax", path: `/api/auth/${p}` });
+  // Scoped to /api/auth so it reaches both callback styles (/api/auth/discord/callback and /api/auth/callback/discord).
+  c.setCookie(STATE_COOKIE, state, { maxAge: 600, sameSite: "Lax", path: "/api/auth" });
+
+  if (viaSupabase(app, p)) {
+    const sb = app.cfg.supabaseAuth!;
+    const back = new URL(redirectUri(app, p));
+    back.searchParams.set("state", state);
+    const q = new URLSearchParams({
+      provider: "google", redirect_to: back.toString(), scopes: "email profile",
+      code_challenge: crypto.createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "s256",
+    });
+    return `${sb.url}/auth/v1/authorize?${q}`;
+  }
 
   const q = new URLSearchParams({ client_id: cfg.clientId, redirect_uri: redirectUri(app, p), response_type: "code", state });
   if (p === "discord") {
@@ -58,7 +73,34 @@ export async function startOAuth(app: App, c: Ctx, p: Provider, intent: Intent, 
 
 interface Identity { id: string; username: string | null; avatar: string | null; email: string | null; emailVerified: boolean; accessToken: string; refreshToken: string | null; expiresIn: number | null; scopes: string[] }
 
+/**
+ * Supabase Auth PKCE exchange. We only take the verified Google identity from it:
+ * LORN keeps its own accounts and sessions, so the Supabase session is ended right away.
+ */
+async function exchangeViaSupabase(app: App, code: string, verifier: string): Promise<Identity> {
+  const sb = app.cfg.supabaseAuth!;
+  const tr = await app.fetch(`${sb.url}/auth/v1/token?grant_type=pkce`, {
+    method: "POST", headers: { apikey: sb.publishableKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ auth_code: code, code_verifier: verifier }), signal: AbortSignal.timeout(10_000),
+  });
+  if (!tr.ok) throw new HttpError(502, "oauth_exchange_failed", `Supabase rejected the sign-in (${tr.status})`);
+  const tok = await tr.json() as any;
+  const g = (tok.user?.identities ?? []).find((i: any) => i.provider === "google");
+  const d = g?.identity_data ?? {};
+  const sub = typeof d.sub === "string" ? d.sub : typeof d.provider_id === "string" ? d.provider_id : null;
+  if (!sub || !/^\d{5,32}$/.test(sub)) throw new HttpError(502, "oauth_profile_failed", "Supabase didn't return a Google account");
+  if (tok.access_token) {
+    void app.fetch(`${sb.url}/auth/v1/logout?scope=local`, { method: "POST", headers: { apikey: sb.publishableKey, Authorization: `Bearer ${tok.access_token}` }, signal: AbortSignal.timeout(5_000) }).catch(() => {});
+  }
+  return {
+    id: sub, username: d.full_name ?? d.name ?? null, avatar: d.avatar_url ?? d.picture ?? null,
+    email: d.email ?? tok.user?.email ?? null, emailVerified: d.email_verified === true,
+    accessToken: "", refreshToken: null, expiresIn: null, scopes: ["email", "profile"],
+  };
+}
+
 async function exchange(app: App, p: Provider, code: string, verifier: string): Promise<Identity> {
+  if (viaSupabase(app, p)) return exchangeViaSupabase(app, code, verifier);
   const cfg = providerCfg(app, p);
   const form = new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: redirectUri(app, p) });
   if (verifier) form.set("code_verifier", verifier);
@@ -107,7 +149,7 @@ async function storeTokens(app: App, userId: string, p: Provider, idn: Identity)
 export async function handleCallback(app: App, c: Ctx, p: Provider): Promise<string> {
   const fail = (code: string) => `/login?error=${code}`;
   const { code, state, error } = c.query;
-  c.clearCookie(STATE_COOKIE, { path: `/api/auth/${p}` });
+  c.clearCookie(STATE_COOKIE, { path: "/api/auth" });
   if (error) return fail("oauth_denied");
   if (!code || !state) return fail("oauth_invalid");
   const cookieState = c.cookies[STATE_COOKIE];

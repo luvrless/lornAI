@@ -15,7 +15,7 @@ export async function deliverEmails(app: App, limit = 20) {
   let sent = 0;
   for (const m of batch) {
     try {
-      await sendMail(app.cfg.smtp.url, { from: app.cfg.smtp.from, to: m.to_address, subject: m.subject, text: m.text_body });
+      await sendMail(app.cfg.smtp.url, { from: app.cfg.smtp.from, to: m.to_address, subject: m.subject, text: m.text_body, html: m.html_body ?? undefined });
       await app.db.query("UPDATE email_outbox SET status = 'sent', sent_at = now(), last_error = NULL WHERE id = $1", [m.id]);
       sent++;
     } catch (e) {
