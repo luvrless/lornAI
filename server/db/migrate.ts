@@ -10,7 +10,8 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Connection, PgConfig, configFromUrl } from "./pg.ts";
 
-const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "migrations");
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const DIR = process.env.MIGRATIONS_DIR ?? [path.join(HERE, "migrations"), path.join(HERE, "_migrations")].find((d) => fs.existsSync(d)) ?? path.join(HERE, "migrations");
 const LOCK_KEY = 7_420_421_337;
 
 export async function migrate(cfg: PgConfig, log: (s: string) => void = console.log): Promise<string[]> {

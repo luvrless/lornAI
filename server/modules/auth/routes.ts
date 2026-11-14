@@ -1,5 +1,5 @@
 import type { App } from "../../app.ts";
-import { Router, z } from "../../lib/http.ts";
+import { Router, z, type Ctx } from "../../lib/http.ts";
 import { RULES } from "../../lib/ratelimit.ts";
 import { HttpError } from "../../lib/errors.ts";
 import * as auth from "./service.ts";
@@ -102,11 +102,13 @@ export function authRoutes(app: App, r: Router) {
     c.redirect(await oauth.startOAuth(app, c, p.data, intent, c.query.next));
   }, { rate: { name: "oauth", rule: RULES.auth }, maintenanceExempt: true });
 
-  r.get("/api/auth/:provider/callback", async (c) => {
+  const callback = async (c: Ctx) => {
     const p = provider.safeParse(c.params.provider);
     if (!p.success) throw new HttpError(404, "not_found", "Unknown provider");
     c.redirect(await oauth.handleCallback(app, c, p.data));
-  }, { skipCsrf: true, maintenanceExempt: true });
+  };
+  r.get("/api/auth/:provider/callback", callback, { skipCsrf: true, maintenanceExempt: true });
+  r.get("/api/auth/callback/:provider", callback, { skipCsrf: true, maintenanceExempt: true });
 
   r.get("/api/auth/signup/pending", async (c) => {
     const p = await oauth.pendingSignup(app, c);

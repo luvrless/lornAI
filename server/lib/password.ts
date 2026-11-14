@@ -1,3 +1,4 @@
+import fs from "node:fs";
 /**
  * Password hashing with Argon2id, run on a worker pool so a ~1s hash never
  * blocks the HTTP event loop. Hashes use the standard PHC string format so
@@ -21,7 +22,9 @@ class HashPool {
   private ensure() {
     if (this.workers.length) return;
     const n = Math.max(1, Math.min(4, os.cpus().length));
-    const url = new URL(import.meta.url.endsWith(".ts") ? "./argon2-worker.ts" : "./argon2-worker.js", import.meta.url);
+    // Bundled builds ship the worker next to the entry; on Vercel it's "_argon2-worker.js" (underscore = not a route).
+    const url = import.meta.url.endsWith(".ts") ? new URL("./argon2-worker.ts", import.meta.url)
+      : [new URL("./argon2-worker.js", import.meta.url), new URL("./_argon2-worker.js", import.meta.url)].find((u) => fs.existsSync(u)) ?? new URL("./argon2-worker.js", import.meta.url);
     for (let i = 0; i < n; i++) {
       const w = new Worker(url);
       w.unref();

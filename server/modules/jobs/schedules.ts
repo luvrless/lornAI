@@ -25,9 +25,9 @@ export async function deliverEmails(app: App, limit = 20) {
   return sent;
 }
 
-every(15_000, async (app) => { await deliverEmails(app); });
-every(3_600_000, async (app) => { await cleanupOrphans(app); });
-every(86_400_000, async (app) => {
+every(15_000, "deliver_emails", async (app) => { await deliverEmails(app); });
+every(3_600_000, "cleanup_orphans", async (app) => { await cleanupOrphans(app); });
+every(86_400_000, "daily", async (app) => {
   await pruneAnalytics(app);
   await app.db.query("DELETE FROM oauth_states WHERE expires_at < now()");
   await app.db.query("DELETE FROM oauth_signups WHERE expires_at < now()");

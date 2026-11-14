@@ -55,20 +55,37 @@ export async function drain(app: App, max = 1000) {
 }
 
 type Tick = (app: App) => Promise<void>;
-const ticks: { every: number; fn: Tick; last: number }[] = [];
-export const every = (ms: number, fn: Tick) => ticks.push({ every: ms, fn, last: 0 });
+const ticks: { name: string; every: number; fn: Tick; last: number }[] = [];
+/** Register a periodic task. `name` must be stable: it's the key the run is claimed under. */
+export const every = (ms: number, name: string, fn: Tick) => ticks.push({ name, every: ms, fn, last: 0 });
+
+/** Atomically claim a tick's run for this interval; false if another instance already ran it. */
+async function claimTick(app: App, name: string, everyMs: number) {
+  const r = await app.db.query(
+    `INSERT INTO tick_runs (name, last_at) VALUES ($1, now())
+     ON CONFLICT (name) DO UPDATE SET last_at = now()
+     WHERE tick_runs.last_at <= now() - make_interval(secs => $2::double precision / 1000)
+     RETURNING name`, [name, everyMs]);
+  return r.rowCount === 1;
+}
+
+/** Run every tick that is due (checked locally first, then claimed in the database). */
+export async function runDueTicks(app: App) {
+  const now = Date.now();
+  for (const t of ticks) {
+    if (now - t.last < t.every) continue;
+    t.last = now;
+    try {
+      if (await claimTick(app, t.name, t.every)) await t.fn(app);
+    } catch (e) { app.log.error("tick failed", { tick: t.name, err: (e as Error).message }); }
+  }
+}
 
 export function startWorker(app: App) {
   let stopped = false;
   const loop = async () => {
     while (!stopped) {
-      const now = Date.now();
-      for (const t of ticks) {
-        if (now - t.last >= t.every) {
-          t.last = now;
-          await t.fn(app).catch((e) => app.log.error("tick failed", { err: (e as Error).message }));
-        }
-      }
+      await runDueTicks(app);
       let worked = false;
       try { worked = await runOne(app); } catch (e) { app.log.error("worker error", { err: (e as Error).message }); }
       if (!worked) await new Promise((r) => setTimeout(r, 1000));

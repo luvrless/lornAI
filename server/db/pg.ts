@@ -180,9 +180,34 @@ export class Connection {
 
   constructor(private cfg: PgConfig) {}
 
+  /**
+   * `host` may list several hosts separated by commas (like libpq): each is tried
+   * in turn until one accepts the connection and the login, and the winner is
+   * remembered for later connections. Used for poolers whose cluster isn't known up front.
+   */
   async connect(): Promise<void> {
+    const hosts = this.cfg.host.split(",").map((h) => h.trim()).filter(Boolean);
+    if (hosts.length === 1) return this.connectTo(hosts[0]);
+    const key = this.cfg.host;
+    const order = preferredHost.has(key) ? [preferredHost.get(key)!, ...hosts.filter((h) => h !== preferredHost.get(key))] : hosts;
+    let last: unknown;
+    for (const h of order) {
+      try {
+        await this.connectTo(h);
+        preferredHost.set(key, h);
+        return;
+      } catch (e) {
+        last = e;
+        if (this.sock) { this.sock.removeAllListeners(); this.sock.on("error", () => {}); this.sock.destroy(); }
+        this.closed = false; this.buf = Buffer.alloc(0); this.onAuth = undefined; this.scram = undefined; this.queue = [];
+      }
+    }
+    throw last;
+  }
+
+  private async connectTo(host: string): Promise<void> {
     let sock: net.Socket = await new Promise((res, rej) => {
-      const s = net.connect(this.cfg.port, this.cfg.host);
+      const s = net.connect(this.cfg.port, host);
       s.once("connect", () => res(s));
       s.once("error", rej);
     });
@@ -191,7 +216,7 @@ export class Connection {
       const answer: Buffer = await new Promise((res) => sock.once("data", res));
       if (answer[0] !== 0x53) throw new Error("Server refused TLS");
       const opts = typeof this.cfg.ssl === "object" ? this.cfg.ssl : {};
-      sock = tls.connect({ socket: sock, servername: this.cfg.host, ...opts });
+      sock = tls.connect({ socket: sock, servername: host, ...opts });
       await new Promise<void>((res, rej) => { sock.once("secureConnect", () => res()); sock.once("error", rej); });
     }
     this.sock = sock;
@@ -510,6 +535,8 @@ export class Pool implements Queryable {
     this.idle = [];
   }
 }
+
+const preferredHost = new Map<string, string>();
 
 export function configFromUrl(url: string, extra: Partial<PgConfig> = {}): PgConfig {
   const u = new URL(url);

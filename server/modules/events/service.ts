@@ -145,7 +145,7 @@ export async function scheduleDueEvents(app: App) {
     }
   }
 }
-every(60_000, scheduleDueEvents);
+every(60_000, "schedule_events", scheduleDueEvents);
 
 // ------------------------------------------------------------------ admin CRUD
 

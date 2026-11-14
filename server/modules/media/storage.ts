@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import crypto from "node:crypto";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -104,8 +105,9 @@ export class S3Storage implements StorageDriver {
 
   private loc(key: string) {
     const u = new URL(this.c.endpoint);
+    const base = u.pathname.replace(/\/+$/, ""); // e.g. Supabase: /storage/v1/s3
     return this.c.pathStyle
-      ? { host: u.host, path: `/${this.c.bucket}/${safeKey(key)}`, origin: u.origin }
+      ? { host: u.host, path: `${base}/${this.c.bucket}/${safeKey(key)}`, origin: u.origin }
       : { host: `${this.c.bucket}.${u.host}`, path: `/${safeKey(key)}`, origin: `${u.protocol}//${this.c.bucket}.${u.host}` };
   }
 
@@ -162,6 +164,10 @@ export function storageFromEnv(appUrl: string): { driver: StorageDriver; status:
       }),
       status: "s3",
     };
+  }
+  if (e.VERCEL) {
+    // Vercel's filesystem is temporary and per-instance: never store uploads there.
+    return { driver: new LocalStorage(path.join(os.tmpdir(), "lorn-media"), `${appUrl}/media`), status: "not_configured: set S3_ENDPOINT, S3_REGION, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY and MEDIA_PUBLIC_URL" };
   }
   const dir = e.STORAGE_DIR ?? path.resolve("data/media");
   return { driver: new LocalStorage(dir, e.MEDIA_PUBLIC_URL ?? `${appUrl}/media`), status: `local (${dir}); set S3_* + MEDIA_PUBLIC_URL for object storage/CDN` };

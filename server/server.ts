@@ -75,7 +75,7 @@ async function serveMedia(app: App, c: Ctx): Promise<boolean> {
   return true;
 }
 
-const STATIC_DIR = path.resolve(process.env.WEB_DIST ?? "dist/web");
+const STATIC_DIR = path.resolve(process.env.WEB_DIST ?? (process.env.VERCEL ? "public/static" : "dist/web"));
 const STATIC_TYPES: Record<string, string> = { js: "text/javascript; charset=utf-8", css: "text/css; charset=utf-8", svg: "image/svg+xml", png: "image/png", woff2: "font/woff2", ico: "image/x-icon", map: "application/json", txt: "text/plain" };
 
 async function serveStatic(c: Ctx): Promise<boolean> {
@@ -113,5 +113,5 @@ export async function buildServer(app: App) {
     secureCookies: app.cfg.secureCookies,
     onError(c, e) { app.log.error("unhandled", { requestId: c.requestId, path: c.url.pathname, err: (e as Error).stack }); },
   }, async (c) => (await serveMedia(app, c)) || (await serveStatic(c)) || (await renderPage(app, c)));
-  return { server: http.createServer(handler), router };
+  return { server: http.createServer(handler), router, handler };
 }

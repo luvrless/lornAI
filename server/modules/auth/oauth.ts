@@ -26,7 +26,8 @@ function providerCfg(app: App, p: Provider) {
   return c;
 }
 
-const redirectUri = (app: App, p: Provider) => `${app.cfg.appUrl}/api/auth/${p}/callback`;
+/** OAUTH_CALLBACK_PATH lets a deployment keep the redirect URL its OAuth apps already allow (e.g. NextAuth-style "/api/auth/callback/{provider}"). */
+const redirectUri = (app: App, p: Provider) => `${app.cfg.appUrl}${(process.env.OAUTH_CALLBACK_PATH ?? "/api/auth/{provider}/callback").replace("{provider}", p)}`;
 
 function safeRedirect(path: unknown): string | null {
   return typeof path === "string" && /^\/(?!\/)[\w\-./?=&%]*$/.test(path) ? path : null;

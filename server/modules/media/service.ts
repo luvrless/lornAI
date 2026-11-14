@@ -95,6 +95,7 @@ export async function usageByKind(app: App, userId: string) {
 export interface StartUpload { filename: string; mime: string; size: number; kind?: Kind; folderId?: string | null; replaceAssetId?: string | null; purpose?: "user" | "badge" | "evidence" }
 
 export async function startUpload(app: App, userId: string, u: StartUpload) {
+  if (app.storageStatus.startsWith("not_configured")) throw new HttpError(503, "storage_not_configured", "File uploads aren't set up on this server yet.");
   const kind = kindForMime(u.mime, u.kind);
   if (!kind) throw new HttpError(415, "unsupported_type", `Files of type ${u.mime || "unknown"} aren't supported`);
   const max = await limitBytes(app, kind);
@@ -144,11 +145,18 @@ export async function receiveBlob(app: App, id: string, token: string, req: impo
 
 interface Processed { mime: string; body: Buffer; width?: number; height?: number; durationMs?: number; thumb?: Buffer; metadata: Record<string, unknown> }
 
+/** null when ffprobe isn't installed (e.g. on Vercel): the file type is still verified by its magic bytes. */
 async function probe(buf: Buffer, ext: string) {
   const tmp = path.join(os.tmpdir(), `lorn-${crypto.randomUUID()}.${ext}`);
   await fsp.writeFile(tmp, buf);
   try {
-    const { stdout } = await run("ffprobe", ["-v", "error", "-print_format", "json", "-show_format", "-show_streams", tmp], { timeout: 20_000, maxBuffer: 4 << 20 });
+    let stdout: string;
+    try {
+      ({ stdout } = await run("ffprobe", ["-v", "error", "-print_format", "json", "-show_format", "-show_streams", tmp], { timeout: 20_000, maxBuffer: 4 << 20 }));
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw e;
+    }
     const j = JSON.parse(stdout);
     let thumb: Buffer | undefined;
     const video = (j.streams ?? []).find((s: any) => s.codec_type === "video" && !s.disposition?.attached_pic);
@@ -190,6 +198,7 @@ export async function processFile(buf: Buffer, kind: Kind): Promise<Processed> {
   }
   if (kind === "video" || kind === "audio") {
     const p = await probe(buf, EXT[real]);
+    if (!p) return { mime: kind === "audio" && real === "video/webm" ? "audio/webm" : real, body: buf, metadata: { probed: false } };
     const duration = Number(p.j.format?.duration ?? 0);
     if (kind === "video" && !p.video) throw new HttpError(415, "invalid_file", "No video stream found");
     if (kind === "audio" && !p.audio) throw new HttpError(415, "invalid_file", "No audio stream found");

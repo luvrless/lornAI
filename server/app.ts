@@ -39,7 +39,8 @@ export function createApp(cfg: Config, overrides: Partial<App> = {}): App {
     storage: st.driver,
     storageStatus: st.status,
     cfg,
-    db: new Pool(configFromUrl(cfg.databaseUrl, { max: 20, statementTimeoutMs: 15_000 })),
+    // Serverless instances each hold their own pool; keep it small so the database's pooler isn't exhausted.
+    db: new Pool(configFromUrl(cfg.databaseUrl, { max: Number(process.env.DB_POOL_MAX ?? (process.env.VERCEL ? 3 : 20)), idleTimeoutMs: process.env.VERCEL ? 10_000 : 30_000, statementTimeoutMs: 15_000 })),
     limiter: new MemoryRateLimiter(),
     log: jsonLogger(cfg.env === "test"),
     fetch: globalThis.fetch.bind(globalThis),

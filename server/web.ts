@@ -14,7 +14,7 @@ import { getPublicProfile } from "./modules/profiles/service.ts";
 import { publicMessage } from "./modules/profiles/routes.ts";
 import { ProfileView } from "../web/profile/ProfileView.tsx";
 
-const DIST = path.resolve(process.env.WEB_DIST ?? "dist/web");
+const DIST = path.resolve(process.env.WEB_DIST ?? (process.env.VERCEL ? "public/static" : "dist/web"));
 let manifest: Record<string, string> | null = null;
 function assets() {
   if (!manifest || process.env.NODE_ENV !== "production") {
