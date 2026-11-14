@@ -38,6 +38,7 @@ if (watch) {
 } else {
   const r = await esbuild.build(client);
   const m = writeManifest(r.metafile!);
+  fs.cpSync("web/brand", path.join(out, "brand"), { recursive: true });
   const sizes = Object.entries(m).map(([k, v]) => `${k}: ${(fs.statSync(path.join(out, v)).size / 1024).toFixed(0)} KB`);
   console.log("client:", sizes.join(", "));
   // Server bundle (node deps stay external; they're installed alongside).

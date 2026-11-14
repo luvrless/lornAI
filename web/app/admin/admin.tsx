@@ -75,7 +75,7 @@ function Gate({ state }: { state: "signin" | "elevate" | "denied" | "unavailable
   return (
     <div className="auth-wrap app-bg">
       <div className="panel auth-card stack-16">
-        <div className="brand" style={{ padding: 0 }}><span className="mark" aria-hidden />LORN.LOL Admin</div>
+        <div className="brand" style={{ padding: 0 }}><img className="mark" src="/static/brand/mark-128.png" alt="" />LORN.LOL Admin</div>
         {state === "denied" ? <>
           <h1>No admin access</h1>
           <p className="muted">{search.get("reason") === "account_mismatch" ? "That Discord account is linked to a different LORN.LOL account." : "This Discord account isn't authorized for the admin panel."}</p>

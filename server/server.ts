@@ -79,8 +79,10 @@ const STATIC_DIR = path.resolve(process.env.WEB_DIST ?? (process.env.VERCEL ? "p
 const STATIC_TYPES: Record<string, string> = { js: "text/javascript; charset=utf-8", css: "text/css; charset=utf-8", svg: "image/svg+xml", png: "image/png", woff2: "font/woff2", ico: "image/x-icon", map: "application/json", txt: "text/plain" };
 
 async function serveStatic(c: Ctx): Promise<boolean> {
-  if (c.method !== "GET" || !c.url.pathname.startsWith("/static/")) return false;
-  const rel = path.normalize(decodeURIComponent(c.url.pathname.slice(8)));
+  if (c.method !== "GET") return false;
+  const pathname = c.url.pathname === "/favicon.ico" ? "/static/brand/favicon.ico" : c.url.pathname;
+  if (!pathname.startsWith("/static/")) return false;
+  const rel = path.normalize(decodeURIComponent(pathname.slice(8)));
   if (rel.startsWith("..") || path.isAbsolute(rel)) return false;
   const file = path.join(STATIC_DIR, rel);
   try {

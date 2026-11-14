@@ -55,8 +55,8 @@ function layout(l: Layout): { html: string; text: string } {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
       <tr><td style="padding:0 4px 20px">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td width="28" height="28" bgcolor="${C.accent}" style="width:28px;height:28px;border-radius:8px;background:${C.accent}"></td>
-          <td style="padding-left:10px;font:700 16px/1 ${FONT};letter-spacing:.02em;color:${C.text}">LORN.LOL</td>
+          <td width="32" height="32" style="width:32px;height:32px"><img src="${esc(l.appUrl)}/static/brand/mark-128.png" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0"></td>
+          <td style="padding-left:8px;font:700 16px/1 ${FONT};letter-spacing:.02em;color:${C.text}">LORN.LOL</td>
         </tr></table>
       </td></tr>
       <tr><td bgcolor="${C.card}" style="background:${C.card};border:1px solid ${C.line};border-radius:18px;overflow:hidden">

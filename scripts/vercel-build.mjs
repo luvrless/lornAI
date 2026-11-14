@@ -33,6 +33,7 @@ for (const [file, info] of Object.entries(client.metafile.outputs)) {
   if (/\.(js|css)$/.test(base)) manifest[base.replace(/-[A-Z0-9]{8}(\.\w+)$/, "$1")] = path.relative(STATIC, file);
 }
 fs.writeFileSync(path.join(STATIC, "manifest.json"), JSON.stringify(manifest, null, 2));
+fs.cpSync("web/brand", path.join(STATIC, "brand"), { recursive: true });
 
 // ---- server function (everything bundled except sharp's native module)
 const banner = { js: "import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);" };
@@ -79,6 +80,8 @@ fs.writeFileSync(path.join(OUT, "config.json"), JSON.stringify({
   routes: [
     { src: "^/static/(.+)-[A-Za-z0-9]{8}\\.(js|css)$", headers: { "Cache-Control": "public, max-age=31536000, immutable" }, continue: true },
     { src: "^/static/manifest\\.json$", status: 404 },
+    { src: "^/favicon\\.ico$", dest: "/static/brand/favicon.ico", headers: { "Cache-Control": "public, max-age=86400" } },
+    { src: "^/static/brand/(.*)$", headers: { "Cache-Control": "public, max-age=86400" }, continue: true },
     { handle: "filesystem" },
     { src: "^/(.*)$", dest: "/index" },
   ],

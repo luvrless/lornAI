@@ -35,7 +35,7 @@ export function Sidebar({ nav, open, onNavigate, footer, badgeCounts = {} }: { n
   const { pathname } = useLocation();
   return (
     <aside className={`sidebar ${open ? "open" : ""}`} aria-label="Main navigation">
-      <Link to="/" className="brand"><span className="mark" aria-hidden />LORN.LOL</Link>
+      <Link to="/" className="brand"><img className="mark" src="/static/brand/mark-128.png" alt="" />LORN.LOL</Link>
       {nav.map((g) => (
         <nav key={g.group} aria-label={g.group}>
           <div className="nav-group">{g.group}</div>

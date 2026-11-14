@@ -44,9 +44,14 @@ function csp(app: App, nonce: string) {
   ].join("; ");
 }
 
-function shell(app: App, c: Ctx, o: { title: string; head?: string; body: string; script?: string; css: string[]; status?: number; nonce: string }) {
+/** Site icons; a profile with its own tab icon replaces the favicon lines. */
+const BRAND_ICONS = `<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">`;
+const TOUCH_ICON = `<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">`;
+const ogDefault = (app: App) => `<meta property="og:image" content="${app.cfg.appUrl}/static/brand/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${app.cfg.appUrl}/static/brand/og.png">`;
+
+function shell(app: App, c: Ctx, o: { title: string; head?: string; body: string; script?: string; css: string[]; status?: number; nonce: string; customIcon?: boolean }) {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#030716"><title>${esc(o.title)}</title>${o.head ?? ""}
+<meta name="theme-color" content="#030716"><title>${esc(o.title)}</title>${o.customIcon ? "" : BRAND_ICONS}${TOUCH_ICON}${o.head ?? ""}
 ${o.css.map((h) => `<link rel="stylesheet" href="/static/${h}">`).join("")}
 </head><body>${o.body}${o.script ? `<script type="module" src="/static/${o.script}" nonce="${o.nonce}"></script>` : ""}</body></html>`;
   c.res.setHeader("Content-Security-Policy", csp(app, o.nonce));
@@ -83,7 +88,7 @@ export async function renderPage(app: App, c: Ctx): Promise<boolean> {
     const head = [
       `<meta name="description" content="${esc(desc)}">`, `<link rel="canonical" href="${esc(url)}">`,
       `<meta property="og:type" content="profile"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${esc(url)}"><meta property="og:site_name" content="LORN.LOL">`,
-      og ? `<meta property="og:image" content="${esc(og)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(og)}">` : `<meta name="twitter:card" content="summary">`,
+      og ? `<meta property="og:image" content="${esc(og)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(og)}">` : ogDefault(app),
       `<meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}">`,
       fav ? `<link rel="icon" href="${esc(fav)}">` : "",
       p.indexable ? "" : `<meta name="robots" content="noindex, nofollow">`,
@@ -93,7 +98,7 @@ export async function renderPage(app: App, c: Ctx): Promise<boolean> {
     try { body = renderToString(createElement(ProfileView, { payload: p as any, mode: "public", pageSlug: page })); }
     catch (e) { app.log.error("ssr failed", { err: (e as Error).stack }); }
     shell(app, c, {
-      nonce, title, head, css: [m["profile.css"]].filter(Boolean), script: m["profile.js"],
+      nonce, title, head, customIcon: !!fav, css: [m["profile.css"]].filter(Boolean), script: m["profile.js"],
       body: `<div id="lp-root">${body}</div><script type="application/json" id="lp-data">${embed({ payload: p, page })}</script>`,
     });
     return true;
@@ -105,7 +110,7 @@ export async function renderPage(app: App, c: Ctx): Promise<boolean> {
   const titles: Record<string, string> = { "": "LORN.LOL — your corner of the internet", login: "Log in · LORN.LOL", register: "Create your page · LORN.LOL" };
   shell(app, c, {
     nonce, title: titles[parts[0] ?? ""] ?? "LORN.LOL", css: [m["app.css"]].filter(Boolean), script: m["app.js"],
-    head: `<meta name="description" content="Build an animated profile page with music, badges, widgets and a live editor."><meta property="og:title" content="LORN.LOL"><meta property="og:description" content="Your corner of the internet.">${parts[0] === "admin" || parts[0] === "dashboard" ? `<meta name="robots" content="noindex">` : ""}`,
+    head: `<meta name="description" content="Build an animated profile page with music, badges, widgets and a live editor."><meta property="og:title" content="LORN.LOL"><meta property="og:description" content="Your corner of the internet.">${ogDefault(app)}${parts[0] === "admin" || parts[0] === "dashboard" ? `<meta name="robots" content="noindex">` : ""}`,
     body: `<div id="root"></div><noscript>LORN.LOL needs JavaScript.</noscript>`,
   });
   return true;

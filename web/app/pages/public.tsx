@@ -10,7 +10,7 @@ import { useSession } from "../session.tsx";
 import { ProfileView, type Payload } from "../../profile/ProfileView.tsx";
 import { defaultConfig } from "../../../shared/profile-schema.ts";
 
-function Brand() { return <Link to="/" className="brand" style={{ padding: 0 }}><span className="mark" aria-hidden />LORN.LOL</Link>; }
+function Brand() { return <Link to="/" className="brand" style={{ padding: 0 }}><img className="mark" src="/static/brand/mark-128.png" alt="" />LORN.LOL</Link>; }
 
 /** A real profile rendered by the production renderer — not a screenshot. */
 function useDemoPayload(username: string): Payload {
