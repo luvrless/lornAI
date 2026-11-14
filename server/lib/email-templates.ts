@@ -49,7 +49,7 @@ function layout(l: Layout): { html: string; text: string } {
 <title>${esc(l.heading)}</title>
 </head>
 <body style="margin:0;padding:0;background:${C.bg}" bgcolor="${C.bg}">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${esc(l.preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${esc(l.preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.bg}" style="background:${C.bg}">
   <tr><td align="center" style="padding:40px 16px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
