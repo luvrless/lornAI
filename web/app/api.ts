@@ -23,7 +23,14 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
   }
   if (res.status === 204) return undefined as T;
   const ct = res.headers.get("content-type") ?? "";
-  const data = ct.includes("json") ? await res.json() : await res.text();
+  const isJson = ct.includes("json");
+  const data = isJson ? await res.json().catch(() => null) : await res.text();
+  // Any /api route on a working server answers JSON. HTML or a bare 404/405 means the request hit a
+  // static file host (for example a Pages deployment without the LORN server behind it).
+  if (!isJson) {
+    throw new ApiError(res.status || 503, "server_unreachable",
+      "The LORN.LOL server isn't answering, so sign-up, login and saving don't work right now. The site is only serving its static files. Try again later.");
+  }
   if (!res.ok) {
     const e = (data as any)?.error;
     throw new ApiError(res.status, e?.code ?? "error", e?.message ?? `Request failed (${res.status})`, e?.details);

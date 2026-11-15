@@ -8,53 +8,136 @@ import { Link, navigate, useLocation } from "../router.tsx";
 import { Button, TextField, toast, useDebounced } from "../ui.tsx";
 import { useSession } from "../session.tsx";
 import { ProfileView, type Payload } from "../../profile/ProfileView.tsx";
+import { BADGE_GLYPHS } from "../../profile/icons.tsx";
 import { defaultConfig } from "../../../shared/profile-schema.ts";
 
 function Brand() { return <Link to="/" className="brand" style={{ padding: 0 }}><img className="mark" src="/static/brand/mark-128.png" alt="" />LORN.LOL</Link>; }
 
-/** A real profile rendered by the production renderer — not a screenshot. */
-function useDemoPayload(username: string): Payload {
+/** Looks the hero cycles through — each is a real config rendered by the production renderer. */
+const LOOKS = [
+  { key: "galaxy", label: "Galaxy", effect: "galaxy", colors: ["#1d4ed8", "#38bdf8", "#c4b5fd"], font: "Sora", nameEffect: "decrypt", overlay: "stars", accent: "#4f8cff" },
+  { key: "aurora", label: "Aurora", effect: "aurora", colors: ["#0ea5e9", "#a78bfa", "#22d3ee"], font: "Syne", nameEffect: "wave", overlay: "floating", accent: "#a78bfa" },
+  { key: "plasma", label: "Plasma", effect: "plasma", colors: ["#1e3a8a", "#6366f1", "#ec4899"], font: "Unbounded", nameEffect: "glitch", overlay: "particles", accent: "#ec4899" },
+  { key: "rain", label: "Night rain", effect: "rain", colors: ["#0b1a3a", "#2563eb", "#93c5fd"], font: "Space Grotesk", nameEffect: "typewriter", overlay: "none", accent: "#93c5fd" },
+] as const;
+
+const BADGE_STRIP: [string, string, string][] = [
+  ["flame", "OG", "#fb923c"], ["check", "Verified", "#3b82f6"], ["gem", "Premium", "#c084fc"], ["bug", "Bug Hunter", "#4ade80"],
+  ["snowflake", "Christmas 2026", "#ef4444"], ["trophy", "Winner", "#facc15"], ["gift", "Gifter", "#f59e0b"], ["coins", "Donor", "#22c55e"],
+  ["boost", "Server Booster", "#f472b6"], ["egg", "Easter 2027", "#fda4af"], ["bulb", "Helper", "#fbbf24"], ["party", "The Million", "#38bdf8"],
+];
+
+const EXAMPLE_NAMES = ["jay", "nova", "kai", "luna", "q5", "echo", "mira", "zed"];
+
+function useDemoPayload(username: string, look: (typeof LOOKS)[number]): Payload {
   return useMemo(() => {
     const c = defaultConfig();
     c.identity.displayName = username || "you";
-    c.identity.bio = "Your corner of the internet — animated, yours, live in a minute.";
+    c.identity.bio = "Your corner of the internet. Animated, yours, live in a minute.";
     c.identity.showUid = false; c.identity.showViews = false; c.identity.showJoined = false;
-    c.background.effect = "galaxy"; c.background.effectColors = ["#1d4ed8", "#38bdf8", "#c4b5fd"]; c.background.speed = .6;
-    c.card.width = 380; c.card.tilt3d = true; c.card.glow = 30; c.card.bgOpacity = 40;
-    c.typography.font = "Sora"; c.typography.nameEffect = "decrypt"; c.typography.nameGradient = true;
-    c.effects.overlay = "stars"; c.effects.density = 20;
+    c.background.effect = look.effect as any; c.background.effectColors = [...look.colors]; c.background.speed = .6;
+    c.card.width = 360; c.card.tilt3d = true; c.card.glow = 30; c.card.bgOpacity = 40;
+    c.typography.font = look.font as any; c.typography.nameEffect = look.nameEffect as any; c.typography.nameGradient = true;
+    c.effects.overlay = look.overlay as any; c.effects.density = 20;
     c.links = (["discord", "github", "spotify", "x", "twitch"] as const).map((p, i) => ({ id: `demo${i}xx`, platform: p, url: "https://lorn.lol", title: "", description: "", iconAssetId: null, iconOnly: true, featured: false, visible: true, archived: false, color: null, hover: "lift", startAt: null, endAt: null }));
     c.widgets = [{ id: "democlock1", type: "clock", visible: true, span: 1, config: { timezone: "Europe/Berlin", hour12: false, seconds: true } }];
     return {
       user: { uid: 1, username: username || "you", createdAt: new Date().toISOString(), premium: false, verified: false }, config: c, assets: {}, views: 0, integrations: {}, mode: "draft",
       badges: [
         { id: "d1", key: "og", name: "OG", tooltip: "OG", iconUrl: null, iconPreset: "flame", color: "#fb923c", gradientFrom: null, gradientTo: null, borderColor: null, glow: 30, hover: "lift" },
-        { id: "d2", key: "early", name: "Early Supporter", tooltip: "Early Supporter", iconUrl: null, iconPreset: "heart", color: "#f472b6", gradientFrom: null, gradientTo: null, borderColor: null, glow: 0, hover: "lift" },
+        { id: "d2", key: "verified", name: "Verified", tooltip: "Verified", iconUrl: null, iconPreset: "check", color: "#3b82f6", gradientFrom: null, gradientTo: null, borderColor: null, glow: 0, hover: "lift" },
       ],
     };
-  }, [username]);
+  }, [username, look]);
+}
+
+const reducedMotion = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Types example names into the empty claim field, like someone trying them out. */
+function useTypedPlaceholder(active: boolean) {
+  const [text, setText] = useState("you");
+  useEffect(() => {
+    if (!active || reducedMotion()) { setText("you"); return; }
+    let i = 0, pos = 0, dir = 1, t: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const word = EXAMPLE_NAMES[i % EXAMPLE_NAMES.length];
+      pos += dir;
+      setText(word.slice(0, Math.max(pos, 0)) || "\u200b");
+      if (dir > 0 && pos >= word.length) { dir = -1; t = setTimeout(tick, 1600); return; }
+      if (dir < 0 && pos <= 0) { dir = 1; i++; t = setTimeout(tick, 350); return; }
+      t = setTimeout(tick, dir > 0 ? 120 : 55);
+    };
+    t = setTimeout(tick, 900);
+    return () => clearTimeout(t);
+  }, [active]);
+  return text;
+}
+
+/** Fade elements in once as they enter the viewport. */
+function useReveal() {
+  useEffect(() => {
+    const els = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+    if (reducedMotion() || !("IntersectionObserver" in window)) return;
+    // Only elements still below the fold get hidden, so nothing is ever stuck invisible.
+    els.forEach((e) => { if (e.getBoundingClientRect().top > innerHeight) e.classList.add("pre"); });
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.remove("pre"); io.unobserve(en.target); } }), { threshold: 0.15 });
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
 }
 
 export function Landing() {
   const [name, setName] = useState("");
+  const [focused, setFocused] = useState(false);
   const check = useDebounced(name.trim(), 350);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [lookIdx, setLookIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [swap, setSwap] = useState(false);
   const { me } = useSession();
   useEffect(() => {
     if (!check) { setStatus(null); return; }
     get(`/api/auth/username/${encodeURIComponent(check)}`).then((r) => setStatus(r.available ? { ok: true, msg: `lorn.lol/${check} is available` } : { ok: false, msg: r.reason })).catch((e) => setStatus({ ok: false, msg: e.message }));
   }, [check]);
-  const demo = useDemoPayload(check);
+  // Cycle looks every few seconds unless the visitor is hovering the demo or prefers less motion.
+  const goTo = (i: number) => {
+    if (i === lookIdx) return;
+    setSwap(true);
+    setTimeout(() => { setLookIdx(i); setSwap(false); }, 320);
+  };
+  useEffect(() => {
+    if (paused || reducedMotion()) return;
+    const t = setTimeout(() => goTo((lookIdx + 1) % LOOKS.length), 6500);
+    return () => clearTimeout(t);
+  }, [lookIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
+  const look = LOOKS[lookIdx];
+  const typed = useTypedPlaceholder(!name && !focused);
+  const demo = useDemoPayload(check || (name ? "" : typed.replace("\u200b", "")), look);
+  useReveal();
+  // Soft glow follows the pointer across the hero.
+  const onMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (reducedMotion()) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+    e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+  };
   const claim = () => navigate(`/register${name ? `?username=${encodeURIComponent(name.trim())}` : ""}`);
+  const Glyph = (k: string) => { const I = BADGE_GLYPHS[k] ?? BADGE_GLYPHS.sparkles; return <I aria-hidden />; };
   return (
-    <div className="landing app-bg" style={{ minHeight: "100vh" }}>
+    <div className="landing" style={{ ["--look" as any]: look.accent }}>
+      <div className="landing-glow" aria-hidden />
       <nav><Brand /><div className="row">{me?.user ? <Link className="btn primary" to="/dashboard">Open dashboard</Link> : <><Link className="btn ghost" to="/login">Log in</Link><Link className="btn primary" to="/register">Create your page</Link></>}</div></nav>
-      <section className="hero">
-        <div>
+      <section className="hero" onPointerMove={onMove}>
+        <div className="hero-copy">
           <h1 className="sr">Claim your LORN.LOL page</h1>
           <form className="claim" onSubmit={(e) => { e.preventDefault(); claim(); }}>
             <span className="host">lorn.lol/</span>
-            <input value={name} onChange={(e) => setName(e.target.value.replace(/[^A-Za-z0-9_.]/g, "").slice(0, 12))} placeholder="you" aria-label="Choose your username" maxLength={12} autoComplete="off" spellCheck={false} />
+            <span className="claim-field">
+              <input value={name} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+                onChange={(e) => setName(e.target.value.replace(/[^A-Za-z0-9_.]/g, "").slice(0, 12))}
+                placeholder={focused ? "you" : ""} aria-label="Choose your username" maxLength={12} autoComplete="off" spellCheck={false} />
+              {!name && !focused && <span className="claim-ghost" aria-hidden>{typed}<i className="caret" /></span>}
+            </span>
           </form>
           <div className="claim-status" aria-live="polite">
             {status && <span className="row" style={{ color: status.ok ? "var(--ok)" : "var(--bad)", gap: 6 }}>{status.ok ? <LuCircleCheck /> : <LuCircleAlert />}{status.msg}</span>}
@@ -65,7 +148,27 @@ export function Landing() {
             <Link className="btn lg ghost" to="/login">I have an account</Link>
           </div>
         </div>
-        <div className="hero-demo" aria-label="Live preview of a LORN.LOL profile"><ProfileView payload={demo} mode="preview" /></div>
+        <div className="hero-stage" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
+          <div className={`hero-demo ${swap ? "swap" : ""}`} aria-label={`Live preview of a LORN.LOL profile, ${look.label} look`}>
+            <ProfileView payload={demo} mode="preview" />
+          </div>
+          <div className="looks" role="tablist" aria-label="Example looks">
+            {LOOKS.map((l, i) => (
+              <button key={l.key} role="tab" aria-selected={i === lookIdx} className={i === lookIdx ? "on" : ""} style={{ ["--c" as any]: l.accent }} onClick={() => goTo(i)}>
+                <span className="dot" />{l.label}
+                {i === lookIdx && !paused && <span className="progress" key={lookIdx} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="badge-strip" aria-label="Badges you can earn">
+        <p>Badges people earn here</p>
+        <div className="marquee"><div className="track">
+          {[...BADGE_STRIP, ...BADGE_STRIP].map(([g, n, c], i) => (
+            <span key={i} className="strip-badge" style={{ ["--c" as any]: c }} aria-hidden={i >= BADGE_STRIP.length}>{Glyph(g)}{n}</span>
+          ))}
+        </div></div>
       </section>
       <section className="features">
         {[
@@ -75,7 +178,11 @@ export function Landing() {
           [LuAward, "Badges that mean something", "Earn OG, event and milestone badges, or design your own."],
           [LuChartLine, "Honest analytics", "Views, clicks and referrers from real visitors. Bots are filtered out and IPs are never stored."],
           [LuShieldCheck, "Safe by design", "Two-factor sign-in and Argon2 passwords, and no custom code can run on your page."],
-        ].map(([I, t, d]: any) => <div key={t}><I aria-hidden /><h3>{t}</h3><p>{d}</p></div>)}
+        ].map(([I, t, d]: any, i) => <div key={t} className="feature" data-reveal style={{ ["--i" as any]: i }}><span className="ficon"><I aria-hidden /></span><h3>{t}</h3><p>{d}</p></div>)}
+      </section>
+      <section className="cta-band" data-reveal>
+        <h2>Your name is one click away.</h2>
+        <Button kind="primary" size="lg" onClick={claim}>Claim {check ? `lorn.lol/${check}` : "your name"}</Button>
       </section>
       <footer className="row" style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 40px", color: "var(--dim)", fontSize: 13, justifyContent: "space-between" }}>
         <span>LORN.LOL</span><span className="row"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link></span>
