@@ -1,9 +1,10 @@
 import type { App, Queryable } from "../../app.ts";
+import * as codes from "./codes.ts";
 import { emails } from "../../lib/email-templates.ts";
 import { PgError, asJson } from "../../db/pg.ts";
 import { HttpError, badRequest, conflict, forbidden, unauthorized } from "../../lib/errors.ts";
 import { hashPassword, verifyPassword, needsRehash, burnVerify } from "../../lib/password.ts";
-import { randomToken, sha256, encrypt, decrypt, verifyTotp, base32Encode } from "../../lib/crypto.ts";
+import { randomToken, sha256 } from "../../lib/crypto.ts";
 import { getSetting, queueEmail, securityEvent, notify } from "../platform/service.ts";
 import type { AuthUser } from "../../lib/http.ts";
 import crypto from "node:crypto";
@@ -119,13 +120,13 @@ export async function getUser(db: Queryable, id: string) {
 
 export interface NewSession { token: string; id: string; csrf: string }
 
-export async function createSession(app: App, db: Queryable, userId: string, method: string, ip: string, ua: string, mfaPending = false): Promise<{ token: string; id: string }> {
+export async function createSession(app: App, db: Queryable, userId: string, method: string, ip: string, ua: string, mfaPending = false, mfaMethod: string | null = null): Promise<{ token: string; id: string }> {
   const days = await getSetting<number>(app, "security.session_days", 30);
   const token = randomToken();
   const r = await db.query<{ id: string }>(
-    `INSERT INTO sessions (token_hash, user_id, auth_method, mfa_pending, ip, user_agent, expires_at)
-     VALUES ($1,$2,$3,$4,$5,$6, now() + make_interval(days => $7)) RETURNING id`,
-    [sha256(token), userId, method, mfaPending, ip, ua, days],
+    `INSERT INTO sessions (token_hash, user_id, auth_method, mfa_pending, ip, user_agent, expires_at, mfa_method)
+     VALUES ($1,$2,$3,$4,$5,$6, now() + make_interval(days => $7), $8) RETURNING id`,
+    [sha256(token), userId, method, mfaPending, ip, ua, days, mfaPending ? mfaMethod : null],
   );
   return { token, id: r.rows[0].id };
 }
@@ -133,19 +134,21 @@ export async function createSession(app: App, db: Queryable, userId: string, met
 /** Resolve a cookie token to an active session + live, unbanned user. */
 export async function resolveSessionToken(app: App, token: string) {
   const r = await app.db.query(
-    `SELECT s.id AS sid, s.auth_method, s.mfa_pending, s.last_seen_at, u.*,
+    `SELECT s.id AS sid, s.auth_method, s.mfa_pending, s.mfa_method, s.last_seen_at, u.*,
        EXISTS (SELECT 1 FROM account_bans b WHERE b.user_id = u.id AND b.lifted_at IS NULL AND (b.expires_at IS NULL OR b.expires_at > now())) AS banned,
        EXISTS (SELECT 1 FROM account_locks l WHERE l.user_id = u.id AND l.unlocked_at IS NULL) AS admin_locked
      FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > now() AND u.deleted_at IS NULL`,
-    [sha256(token)],
+     WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > now() AND u.deleted_at IS NULL
+       AND s.last_seen_at > now() - make_interval(days => $2)`,
+    // A session nobody has used for two weeks is over: the owner signs in again (and confirms by email).
+    [sha256(token), await getSetting<number>(app, "security.session_idle_days", 14)],
   );
   const row = r.rows[0];
   if (!row || row.banned || row.admin_locked) return null;
   if (Date.now() - new Date(row.last_seen_at).getTime() > 5 * 60_000) {
     app.db.query("UPDATE sessions SET last_seen_at = now() WHERE id = $1", [row.sid]).catch(() => {});
   }
-  return { sessionId: row.sid as string, authMethod: row.auth_method as string, mfaPending: row.mfa_pending as boolean, user: toAuthUser(row) };
+  return { sessionId: row.sid as string, authMethod: row.auth_method as string, mfaPending: row.mfa_pending as boolean, mfaMethod: (row.mfa_method ?? null) as string | null, user: toAuthUser(row) };
 }
 
 export async function revokeSession(db: Queryable, userId: string, sessionId: string, reason: string) {
@@ -155,6 +158,7 @@ export async function revokeSession(db: Queryable, userId: string, sessionId: st
 }
 
 export async function revokeAllSessions(db: Queryable, userId: string, reason: string, exceptSessionId?: string) {
+  if (!exceptSessionId) await db.query("DELETE FROM trusted_devices WHERE user_id = $1", [userId]); // every browser must confirm by email again
   const r = await db.query(
     "UPDATE sessions SET revoked_at = now(), revoked_reason = $2 WHERE user_id = $1 AND revoked_at IS NULL AND id IS DISTINCT FROM $3",
     [userId, reason, exceptSessionId ?? null],
@@ -172,7 +176,7 @@ export async function listSessions(db: Queryable, userId: string, currentId?: st
 
 // ------------------------------------------------------------------ login
 
-export interface LoginResult { userId: string; session: { token: string; id: string }; mfaRequired: boolean; suspicious: boolean }
+export interface LoginResult { userId: string; session: { token: string; id: string }; mfaRequired: boolean; suspicious: boolean; emailHint?: string; codeStatus?: string }
 
 async function activeRestriction(db: Queryable, userId: string) {
   const ban = (await db.query(
@@ -225,7 +229,7 @@ export async function recordLogin(app: App, userId: string, method: string, ip: 
   return suspicious;
 }
 
-export async function login(app: App, identifier: string, password: string, ip: string, ua: string): Promise<LoginResult> {
+export async function login(app: App, identifier: string, password: string, ip: string, ua: string, trusted: (userId: string) => Promise<boolean> = async () => true): Promise<LoginResult> {
   const id = identifier.trim();
   const user = (await app.db.query(
     `SELECT ${USER_COLS} FROM users WHERE deleted_at IS NULL AND (${id.includes("@") ? "email = $1" : "username_lc = lower($1)"})`, [id])).rows[0];
@@ -270,86 +274,44 @@ export async function login(app: App, identifier: string, password: string, ip: 
     await app.db.query("UPDATE users SET password_hash = $2 WHERE id = $1", [user.id, h]);
   }
 
-  const mfa = !!user.totp_enabled_at;
-  const session = await createSession(app, app.db, user.id, "password", ip, ua, mfa);
-  const suspicious = await recordLogin(app, user.id, "password", ip, ua);
-  return { userId: user.id, session, mfaRequired: mfa, suspicious };
-}
-
-// ------------------------------------------------------------------ 2FA
-
-export async function beginTotpSetup(app: App, userId: string) {
-  const u = await getUser(app.db, userId);
-  if (u.totp_enabled_at) throw conflict("Two-factor authentication is already enabled");
-  const secret = crypto.randomBytes(20);
-  await app.db.query("UPDATE users SET totp_secret_enc = $2 WHERE id = $1", [userId, encrypt(app.cfg.encryptionKey, secret.toString("hex"))]);
-  const b32 = base32Encode(secret);
-  return { secret: b32, otpauthUrl: `otpauth://totp/LORN.LOL:${encodeURIComponent(u.username)}?secret=${b32}&issuer=LORN.LOL&digits=6&period=30` };
-}
-
-async function loadTotp(app: App, userId: string): Promise<Buffer | null> {
-  const r = (await app.db.query("SELECT totp_secret_enc FROM users WHERE id = $1", [userId])).rows[0];
-  if (!r?.totp_secret_enc) return null;
-  return Buffer.from(decrypt(app.cfg.encryptionKey, r.totp_secret_enc), "hex");
-}
-
-function newRecoveryCodes() {
-  return Array.from({ length: 10 }, () => {
-    const s = crypto.randomBytes(5).toString("hex");
-    return `${s.slice(0, 5)}-${s.slice(5)}`;
-  });
-}
-
-export async function enableTotp(app: App, userId: string, code: string) {
-  const secret = await loadTotp(app, userId);
-  if (!secret) throw badRequest("Start two-factor setup first");
-  if (!verifyTotp(secret, code)) throw new HttpError(400, "invalid_code", "That code is not valid");
-  const codes = newRecoveryCodes();
-  await app.db.tx(async (tx) => {
-    const r = await tx.query("UPDATE users SET totp_enabled_at = now() WHERE id = $1 AND totp_enabled_at IS NULL", [userId]);
-    if (!r.rowCount) throw conflict("Two-factor authentication is already enabled");
-    await tx.query("DELETE FROM recovery_codes WHERE user_id = $1", [userId]);
-    for (const c of codes) await tx.query("INSERT INTO recovery_codes (user_id, code_hash) VALUES ($1,$2)", [userId, sha256(c)]);
-    await securityEvent(tx, userId, "mfa.enabled", "info", {});
-  });
-  return { recoveryCodes: codes };
-}
-
-export async function checkSecondFactor(app: App, userId: string, code: string): Promise<"totp" | "recovery" | null> {
-  const secret = await loadTotp(app, userId);
-  if (secret && verifyTotp(secret, code.trim())) return "totp";
-  const r = await app.db.query("UPDATE recovery_codes SET used_at = now() WHERE user_id = $1 AND code_hash = $2 AND used_at IS NULL", [userId, sha256(code.trim().toLowerCase())]);
-  return r.rowCount ? "recovery" : null;
-}
-
-export async function completeMfa(app: App, sessionId: string, userId: string, code: string, ip: string) {
-  const how = await checkSecondFactor(app, userId, code);
-  if (!how) {
-    await securityEvent(app.db, userId, "mfa.failed", "warning", {}, ip);
-    throw new HttpError(400, "invalid_code", "That code is not valid");
+  // A correct password on a browser we haven't confirmed in the last two weeks also needs the emailed code.
+  // (Only when mail can actually be sent and the account has an address, so nobody is locked out.)
+  const needsCode = codes.mailConfigured(app) && !!user.email && !(await trusted(user.id));
+  const session = await createSession(app, app.db, user.id, "password", ip, ua, needsCode, "email");
+  if (needsCode) {
+    const m = await codes.sendLoginCode(app, user, session.id, uaFamily(ua).replace("/", " on "));
+    return { userId: user.id, session, mfaRequired: true, suspicious: false, emailHint: codes.maskEmail(user.email), codeStatus: m.status };
   }
-  await app.db.query("UPDATE sessions SET mfa_pending = false WHERE id = $1 AND user_id = $2", [sessionId, userId]);
-  if (how === "recovery") await securityEvent(app.db, userId, "mfa.recovery_code_used", "warning", {}, ip);
+  const suspicious = await recordLogin(app, user.id, "password", ip, ua);
+  return { userId: user.id, session, mfaRequired: false, suspicious };
 }
 
-export async function disableTotp(app: App, userId: string, password: string | null, code: string) {
+// ------------------------------------------------------------------ emailed sign-in codes
+
+/** Finish a sign-in that was waiting for the emailed code. Proving the inbox also verifies the address. */
+export async function completeMfa(app: App, sessionId: string, userId: string, code: string, ip: string, ua = "") {
+  try { await codes.consumeEmailCode(app, userId, "login", code, sessionId); }
+  catch (e) { await securityEvent(app.db, userId, "login.code_failed", "warning", {}, ip); throw e; }
+  await app.db.query("UPDATE sessions SET mfa_pending = false, mfa_method = NULL WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+  await app.db.query("UPDATE users SET email_verified_at = coalesce(email_verified_at, now()) WHERE id = $1", [userId]);
+  await recordLogin(app, userId, "password", ip, ua);
+}
+
+export async function resendLoginCode(app: App, sessionId: string, userId: string, ua: string) {
   const u = await getUser(app.db, userId);
-  if (!u.totp_enabled_at) throw badRequest("Two-factor authentication is not enabled");
-  if (u.password_hash && !(password && (await verifyPassword(u.password_hash, password)))) throw new HttpError(400, "invalid_password", "Password is incorrect");
-  if (!(await checkSecondFactor(app, userId, code))) throw new HttpError(400, "invalid_code", "That code is not valid");
-  await app.db.query("UPDATE users SET totp_secret_enc = NULL, totp_enabled_at = NULL WHERE id = $1", [userId]);
-  await app.db.query("DELETE FROM recovery_codes WHERE user_id = $1", [userId]);
-  await securityEvent(app.db, userId, "mfa.disabled", "warning", {});
+  if (!u.email) throw badRequest("This account has no email address");
+  const m = await codes.sendLoginCode(app, u, sessionId, uaFamily(ua).replace("/", " on "));
+  return { status: m.status, emailHint: codes.maskEmail(u.email) };
 }
 
-export async function regenerateRecoveryCodes(app: App, userId: string, code: string) {
-  if ((await checkSecondFactor(app, userId, code)) !== "totp") throw new HttpError(400, "invalid_code", "Enter a code from your authenticator app");
-  const codes = newRecoveryCodes();
-  await app.db.tx(async (tx) => {
-    await tx.query("DELETE FROM recovery_codes WHERE user_id = $1", [userId]);
-    for (const c of codes) await tx.query("INSERT INTO recovery_codes (user_id, code_hash) VALUES ($1,$2)", [userId, sha256(c)]);
-  });
-  return { recoveryCodes: codes };
+/** Sign-up confirmation by code (the emailed link keeps working too). */
+export async function verifyEmailByCode(app: App, userId: string, code: string) {
+  const u = await getUser(app.db, userId);
+  if (u.email_verified_at) return { ok: true };
+  await codes.consumeEmailCode(app, userId, "verify_email", code);
+  await app.db.query("UPDATE users SET email_verified_at = now() WHERE id = $1", [userId]);
+  await app.db.query("UPDATE auth_tokens SET used_at = now() WHERE user_id = $1 AND purpose = 'verify_email' AND used_at IS NULL", [userId]);
+  return { ok: true };
 }
 
 // ------------------------------------------------------------------ email tokens
@@ -383,8 +345,9 @@ export async function sendVerificationEmail(app: App, userId: string) {
   if (!u.email) throw badRequest("Add an email address first");
   if (u.email_verified_at) return { alreadyVerified: true, status: "verified" };
   const token = await issueToken(app.db, userId, "verify_email");
-  const m = await queueEmail(app, app.db, { to: u.email, userId, ...emails.verifyEmail(app.cfg.appUrl, { username: u.username, url: `${app.cfg.appUrl}/verify-email?token=${token}` }) });
-  return { alreadyVerified: false, status: m.status };
+  const code = await codes.issueEmailCode(app, app.db, userId, "verify_email");
+  const m = await queueEmail(app, app.db, { to: u.email, userId, ...emails.verifyEmail(app.cfg.appUrl, { username: u.username, code, url: `${app.cfg.appUrl}/verify-email?token=${token}` }) });
+  return { alreadyVerified: false, status: m.status, emailHint: codes.maskEmail(u.email) };
 }
 
 export async function verifyEmail(app: App, token: string) {

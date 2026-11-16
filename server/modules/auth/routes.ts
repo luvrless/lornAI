@@ -7,6 +7,7 @@ import * as oauth from "./oauth.ts";
 import { csrfFor, setSessionCookie, clearSessionCookie } from "./cookies.ts";
 import { isOwnerDiscordId, roleForDiscordId } from "../authz/service.ts";
 import { getSetting } from "../platform/service.ts";
+import * as codes from "./codes.ts";
 
 const username = z.string().trim().min(1).max(12);
 const email = z.string().trim().toLowerCase().email().max(254);
@@ -22,13 +23,15 @@ export function authRoutes(app: App, r: Router) {
     const staff = discord ? await roleForDiscordId(app, app.db, discord.provider_user_id) : null;
     return {
       app: "lorn",
-      user: { ...u, createdAt: row.created_at, hasPassword: row.has_password, twoFactor: !!row.totp_enabled_at },
+      user: { ...u, createdAt: row.created_at, hasPassword: row.has_password },
       connections: links.map((l) => ({ provider: l.provider, providerUserId: l.provider_user_id, username: l.provider_username, avatar: l.provider_avatar, linkedAt: l.linked_at })),
-      // The admin panel link is shown only to the owner and owner-appointed admins.
-      // Staff (and everyone else) get no hint that the panel exists.
-      adminPanel: staff?.role === "OWNER" || staff?.role === "ADMIN",
-      staffRole: staff?.role === "OWNER" || staff?.role === "ADMIN" ? staff.role : null,
+      // The admin panel link exists only for the owner and the admins and staff the owner appointed
+      // (matched by linked Discord ID). Everyone else gets no hint that the panel exists.
+      adminPanel: !!staff,
+      staffRole: staff?.role ?? null,
       mfaPending: c.session.mfaPending,
+      mfaMethod: c.session.mfaPending ? "email" : null,
+      emailHint: c.session.mfaPending && u.email ? codes.maskEmail(u.email) : undefined,
       csrf: c.session.csrf,
     };
   };
@@ -53,23 +56,35 @@ export function authRoutes(app: App, r: Router) {
     const s = await auth.createSession(app, app.db, user.id, "password", c.ip, c.ua);
     await auth.recordLogin(app, user.id, "password", c.ip, c.ua);
     setSessionCookie(app, c, s.token);
+    await codes.trustDevice(app, c, user.id); // the browser that created the account
     const v = await auth.sendVerificationEmail(app, user.id);
-    return { user: auth.toAuthUser(user), csrf: csrfFor(app, s.id), verificationEmail: v.status };
+    return { user: auth.toAuthUser(user), csrf: csrfFor(app, s.id), verificationEmail: v.status, emailHint: (v as any).emailHint };
   }, { rate: { name: "register", rule: RULES.register } });
 
   r.post("/api/auth/login", async (c) => {
     const b = await c.body(z.object({ identifier: z.string().trim().min(1).max(254), password }));
-    const res = await auth.login(app, b.identifier, b.password, c.ip, c.ua);
+    const res = await auth.login(app, b.identifier, b.password, c.ip, c.ua, (userId) => codes.isTrustedDevice(app, c, userId));
     setSessionCookie(app, c, res.session.token);
-    return { mfaRequired: res.mfaRequired, csrf: csrfFor(app, res.session.id) };
+    return { mfaRequired: res.mfaRequired, method: res.mfaRequired ? "email" : undefined, emailHint: res.emailHint, codeStatus: res.codeStatus, csrf: csrfFor(app, res.session.id) };
   }, { rate: { name: "login", rule: RULES.auth }, maintenanceExempt: true });
 
   r.post("/api/auth/2fa/verify", async (c) => {
     const b = await c.body(z.object({ code: z.string().trim().min(6).max(16) }));
     if (!c.session!.mfaPending) return { ok: true };
-    await auth.completeMfa(app, c.session!.id, c.user!.id, b.code, c.ip);
+    await auth.completeMfa(app, c.session!.id, c.user!.id, b.code, c.ip, c.ua);
+    await codes.trustDevice(app, c, c.user!.id);
     return { ok: true };
   }, { auth: "required", allowMfaPending: true, rate: { name: "mfa", rule: RULES.auth, by: "user" }, maintenanceExempt: true });
+
+  r.post("/api/auth/2fa/resend", async (c) => {
+    if (!c.session!.mfaPending) return { status: "not_needed" };
+    return auth.resendLoginCode(app, c.session!.id, c.user!.id, c.ua);
+  }, { auth: "required", allowMfaPending: true, rate: { name: "codemail", rule: RULES.codeSend, by: "user" }, maintenanceExempt: true });
+
+  r.post("/api/auth/verify-email-code", async (c) => {
+    const b = await c.body(z.object({ code: z.string().trim().min(6).max(12) }));
+    return auth.verifyEmailByCode(app, c.user!.id, b.code);
+  }, { auth: "required", rate: { name: "verifycode", rule: RULES.auth, by: "user" } });
 
   r.post("/api/auth/logout", async (c) => {
     if (c.session) await auth.revokeSession(app.db, c.user!.id, c.session.id, "logout");
@@ -82,7 +97,7 @@ export function authRoutes(app: App, r: Router) {
   }, { rate: { name: "token", rule: RULES.auth } });
 
   r.post("/api/auth/resend-verification", async (c) => auth.sendVerificationEmail(app, c.user!.id),
-    { auth: "required", rate: { name: "verifymail", rule: RULES.emailSend, by: "user" } });
+    { auth: "required", rate: { name: "verifymail", rule: RULES.codeSend, by: "user" } });
 
   r.post("/api/auth/forgot-password", async (c) => {
     const b = await c.body(z.object({ identifier: z.string().trim().min(1).max(254) }));
@@ -153,21 +168,6 @@ export function authRoutes(app: App, r: Router) {
     const b = await c.body(z.object({ email, password: z.string().max(256).nullable().optional() }));
     return auth.requestEmailChange(app, c.user!.id, b.password ?? null, b.email);
   }, { auth: "required", rate: { name: "emailchange", rule: RULES.emailSend, by: "user" } });
-
-  r.post("/api/account/2fa/setup", async (c) => auth.beginTotpSetup(app, c.user!.id), { auth: "required" });
-  r.post("/api/account/2fa/enable", async (c) => {
-    const b = await c.body(z.object({ code: z.string().trim().length(6) }));
-    return auth.enableTotp(app, c.user!.id, b.code);
-  }, { auth: "required", rate: { name: "mfa", rule: RULES.auth, by: "user" } });
-  r.post("/api/account/2fa/disable", async (c) => {
-    const b = await c.body(z.object({ password: z.string().max(256).nullable().optional(), code: z.string().trim().min(6).max(16) }));
-    await auth.disableTotp(app, c.user!.id, b.password ?? null, b.code);
-    return { ok: true };
-  }, { auth: "required", rate: { name: "mfa", rule: RULES.auth, by: "user" } });
-  r.post("/api/account/2fa/recovery-codes", async (c) => {
-    const b = await c.body(z.object({ code: z.string().trim().length(6) }));
-    return auth.regenerateRecoveryCodes(app, c.user!.id, b.code);
-  }, { auth: "required", rate: { name: "mfa", rule: RULES.auth, by: "user" } });
 
   r.delete("/api/account/connections/:provider", async (c) => {
     const p = provider.parse(c.params.provider);

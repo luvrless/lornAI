@@ -2,7 +2,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { startHarness, Harness, Client, lastEmailToken } from "./helpers.ts";
-import { totp, base32Decode } from "../server/lib/crypto.ts";
 import { closeHashPool } from "../server/lib/password.ts";
 
 let h: Harness;
@@ -130,30 +129,6 @@ test("6: password recovery resets the password and revokes every session", async
   assert.equal((await new Client(h.base).post("/api/auth/login", { identifier: "conc5", password: PW })).status, 401);
   assert.equal((await new Client(h.base).post("/api/auth/login", { identifier: "conc5", password: "Brand-New-Pass-9" })).status, 200);
   assert.equal((await anon.post("/api/auth/reset-password", { token, password: "Another-Pass-10" })).body.error.code, "invalid_token");
-});
-
-test("two-factor: setup, enforced at login, recovery codes are single-use", async () => {
-  const c = new Client(h.base);
-  await c.post("/api/auth/login", { identifier: "conc6", password: PW });
-  const setup = await c.post("/api/account/2fa/setup");
-  const secret = base32Decode(setup.body.secret);
-  assert.equal((await c.post("/api/account/2fa/enable", { code: "000000" })).body.error.code, "invalid_code");
-  const en = await c.post("/api/account/2fa/enable", { code: totp(secret) });
-  assert.equal(en.body.recoveryCodes.length, 10);
-
-  const d = new Client(h.base);
-  const login = await d.post("/api/auth/login", { identifier: "conc6", password: PW });
-  assert.equal(login.body.mfaRequired, true);
-  assert.equal((await d.get("/api/account/sessions")).body.error.code, "mfa_required");
-  assert.equal((await d.post("/api/auth/2fa/verify", { code: totp(secret) })).status, 200);
-  assert.equal((await d.get("/api/account/sessions")).status, 200);
-
-  const e = new Client(h.base);
-  await e.post("/api/auth/login", { identifier: "conc6", password: PW });
-  assert.equal((await e.post("/api/auth/2fa/verify", { code: en.body.recoveryCodes[0] })).status, 200);
-  const f = new Client(h.base);
-  await f.post("/api/auth/login", { identifier: "conc6", password: PW });
-  assert.equal((await f.post("/api/auth/2fa/verify", { code: en.body.recoveryCodes[0] })).body.error.code, "invalid_code");
 });
 
 test("new-device sign-in is flagged and the user is notified", async () => {

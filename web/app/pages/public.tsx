@@ -1,8 +1,8 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 /** Landing, authentication and legal pages. */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState , useRef } from "react";
 import { SiDiscord, SiGoogle } from "react-icons/si";
-import { LuCircleCheck, LuCircleAlert, LuEye, LuEyeOff, LuLayers, LuMusic, LuChartLine, LuAward, LuPalette, LuShieldCheck } from "react-icons/lu";
+import { LuAward, LuChartLine, LuChevronDown, LuCircleAlert, LuCircleCheck, LuEye, LuEyeOff, LuLayers, LuMenu, LuMusic, LuPalette, LuShieldCheck } from "react-icons/lu";
 import { get, post, ApiError } from "../api.ts";
 import { Link, navigate, useLocation } from "../router.tsx";
 import { Button, TextField, toast, useDebounced } from "../ui.tsx";
@@ -43,10 +43,7 @@ function useDemoPayload(username: string, look: (typeof LOOKS)[number]): Payload
     c.widgets = [{ id: "democlock1", type: "clock", visible: true, span: 1, config: { timezone: "Europe/Berlin", hour12: false, seconds: true } }];
     return {
       user: { uid: 1, username: username || "you", createdAt: new Date().toISOString(), premium: false, verified: false }, config: c, assets: {}, views: 0, integrations: {}, mode: "draft",
-      badges: [
-        { id: "d1", key: "og", name: "OG", tooltip: "OG", iconUrl: null, iconPreset: "flame", color: "#fb923c", gradientFrom: null, gradientTo: null, borderColor: null, glow: 30, hover: "lift" },
-        { id: "d2", key: "verified", name: "Verified", tooltip: "Verified", iconUrl: null, iconPreset: "check", color: "#3b82f6", gradientFrom: null, gradientTo: null, borderColor: null, glow: 0, hover: "lift" },
-      ],
+      badges: [],
     };
   }, [username, look]);
 }
@@ -118,17 +115,34 @@ function usePlatformStats() {
 }
 const compact = (n: number) => new Intl.NumberFormat("en", { notation: n >= 10000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(n);
 
+const money = (cents: number, currency: string) => new Intl.NumberFormat("en", { style: "currency", currency: currency.toUpperCase(), minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
+
+const FAQ: [string, string][] = [
+  ["What is LORN.LOL?", "A place to build one page that holds everything about you: links, music, badges, widgets and a look you design yourself. Your page lives at lorn.lol/yourname."],
+  ["Is it really free?", "Yes. Links, widgets, effects, music players and the full editor are free with no card. Premium adds extras for people who want them."],
+  ["What do visitors see before I've designed anything?", "A clean starter card with your name, join date, view count and UID. Your design replaces it the moment you publish."],
+  ["How much can I change?", "Background effects or video, the card, fonts, cursor, entry screen, layout, pages and widgets. The preview next to the editor is the real renderer, so what you see is what goes live."],
+  ["How do I sign in?", "With Discord, Google or email and password. On a browser we haven't seen, we email a 6-digit code after your password. You can connect Discord later in settings."],
+  ["Is it safe?", "Passwords are hashed with Argon2, sessions end after two weeks of inactivity, and no custom code can run on a page. Analytics never store visitor IP addresses."],
+];
+
 export function Landing() {
   const [name, setName] = useState("");
   const [focused, setFocused] = useState(false);
   const nameCheck = useUsernameCheck(name);
   const check = nameCheck.status === "idle" ? "" : nameCheck.name;
   const stats = usePlatformStats();
+  const [plans, setPlans] = useState<{ premium: { priceCents: number; currency: string; billing: string } | null } | null>(null);
+  const [showcase, setShowcase] = useState<{ username: string; name: string; bio: string; views: number; colors: string[] }[]>([]);
   const [lookIdx, setLookIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const [swap, setSwap] = useState(false);
+  const [menu, setMenu] = useState(false);
   const { me } = useSession();
-  // Cycle looks every few seconds unless the visitor is hovering the demo or prefers less motion.
+  useEffect(() => {
+    get("/api/public/plans").then((r) => r && setPlans(r)).catch(() => {});
+    get("/api/public/showcase").then((r) => Array.isArray(r?.profiles) && setShowcase(r.profiles)).catch(() => {});
+  }, []);
   const goTo = (i: number) => {
     if (i === lookIdx) return;
     setSwap(true);
@@ -143,94 +157,148 @@ export function Landing() {
   const typed = useTypedPlaceholder(!name && !focused);
   const demo = useDemoPayload(check || (name ? "" : typed.replace("\u200b", "")), look);
   useReveal();
-  // Soft glow follows the pointer across the hero.
-  const onMove = (e: React.PointerEvent<HTMLElement>) => {
-    if (reducedMotion()) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
-    e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
-  };
   const claim = () => navigate(`/register${name ? `?username=${encodeURIComponent(name.trim())}` : ""}`);
   const Glyph = (k: string) => { const I = BADGE_GLYPHS[k] ?? BADGE_GLYPHS.sparkles; return <I aria-hidden />; };
+  const shownName = check || "you";
+  const premium = plans?.premium;
   return (
-    <div className="landing" style={{ ["--look" as any]: look.accent }}>
-      <div className="landing-glow" aria-hidden />
-      <nav><Brand /><div className="row">{me?.user ? <Link className="btn primary" to="/dashboard">Open dashboard</Link> : <><Link className="btn ghost" to="/login">Log in</Link><Link className="btn primary" to="/register">Create your page</Link></>}</div></nav>
-      <section className="hero" onPointerMove={onMove}>
-        <div className="hero-copy">
+    <div className="landing lx" style={{ ["--look" as any]: look.accent }}>
+      <div className="lx-bg" aria-hidden><i /><i /><i /></div>
+      <header className="lx-nav">
+        <Brand />
+        <nav className={menu ? "open" : ""} aria-label="Sections" onClick={() => setMenu(false)}>
+          <a href="#features">Features</a><a href="#share">Sharing</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
+        </nav>
+        <div className="row lx-nav-cta">
+          {me?.user ? <Link className="btn primary pill" to="/dashboard">Open dashboard</Link> : <><Link className="btn ghost pill" to="/login">Login</Link><Link className="btn primary pill" to="/register">Get started</Link></>}
+          <button className="btn icon pill lx-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)}><LuMenu /></button>
+        </div>
+      </header>
+
+      <section className="lx-hero">
+        <div className="lx-hero-copy">
           {stats && stats.members > 0 && <div className="live-pill"><i />{compact(stats.members)} {stats.members === 1 ? "page" : "pages"} claimed</div>}
-          <h1 className="hero-title">One link that looks like you.</h1>
-          <form className="claim" onSubmit={(e) => { e.preventDefault(); claim(); }}>
+          <h1>Not a template.<br />A page that's <em>yours</em>.</h1>
+          <p className="lede">Build a profile that looks and sounds like you. Deeply customizable, quick to set up, and free.</p>
+          <form className="lx-claim" onSubmit={(e) => { e.preventDefault(); claim(); }}>
             <span className="host">lorn.lol/</span>
             <span className="claim-field">
               <input value={name} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
                 onChange={(e) => setName(e.target.value.replace(/[^A-Za-z0-9_.]/g, "").slice(0, 12))}
-                placeholder={focused ? "you" : ""} aria-label="Choose your username" maxLength={12} autoComplete="off" spellCheck={false} />
+                placeholder={focused ? "yourname" : ""} aria-label="Choose your username" maxLength={12} autoComplete="off" spellCheck={false} />
               {!name && !focused && <span className="claim-ghost" aria-hidden>{typed}<i className="caret" /></span>}
             </span>
+            <button className="btn primary pill" type="submit" disabled={nameCheck.status === "taken"}>Claim</button>
           </form>
-          <div className="claim-status" aria-live="polite">
-            <NameStatus c={nameCheck} />
-          </div>
-          <p className="lede">A profile page you can actually make your own: shader backgrounds, video, music, badges, widgets and a live editor that shows exactly what visitors will see.</p>
-          <div className="row" style={{ marginTop: 28 }}>
-            <Button kind="primary" size="lg" onClick={claim} disabled={nameCheck.status === "taken"}>Claim {check ? `lorn.lol/${check}` : "your name"}</Button>
-            <Link className="btn lg ghost" to="/login">I have an account</Link>
-          </div>
+          <div className="claim-status" aria-live="polite"><NameStatus c={nameCheck} /></div>
+          <ul className="lx-ticks"><li><LuCircleCheck />Free forever</li><li><LuCircleCheck />No card required</li><li><LuCircleCheck />Live in a minute</li></ul>
         </div>
-        <div className="hero-stage" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
-          <div className={`hero-demo ${swap ? "swap" : ""}`} aria-label={`Live preview of a LORN.LOL profile, ${look.label} look`}>
-            <ProfileView payload={demo} mode="preview" />
+        <div className="lx-phone-wrap" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
+          <div className="lx-phone">
+            <span className="lx-island" aria-hidden />
+            <div className={`hero-demo ${swap ? "swap" : ""}`} aria-label={`Live preview of a LORN.LOL profile, ${look.label} look`}><ProfileView payload={demo} mode="preview" /></div>
           </div>
           <div className="looks" role="tablist" aria-label="Example looks">
             {LOOKS.map((l, i) => (
               <button key={l.key} role="tab" aria-selected={i === lookIdx} className={i === lookIdx ? "on" : ""} style={{ ["--c" as any]: l.accent }} onClick={() => goTo(i)}>
-                <span className="dot" />{l.label}
-                {i === lookIdx && !paused && <span className="progress" key={lookIdx} />}
+                <span className="dot" />{l.label}{i === lookIdx && !paused && <span className="progress" key={lookIdx} />}
               </button>
             ))}
           </div>
         </div>
       </section>
+
       <section className="badge-strip" aria-label="Badges you can earn">
-        <p>Badges people earn here</p>
         <div className="marquee"><div className="track">
-          {[...BADGE_STRIP, ...BADGE_STRIP].map(([g, n, c], i) => (
-            <span key={i} className="strip-badge" style={{ ["--c" as any]: c }} aria-hidden={i >= BADGE_STRIP.length}>{Glyph(g)}{n}</span>
-          ))}
+          {[...BADGE_STRIP, ...BADGE_STRIP].map(([g, n, c], i) => <span key={i} className="strip-badge" style={{ ["--c" as any]: c }} aria-hidden={i >= BADGE_STRIP.length}>{Glyph(g)}{n}</span>)}
         </div></div>
       </section>
-      {stats && stats.members > 0 && (
-        <section className="totals" aria-label="LORN.LOL in numbers">
-          <div><b>{compact(stats.members)}</b><span>members</span></div>
-          <div><b>{compact(stats.live)}</b><span>custom pages live</span></div>
-          <div><b>{compact(stats.views)}</b><span>profile views counted</span></div>
+
+      {showcase.length >= 3 && (
+        <section className="lx-sec" id="community">
+          <p className="lx-kicker">Made by the community</p>
+          <h2>See what people built</h2>
+          <div className="lx-show">
+            {showcase.map((p) => (
+              <a key={p.username} className="glass lx-show-card" href={`/${p.username}`} aria-label={`View ${p.name}'s profile`}>
+                <span className="swatch" style={{ background: p.colors.length >= 2 ? `linear-gradient(135deg, ${p.colors.join(", ")})` : undefined }} />
+                <b>{p.name}</b><span className="dim">lorn.lol/{p.username}</span>
+                <span className="small muted">{compact(p.views)} {p.views === 1 ? "view" : "views"}</span>
+              </a>
+            ))}
+          </div>
         </section>
       )}
-      <section className="steps" aria-label="How it works">
-        <h2>From name to live page in three steps</h2>
-        <ol>
-          <li data-reveal style={{ ["--i" as any]: 0 }}><span className="n">1</span><h3>Claim your name</h3><p>Pick a username. Your page exists straight away as a clean card with your name, join date, views and UID.</p></li>
-          <li data-reveal style={{ ["--i" as any]: 1 }}><span className="n">2</span><h3>Design it live</h3><p>Change the background, card, fonts, links, music and widgets while a real preview updates next to you.</p></li>
-          <li data-reveal style={{ ["--i" as any]: 2 }}><span className="n">3</span><h3>Publish when it's ready</h3><p>Nothing you're working on is public until you publish. Every version is kept so you can go back.</p></li>
-        </ol>
+
+      <section className="lx-sec" id="features">
+        <p className="lx-kicker">Everything in one editor</p>
+        <h2>Change anything. See it instantly.</h2>
+        <div className="lx-bento">
+          <div className="glass b-wide" data-reveal><span className="ficon"><LuPalette aria-hidden /></span><h3>A real live editor</h3><p>Backgrounds, card, type, cursor and animations with undo, autosave and version history. The preview is the same renderer visitors get.</p>
+            <div className="b-swatches" aria-hidden>{LOOKS.map((l) => <i key={l.key} style={{ background: `linear-gradient(135deg, ${l.colors.join(", ")})` }} />)}</div></div>
+          <div className="glass" data-reveal><span className="ficon"><LuMusic aria-hidden /></span><h3>Music that plays</h3><p>Upload tracks, add timed lyrics and choose from seven player styles.</p></div>
+          <div className="glass" data-reveal><span className="ficon"><LuLayers aria-hidden /></span><h3>Pages and widgets</h3><p>GitHub, Roblox, Steam, clocks, galleries and more, split across pages.</p></div>
+          <div className="glass" data-reveal><span className="ficon"><LuAward aria-hidden /></span><h3>Badges that mean something</h3><p>Earn OG, event and milestone badges, or design your own.</p></div>
+          <div className="glass" data-reveal><span className="ficon"><LuChartLine aria-hidden /></span><h3>Honest analytics</h3><p>Views, clicks and referrers from real visitors. Bots are filtered and IPs never stored.</p></div>
+          <div className="glass b-wide" data-reveal><span className="ficon"><LuShieldCheck aria-hidden /></span><h3>Locked down by default</h3><p>Emailed sign-in codes on new browsers, automatic sign-out after two weeks away, Argon2 passwords, and no custom code on any page.</p></div>
+        </div>
       </section>
-      <section className="features">
-        {[
-          [LuPalette, "A real editor", "Backgrounds, card, type, cursor and animations, with undo, autosave and version history."],
-          [LuLayers, "Pages and widgets", "Split your profile into pages and fill them with GitHub, Roblox, Steam, clocks, galleries and more."],
-          [LuMusic, "Music that plays", "Upload tracks, add timed lyrics, and choose from seven player styles."],
-          [LuAward, "Badges that mean something", "Earn OG, event and milestone badges, or design your own."],
-          [LuChartLine, "Honest analytics", "Views, clicks and referrers from real visitors. Bots are filtered out and IPs are never stored."],
-          [LuShieldCheck, "Safe by design", "Two-factor sign-in and Argon2 passwords, and no custom code can run on your page."],
-        ].map(([I, t, d]: any, i) => <div key={t} className="feature" data-reveal style={{ ["--i" as any]: i }}><span className="ficon"><I aria-hidden /></span><h3>{t}</h3><p>{d}</p></div>)}
+
+      <section className="lx-sec lx-share" id="share">
+        <div>
+          <p className="lx-kicker">Made to be shared</p>
+          <h2>One link for your bio, your server and your friends</h2>
+          <p className="lede">Paste your link anywhere. It unfurls with your name, bio and banner, and opens to the page you designed.</p>
+          <ol className="lx-steps">
+            <li><b>Claim your name</b><span>Your starter card is public right away.</span></li>
+            <li><b>Design it live</b><span>Nothing changes for visitors until you publish.</span></li>
+            <li><b>Share the link</b><span>Every version is kept so you can roll back.</span></li>
+          </ol>
+        </div>
+        <div className="glass lx-chat" aria-hidden data-reveal>
+          <div className="msg"><span className="av" /><div><b>{shownName}</b><span className="dim"> just now</span><p>new page is up</p>
+            <div className="embed"><span className="site">LORN.LOL</span><b>{shownName} (@{shownName})</b><span>Your corner of the internet.</span><i style={{ background: `linear-gradient(120deg, ${look.colors.join(", ")})` }} /><span className="url">lorn.lol/{shownName}</span></div>
+          </div></div>
+        </div>
       </section>
-      <section className="cta-band" data-reveal>
-        <h2>Your name is one click away.</h2>
-        <Button kind="primary" size="lg" onClick={claim}>Claim {check ? `lorn.lol/${check}` : "your name"}</Button>
+
+      <section className="lx-sec" id="pricing">
+        <p className="lx-kicker">Free and Premium</p>
+        <h2>Start free. Upgrade only if you want to.</h2>
+        <div className="lx-plans">
+          <div className="glass plan">
+            <h3>Free</h3><div className="price"><b>{money(0, premium?.currency ?? "usd")}</b><span>forever</span></div>
+            <ul><li><LuCircleCheck />Links, pages and widgets</li><li><LuCircleCheck />Background effects and animations</li><li><LuCircleCheck />Music players with lyrics</li><li><LuCircleCheck />Analytics and badges</li></ul>
+            <Button size="lg" onClick={claim}>Create your profile</Button>
+          </div>
+          <div className="glass plan hot">
+            <span className="chip">Premium</span>
+            <h3>Premium</h3>
+            {premium ? <div className="price"><b>{money(premium.priceCents, premium.currency)}</b><span>{premium.billing === "monthly" ? "per month" : "one-time"}</span></div> : <div className="price"><span>Price shown at checkout</span></div>}
+            <ul><li><LuCircleCheck />Everything in Free</li><li><LuCircleCheck />Custom fonts and cursor images</li><li><LuCircleCheck />More pages and music tracks</li><li><LuCircleCheck />Bigger media storage and the Premium badge</li></ul>
+            <Link className="btn primary lg" to={me?.user ? "/dashboard/premium" : "/register"}>Get Premium</Link>
+          </div>
+        </div>
       </section>
-      <footer className="row" style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 28px 40px", color: "var(--dim)", fontSize: 13, justifyContent: "space-between" }}>
-        <span>LORN.LOL</span><span className="row"><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link></span>
+
+      <section className="lx-sec" id="faq">
+        <p className="lx-kicker">Questions and answers</p>
+        <h2>Good to know</h2>
+        <div className="lx-faq">{FAQ.map(([q, a]) => <details key={q} className="glass"><summary>{q}<LuChevronDown aria-hidden /></summary><p>{a}</p></details>)}</div>
+      </section>
+
+      <section className="lx-final glass" data-reveal>
+        <h2>Claim your username</h2>
+        <p className="muted">Your name is one click away.</p>
+        <div className="row" style={{ justifyContent: "center" }}><Button kind="primary" size="lg" onClick={claim}>Register for free</Button><a className="btn lg" href="#features">Explore features</a></div>
+      </section>
+
+      <footer className="lx-foot">
+        <div><Brand /><p className="muted small">One page. Entirely yours.</p></div>
+        <div><h4>Explore</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+        <div><h4>Account</h4><Link to="/register">Sign up</Link><Link to="/login">Login</Link><Link to="/forgot-password">Reset password</Link></div>
+        <div><h4>LORN.LOL</h4><Link to="/terms">Terms</Link><Link to="/privacy">Privacy</Link></div>
+        <p className="copy dim small">© {new Date().getFullYear()} LORN.LOL</p>
       </footer>
     </div>
   );
@@ -354,10 +422,10 @@ export function Register() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr(null); setErrs({});
     try {
-      await post("/api/auth/register", f);
+      const r = await post("/api/auth/register", f);
       await refresh();
       toast("Welcome to LORN.LOL", "ok");
-      navigate("/dashboard");
+      navigate(r?.verificationEmail === "pending" ? "/verify" : "/dashboard");
     } catch (x) {
       const a = x as ApiError;
       setErrs(a.fieldErrors()); if (!Object.keys(a.fieldErrors()).length) setErr(a.message);
@@ -385,25 +453,103 @@ export function Register() {
   );
 }
 
+/** Six boxes that behave like one field: typing, backspace, arrows and pasting the whole code all work. */
+function CodeInput({ value, onChange, onComplete }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void }) {
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const set = (v: string, focus: number) => {
+    const clean = v.replace(/\D/g, "").slice(0, 6);
+    onChange(clean);
+    refs.current[Math.min(focus, 5)]?.focus();
+    if (clean.length === 6) onComplete?.(clean);
+  };
+  return (
+    <div className="code-input" role="group" aria-label="6-digit code">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <input key={i} ref={(el) => { refs.current[i] = el; }} value={value[i] ?? ""} inputMode="numeric" autoComplete={i === 0 ? "one-time-code" : "off"} maxLength={6} autoFocus={i === 0} aria-label={`Digit ${i + 1}`}
+          onChange={(e) => { const d = e.target.value.replace(/\D/g, ""); if (d.length > 1) set(d, d.length); else set(value.slice(0, i) + d + value.slice(i + 1), d ? i + 1 : i); }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" && !value[i] && i > 0) { e.preventDefault(); set(value.slice(0, i - 1), i - 1); }
+            else if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
+            else if (e.key === "ArrowRight" && i < 5) refs.current[i + 1]?.focus();
+          }}
+          onPaste={(e) => { e.preventDefault(); const d = e.clipboardData.getData("text").replace(/\D/g, ""); set(d, d.length); }}
+          onFocus={(e) => e.target.select()} />
+      ))}
+    </div>
+  );
+}
+
+function ResendCode({ path, onSent }: { path: string; onSent?: (r: any) => void }) {
+  const [wait, setWait] = useState(30);
+  const [note, setNote] = useState<{ ok: boolean; t: string } | null>(null);
+  useEffect(() => { if (wait <= 0) return; const t = setTimeout(() => setWait((w) => w - 1), 1000); return () => clearTimeout(t); }, [wait]);
+  const send = async () => {
+    setNote(null);
+    try {
+      const r = await post(path);
+      if (r?.status === "not_configured") setNote({ ok: false, t: "This server can't send email yet, so no code went out. The site owner needs to add the Resend key." });
+      else { setNote({ ok: true, t: "New code sent. The old one no longer works." }); onSent?.(r); }
+      setWait(30);
+    } catch (x) { setNote({ ok: false, t: (x as Error).message }); }
+  };
+  return (
+    <div className="resend small">
+      {wait > 0 ? <span className="dim">Didn't get it? You can resend in {wait}s</span> : <button type="button" className="linklike" onClick={send}>Send a new code</button>}
+      {note && <div className={`banner small ${note.ok ? "ok" : "bad"}`} role="status">{note.t}</div>}
+    </div>
+  );
+}
+
+/** Second step of sign-in: the code we emailed after a correct password on an unconfirmed browser. */
 export function TwoFactor() {
-  const { refresh } = useSession();
+  const { refresh, me, logout } = useSession();
   const { search } = useLocation();
   const [code, setCode] = useState(""); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setBusy(true); setErr(null);
+  const submit = async (v = code) => {
+    if (v.length < 6 || busy) return;
+    setBusy(true); setErr(null);
     try {
-      await post("/api/auth/2fa/verify", { code });
+      await post("/api/auth/2fa/verify", { code: v });
       await refresh();
       const next = search.get("next") ?? "/dashboard";
       if (next.startsWith("/api/")) location.href = next; else navigate(next);
-    } catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
+    } catch (x) { setErr((x as Error).message); setCode(""); } finally { setBusy(false); }
+  };
+  useEffect(() => { if (me && !me.user) navigate("/login", true); else if (me?.user && !me.mfaPending) navigate(search.get("next") ?? "/dashboard", true); }, [me]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <AuthFrame title="Check your email" sub={<>We sent a 6-digit code to <b>{(me as any)?.emailHint ?? "your email"}</b>. Enter it to finish signing in.</>}>
+      <form className="col" style={{ gap: 16 }} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <CodeInput value={code} onChange={setCode} onComplete={submit} />
+        {err && <div className="banner bad small" role="alert">{err}</div>}
+        <Button kind="primary" size="lg" busy={busy} type="submit" disabled={code.length < 6}>Finish signing in</Button>
+        <ResendCode path="/api/auth/2fa/resend" />
+        <button type="button" className="linklike small" onClick={async () => { await logout(); navigate("/login"); }}>Use a different account</button>
+      </form>
+      <p className="small dim" style={{ marginTop: 18 }}>We ask for a code on browsers we haven't confirmed, and again after two weeks away.</p>
+    </AuthFrame>
+  );
+}
+
+/** Last step of sign-up: confirm the email address with the code we just sent. */
+export function VerifyCode() {
+  const { refresh, me } = useSession();
+  const [code, setCode] = useState(""); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  useEffect(() => { if (me && !me.user) navigate("/login", true); else if (me?.user?.emailVerified) navigate("/dashboard", true); }, [me]);
+  const submit = async (v = code) => {
+    if (v.length < 6 || busy) return;
+    setBusy(true); setErr(null);
+    try { await post("/api/auth/verify-email-code", { code: v }); await refresh(); toast("Email confirmed", "ok"); navigate("/dashboard"); }
+    catch (x) { setErr((x as Error).message); setCode(""); } finally { setBusy(false); }
   };
   return (
-    <AuthFrame title="Two-factor check" sub="Enter the 6-digit code from your authenticator app, or one of your recovery codes.">
-      <form className="col" style={{ gap: 14 }} onSubmit={submit}>
-        <TextField label="Code" value={code} onChange={setCode} autoComplete="one-time-code" inputMode="numeric" autoFocus required />
-        {err && <div className="banner bad small">{err}</div>}
-        <Button kind="primary" busy={busy} type="submit">Verify</Button>
+    <AuthFrame title="Confirm your email" sub={<>Your page is live. We sent a 6-digit code to <b>{me?.user?.email ?? "your email"}</b> so you can recover your account later.</>}
+      stage={<AuthStage username={me?.user?.username ?? ""} look={2} caption="One more step and your account is fully protected." />}>
+      <form className="col" style={{ gap: 16 }} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <CodeInput value={code} onChange={setCode} onComplete={submit} />
+        {err && <div className="banner bad small" role="alert">{err}</div>}
+        <Button kind="primary" size="lg" busy={busy} type="submit" disabled={code.length < 6}>Confirm email</Button>
+        <ResendCode path="/api/auth/resend-verification" />
+        <Link to="/dashboard" className="small">Do this later</Link>
       </form>
     </AuthFrame>
   );

@@ -202,7 +202,7 @@ export function UserDetail({ id }: { id: string }) {
         <div className="panel pad"><dl className="kv small">
           <dt>UID</dt><dd>{u.uid}</dd><dt>Username</dt><dd>{u.username}</dd><dt>Display name</dt><dd>{u.displayName ?? "—"}</dd>
           <dt>Email</dt><dd>{u.email ?? (can(a, "users.view_email") ? "None" : "Hidden")} {u.email && (u.emailVerified ? <span className="chip ok">Verified</span> : <span className="chip warn">Unverified</span>)}</dd>
-          <dt>Discord ID</dt><dd className="mono">{u.discordId ?? "Not linked"}</dd><dt>Two-factor</dt><dd>{u.twoFactor ? "On" : "Off"}</dd>
+          <dt>Discord ID</dt><dd className="mono">{u.discordId ?? "Not linked"}</dd>
           <dt>Registered</dt><dd>{fmtDate(u.createdAt, true)}</dd><dt>Last login</dt><dd>{fmtDate(u.lastLoginAt, true)}</dd><dt>Status</dt><dd>{humanize(u.status)}</dd>
         </dl></div>
         <div className="panel pad stack-16">

@@ -51,7 +51,8 @@ export const RULES = {
   global: { capacity: 300, refillPerSec: 5 },
   auth: { capacity: 10, refillPerSec: 10 / 60 },          // 10 / min burst
   register: { capacity: 5, refillPerSec: 5 / 3600 },       // 5 / hour per IP
-  emailSend: { capacity: 3, refillPerSec: 3 / 3600 },      // 3 / hour per account
+  emailSend: { capacity: 3, refillPerSec: 3 / 3600 },
+  codeSend: { capacity: 5, refillPerSec: 5 / 900 },         // 5 codes per 15 min per account      // 3 / hour per account
   admin: { capacity: 120, refillPerSec: 2 },
   usernameCheck: { capacity: 30, refillPerSec: 1 },
 } satisfies Record<string, RateLimitRule>;

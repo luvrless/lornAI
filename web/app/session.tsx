@@ -8,6 +8,7 @@ export interface Me {
   staffRole?: "OWNER" | "ADMIN" | null;
   adminPanel?: boolean;
   mfaPending?: boolean;
+  emailHint?: string;
 }
 
 const Ctx = createContext<{ me: Me | null; loading: boolean; serverProblem: string | null; refresh: () => Promise<Me>; logout: () => Promise<void> }>(null!);

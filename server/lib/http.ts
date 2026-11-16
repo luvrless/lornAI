@@ -17,6 +17,7 @@ export interface SessionInfo {
   userId: string;
   authMethod: string;
   mfaPending: boolean;
+  mfaMethod?: string | null;
   csrf: string;
 }
 
@@ -291,7 +292,7 @@ export function createHandler(router: Router, hooks: Hooks, fallback?: (c: Ctx) 
       const needAuth = o.perm ? "required" : (o.auth ?? "none");
       if (needAuth === "required") {
         if (!c.session || !c.user) throw unauthorized();
-        if (c.session.mfaPending && !o.allowMfaPending) throw new HttpError(401, "mfa_required", "Two-factor code required");
+        if (c.session.mfaPending && !o.allowMfaPending) throw new HttpError(401, "mfa_required", "Enter the code we emailed you to finish signing in");
       }
 
       if (o.perm) {

@@ -204,12 +204,11 @@ export async function handleCallback(app: App, c: Ctx, p: Provider): Promise<str
         return "/signup/complete?next=/admin";
       }
       try { await assertCanLogIn(app, linked.user_id); } catch { return fail("account_restricted"); }
-      const s = await createSession(app, app.db, linked.user_id, "discord", c.ip, c.ua, await hasMfa(app, linked.user_id));
+      const s = await createSession(app, app.db, linked.user_id, "discord", c.ip, c.ua);
       await recordLogin(app, linked.user_id, "discord", c.ip, c.ua);
       setSessionCookie(app, c, s.token);
       userId = linked.user_id;
       sessionId = s.id;
-      if (await hasMfa(app, userId)) return "/login/2fa?next=/api/auth/discord/start?intent=admin";
     } else if (!linked) {
       // Signed-in user elevating with a Discord ID not linked anywhere: link it.
       const has = await app.db.query("SELECT 1 FROM oauth_accounts WHERE user_id = $1 AND provider = 'discord'", [userId]);
@@ -232,8 +231,8 @@ export async function handleCallback(app: App, c: Ctx, p: Provider): Promise<str
   if (linked) {
     try { await assertCanLogIn(app, linked.user_id); }
     catch (e) { return fail((e as HttpError).code ?? "account_restricted"); }
-    const mfa = await hasMfa(app, linked.user_id);
-    const s = await createSession(app, app.db, linked.user_id, p, c.ip, c.ua, mfa);
+    const mfa = false; // the provider has already confirmed who this is
+    const s = await createSession(app, app.db, linked.user_id, p, c.ip, c.ua);
     await recordLogin(app, linked.user_id, p, c.ip, c.ua);
     await storeTokens(app, linked.user_id, p, idn);
     setSessionCookie(app, c, s.token);
@@ -245,9 +244,6 @@ export async function handleCallback(app: App, c: Ctx, p: Provider): Promise<str
   return st.redirect_to ? `/signup/complete?next=${encodeURIComponent(st.redirect_to)}` : "/signup/complete";
 }
 
-async function hasMfa(app: App, userId: string) {
-  return !!(await app.db.query("SELECT totp_enabled_at FROM users WHERE id = $1", [userId])).rows[0]?.totp_enabled_at;
-}
 
 async function beginSignup(app: App, c: Ctx, p: Provider, idn: Identity) {
   const token = randomToken();

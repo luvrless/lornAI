@@ -24,7 +24,7 @@ function assets() {
   return manifest!;
 }
 
-const RESERVED = new Set(["api", "static", "media", "dashboard", "admin", "login", "register", "signup", "forgot-password", "reset-password", "verify-email", "terms", "privacy", "favicon.ico", "robots.txt"]);
+const RESERVED = new Set(["api", "static", "media", "dashboard", "admin", "login", "register", "signup", "forgot-password", "reset-password", "verify-email", "verify", "terms", "privacy", "favicon.ico", "robots.txt"]);
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 /** JSON safe to embed inside <script type="application/json">. */
 const embed = (v: unknown) => JSON.stringify(v).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
@@ -105,7 +105,7 @@ export async function renderPage(app: App, c: Ctx): Promise<boolean> {
   }
 
   // SPA routes
-  const spa = parts.length === 0 || ["dashboard", "admin", "login", "register", "signup", "forgot-password", "reset-password", "verify-email", "terms", "privacy"].includes(parts[0]);
+  const spa = parts.length === 0 || ["dashboard", "admin", "login", "register", "signup", "forgot-password", "reset-password", "verify-email", "verify", "terms", "privacy"].includes(parts[0]);
   if (!spa) return false;
   const titles: Record<string, string> = { "": "LORN.LOL — your corner of the internet", login: "Log in · LORN.LOL", register: "Create your page · LORN.LOL" };
   shell(app, c, {

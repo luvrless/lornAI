@@ -41,6 +41,23 @@ export function buildRouter(app: App) {
     }
     return totals.v;
   }, { maintenanceExempt: true });
+  // Premium price as configured in the database, so the landing page never quotes a made-up number.
+  r.get("/api/public/plans", async () => {
+    const p = (await app.db.query("SELECT name, price_cents, currency, billing FROM products WHERE key = 'premium' AND enabled")).rows[0];
+    return { premium: p ? { name: p.name, priceCents: p.price_cents, currency: p.currency, billing: p.billing } : null };
+  }, { maintenanceExempt: true });
+  // Real published pages for the landing page. Empty until members publish; never padded with examples.
+  r.get("/api/public/showcase", async () => {
+    const rows = (await app.db.query(
+      `SELECT u.username, u.display_name, p.view_count, v.config->'identity'->>'displayName' AS shown, v.config->'identity'->>'bio' AS bio,
+              v.config->'background'->'effectColors' AS colors
+       FROM users u JOIN profiles p ON p.user_id = u.id JOIN profile_versions v ON v.id = p.published_version_id
+       WHERE p.is_published AND NOT p.moderation_hidden AND u.deleted_at IS NULL
+         AND coalesce(v.config->>'visibility', 'public') = 'public' AND coalesce(v.config->'seo'->>'indexable', 'true') = 'true'
+         AND NOT EXISTS (SELECT 1 FROM account_bans b WHERE b.user_id = u.id AND b.lifted_at IS NULL AND (b.expires_at IS NULL OR b.expires_at > now()))
+       ORDER BY p.view_count DESC, u.uid ASC LIMIT 8`)).rows;
+    return { profiles: rows.map((x: any) => ({ username: x.username, name: x.shown || x.display_name || x.username, bio: String(x.bio ?? "").slice(0, 80), views: Number(x.view_count), colors: Array.isArray(x.colors) ? x.colors.slice(0, 3) : [] })) };
+  }, { maintenanceExempt: true });
   authRoutes(app, r);
   adminRoutes(app, r);
   profileRoutes(app, r);
@@ -115,7 +132,7 @@ export async function buildServer(app: App) {
       if (!token || token.length > 100) return;
       const s = await resolveSessionToken(app, token);
       if (!s) return;
-      c.session = { id: s.sessionId, userId: s.user.id, authMethod: s.authMethod, mfaPending: s.mfaPending, csrf: csrfFor(app, s.sessionId) };
+      c.session = { id: s.sessionId, userId: s.user.id, authMethod: s.authMethod, mfaPending: s.mfaPending, mfaMethod: s.mfaMethod, csrf: csrfFor(app, s.sessionId) };
       c.user = s.user;
     },
     resolveAdmin: (c) => resolveAdmin(app, c),

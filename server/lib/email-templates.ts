@@ -18,6 +18,7 @@ interface Layout {
   heading: string;
   paragraphs: string[];          // plain sentences; escaped here
   button?: { label: string; url: string };
+  code?: string;                 // 6-digit code shown large
   details?: [string, string][];  // label/value rows (security info)
   tone?: "default" | "alert";
   footnote: string;              // why you got this / what to do if it wasn't you
@@ -36,6 +37,10 @@ function layout(l: Layout): { html: string; text: string } {
       </table>
       <p style="margin:0 0 20px;font:400 12px/1.6 ${FONT};color:${C.dim}">Button not working? Paste this link into your browser:<br>
         <a href="${esc(l.button.url)}" style="color:${C.halo};word-break:break-all;text-decoration:underline">${esc(l.button.url)}</a></p>` : "";
+  const code = l.code ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.bg}" style="background:${C.bg};border:1px solid ${C.line};border-radius:14px;margin:4px 0 24px">
+        <tr><td align="center" style="padding:22px 12px;font:700 34px/1 'SFMono-Regular',Consolas,Menlo,monospace;letter-spacing:10px;color:${C.text}">${esc(l.code)}</td></tr>
+      </table>` : "";
   const details = l.details?.length ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.bg}" style="background:${C.bg};border:1px solid ${C.line};border-radius:12px;margin:4px 0 24px">
         ${l.details.map(([k, v], i) => `<tr><td style="padding:${i ? "0" : "14px"} 16px ${i === l.details!.length - 1 ? "14px" : "8px"};font:400 13px/1.5 ${FONT};color:${C.dim};width:38%;vertical-align:top">${esc(k)}</td><td style="padding:${i ? "0" : "14px"} 16px ${i === l.details!.length - 1 ? "14px" : "8px"} 0;font:500 13px/1.5 ${FONT};color:${C.text};vertical-align:top">${esc(v)}</td></tr>`).join("")}
@@ -65,6 +70,7 @@ function layout(l: Layout): { html: string; text: string } {
           <tr><td style="padding:32px 32px 12px">
             <h1 style="margin:0 0 18px;font:700 23px/1.3 ${FONT};color:${C.text}">${esc(l.heading)}</h1>
             ${l.paragraphs.map(p).join("\n            ")}
+            ${code}
             ${details}
             ${button}
           </td></tr>
@@ -85,6 +91,7 @@ function layout(l: Layout): { html: string; text: string } {
   const text = [
     l.heading, "",
     ...l.paragraphs.flatMap((s) => [s, ""]),
+    ...(l.code ? [`Your code: ${l.code}`, ""] : []),
     ...(l.details?.length ? [...l.details.map(([k, v]) => `${k}: ${v}`), ""] : []),
     ...(l.button ? [`${l.button.label}: ${l.button.url}`, ""] : []),
     "—", l.footnote, `${host} · Support: ${l.appUrl}/dashboard/support`,
@@ -95,15 +102,28 @@ function layout(l: Layout): { html: string; text: string } {
 const when = (d: Date) => d.toUTCString().replace("GMT", "UTC");
 
 export const emails = {
-  verifyEmail(appUrl: string, o: { username: string; url: string }): EmailContent {
+  verifyEmail(appUrl: string, o: { username: string; url: string; code?: string }): EmailContent {
     const r = layout({
-      appUrl, preheader: "One click to confirm your email and finish setting up your account.",
+      appUrl, preheader: o.code ? `${o.code} is your LORN.LOL confirmation code.` : "One click to confirm your email and finish setting up your account.",
       heading: "Confirm your email",
-      paragraphs: [`Hi @${o.username}, welcome to LORN.LOL.`, "Confirm this is your email address so you can recover your account and get security alerts."],
-      button: { label: "Confirm email", url: o.url },
-      footnote: "This link expires in 24 hours. If you didn't create a LORN.LOL account, you can ignore this email.",
+      paragraphs: [`Hi @${o.username}, welcome to LORN.LOL.`, o.code ? "Enter this code on the sign-up screen to confirm your email address. It works for 10 minutes." : "Confirm this is your email address so you can recover your account and get security alerts."],
+      code: o.code,
+      button: { label: o.code ? "Or confirm with one click" : "Confirm email", url: o.url },
+      footnote: "The link expires in 24 hours. If you didn't create a LORN.LOL account, you can ignore this email.",
     });
-    return { template: "verify_email", subject: "Confirm your email for LORN.LOL", ...r };
+    return { template: "verify_email", subject: o.code ? `${o.code} is your LORN.LOL code` : "Confirm your email for LORN.LOL", ...r };
+  },
+
+  loginCode(appUrl: string, o: { username: string; code: string; device: string }): EmailContent {
+    const r = layout({
+      appUrl, preheader: `${o.code} is your LORN.LOL sign-in code.`,
+      heading: "Your sign-in code",
+      paragraphs: [`Hi @${o.username}, someone entered your password on a browser we don't recognise. Enter this code to finish signing in. It works for 10 minutes.`],
+      code: o.code,
+      details: [["Browser", o.device]],
+      footnote: "If this wasn't you, your password is known to someone else: don't share this code, and reset your password at " + `${appUrl}/forgot-password`,
+    });
+    return { template: "login_code", subject: `${o.code} is your LORN.LOL sign-in code`, ...r };
   },
 
   resetPassword(appUrl: string, o: { username: string; url: string; byStaff?: boolean }): EmailContent {

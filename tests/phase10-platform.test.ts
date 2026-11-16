@@ -9,6 +9,7 @@ import http from "node:http";
 import { AddressInfo } from "node:net";
 import { startHarness, Harness, Client } from "./helpers.ts";
 import { closeHashPool } from "../server/lib/password.ts";
+import { MemoryRateLimiter } from "../server/lib/ratelimit.ts";
 import { deliverEmails } from "../server/modules/jobs/schedules.ts";
 
 let h: Harness;
@@ -42,6 +43,16 @@ test("accounts are isolated: one person's sign-up never signs anyone else in", a
   assert.equal((await again.post("/api/auth/login", { identifier: "ALICE", password: "Sunset-Driver-77" })).status, 200);
   assert.equal((await again.get("/api/auth/me")).body.user.username, "alice");
   assert.equal((await new Client(h.base).post("/api/auth/login", { identifier: "alice", password: "wrong-password-1" })).status, 401);
+});
+
+test("a fresh platform flags none of the front page's example names as taken", async () => {
+  // Runs before anyone but alice and bob exists: the names the landing page types and shows are only examples.
+  for (const n of ["jay", "nova", "kai", "luna", "q5", "echo", "mira", "zed", "you", "yourname"]) {
+    assert.equal((await new Client(h.base).get(`/api/auth/username/${n}`)).body.available, true, n);
+  }
+  assert.deepEqual((await (await fetch(`${h.base}/api/public/showcase`)).json()).profiles, [], "no invented community profiles");
+  const plans = await (await fetch(`${h.base}/api/public/plans`)).json();
+  assert.equal(plans.premium.priceCents, 499);
 });
 
 test("the header status is accurate: starter → live → unpublished changes → live", async () => {
@@ -104,7 +115,7 @@ test("Discord sign-in is always reachable; when unconfigured it explains itself 
   } finally { (h.app.cfg as any).discord = saved; }
 });
 
-test("account emails are delivered through the Resend API, once each", async () => {
+test("Resend: sign-up code, sign-in code on a new browser, remembered browser, two-week idle sign-out", async () => {
   const got: any[] = [];
   const srv = http.createServer(async (req, res) => {
     const chunks: Buffer[] = []; for await (const c of req) chunks.push(c as Buffer);
@@ -113,20 +124,82 @@ test("account emails are delivered through the Resend API, once each", async () 
   });
   await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
   (h.app.cfg as any).resend = { apiKey: "re_test_key", apiBase: `http://127.0.0.1:${(srv.address() as AddressInfo).port}`, from: "LORN.LOL <no-reply@lorn.lol>", replyTo: null };
+  const lastCode = async () => { await deliverEmails(h.app); return /Your code: (\d{6})/.exec(got.at(-1).body.text)![1]; };
   try {
     assert.equal((await (await fetch(`${h.base}/api/auth/providers`)).json()).email, true);
+
+    // --- sign-up: a 6-digit code goes out through Resend
     const c = new Client(h.base);
     const r = await reg(c, "dana");
     assert.equal(r.body.verificationEmail, "pending");
-    await new Client(h.base).post("/api/auth/forgot-password", { identifier: "dana@example.com" });
-    assert.equal(await deliverEmails(h.app), 2);
-    assert.equal(await deliverEmails(h.app), 0, "nothing is sent twice");
-    assert.equal(got.length, 2);
+    const signupCode = await lastCode();
+    assert.equal(got.length, 1);
     assert.equal(got[0].url, "/emails"); assert.equal(got[0].auth, "Bearer re_test_key");
-    assert.match(got[0].key, /^lorn-outbox-\d+$/); assert.notEqual(got[0].key, got[1].key);
+    assert.match(got[0].key, /^lorn-outbox-\d+$/);
     assert.deepEqual(got[0].body.to, ["dana@example.com"]); assert.equal(got[0].body.from, "LORN.LOL <no-reply@lorn.lol>");
-    assert.ok(got[0].body.html.includes("verify-email") && got[1].body.html.includes("reset-password"), "sent oldest first");
-    const rows = (await h.app.db.query("SELECT status FROM email_outbox WHERE to_address = 'dana@example.com'")).rows;
-    assert.deepEqual(rows.map((x: any) => x.status), ["sent", "sent"]);
+    assert.ok(got[0].body.subject.includes(signupCode) && got[0].body.html.includes(signupCode) && got[0].body.html.includes("verify-email"));
+    assert.equal(await deliverEmails(h.app), 0, "nothing is sent twice");
+    const wrong = signupCode === "000000" ? "111111" : "000000";
+    assert.equal((await c.post("/api/auth/verify-email-code", { code: wrong })).body.error.code, "invalid_code");
+    assert.equal((await c.get("/api/auth/me")).body.user.emailVerified, false);
+    assert.equal((await c.post("/api/auth/verify-email-code", { code: signupCode })).status, 200);
+    assert.equal((await c.get("/api/auth/me")).body.user.emailVerified, true);
+
+    // --- the browser that signed up is remembered: logging back in needs no code
+    await c.post("/api/auth/logout");
+    assert.equal((await c.post("/api/auth/login", { identifier: "dana", password: "Sunset-Driver-77" })).body.mfaRequired, false);
+
+    // --- a new browser with the right password is held until the emailed code is entered
+    const n = new Client(h.base);
+    const li = await n.post("/api/auth/login", { identifier: "dana", password: "Sunset-Driver-77" });
+    assert.equal(li.body.mfaRequired, true); assert.equal(li.body.method, "email"); assert.match(li.body.emailHint, /^d•+@example\.com$/);
+    assert.equal((await n.get("/api/auth/me")).body.mfaPending, true);
+    assert.equal((await n.get("/api/profile/editor")).status, 401, "nothing private before the code");
+    const loginCode = await lastCode();
+    assert.ok(got.at(-1).body.subject.includes("sign-in code"));
+    // a code is bound to the sign-in that asked for it
+    const other = new Client(h.base);
+    await other.post("/api/auth/login", { identifier: "dana", password: "Sunset-Driver-77" });
+    const otherCode = await lastCode();
+    assert.equal((await n.post("/api/auth/2fa/verify", { code: loginCode })).body.error.code, "code_expired", "an older code dies when a newer one is issued");
+    assert.equal((await n.post("/api/auth/2fa/verify", { code: otherCode })).body.error.code, "code_expired", "another browser's code is refused");
+    assert.equal((await other.post("/api/auth/2fa/verify", { code: otherCode })).status, 200);
+    assert.equal((await other.get("/api/profile/editor")).status, 200);
+    // five wrong tries burn a code (fresh limiter so this checks the code's own attempt cap, not the rate limit)
+    const resent = await n.post("/api/auth/2fa/resend");
+    assert.equal(resent.body.status, "pending");
+    const fresh = await lastCode();
+    for (let i = 0; i < 5; i++) await n.post("/api/auth/2fa/verify", { code: fresh === "222222" ? "333333" : "222222" });
+    assert.equal((await n.post("/api/auth/2fa/verify", { code: fresh })).body.error.code, "code_expired");
+
+
+    // --- two weeks without activity ends the session, and the next sign-in needs a code again
+    await h.app.db.query("UPDATE sessions SET last_seen_at = now() - interval '15 days' WHERE user_id = (SELECT id FROM users WHERE username_lc = 'dana')");
+    await h.app.db.query("UPDATE trusted_devices SET expires_at = now() - interval '1 day' WHERE user_id = (SELECT id FROM users WHERE username_lc = 'dana')");
+    assert.equal((await other.get("/api/auth/me")).body.user, null);
+    assert.equal((await other.get("/api/profile/editor")).status, 401);
+    assert.equal((await other.post("/api/auth/login", { identifier: "dana", password: "Sunset-Driver-77" })).body.mfaRequired, true);
+
+    // --- password reset mail also goes through Resend
+    await new Client(h.base).post("/api/auth/forgot-password", { identifier: "dana@example.com" });
+    await deliverEmails(h.app);
+    assert.ok(got.at(-1).body.html.includes("reset-password"));
+    const rows = (await h.app.db.query("SELECT DISTINCT status FROM email_outbox WHERE to_address = 'dana@example.com'")).rows;
+    assert.deepEqual(rows.map((x: any) => x.status), ["sent"]);
   } finally { (h.app.cfg as any).resend = null; srv.close(); }
+});
+
+test("without a mail provider nobody is locked out: no code is demanded, and the UI is told why", async () => {
+  const n = new Client(h.base);
+  const li = await n.post("/api/auth/login", { identifier: "alice", password: "Sunset-Driver-77" });
+  assert.equal(li.body.mfaRequired, false);
+  assert.equal((await n.post("/api/auth/resend-verification")).body.status, "not_configured");
+  assert.equal((await (await fetch(`${h.base}/api/auth/providers`)).json()).email, false);
+});
+
+test("authenticator-app 2FA is gone", async () => {
+  const c = new Client(h.base);
+  await c.post("/api/auth/login", { identifier: "alice", password: "Sunset-Driver-77" });
+  for (const p of ["/api/account/2fa/setup", "/api/account/2fa/enable", "/api/account/2fa/disable"]) assert.equal((await c.post(p, {})).status, 404, p);
+  assert.equal("twoFactor" in (await c.get("/api/auth/me")).body.user, false);
 });

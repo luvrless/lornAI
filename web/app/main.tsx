@@ -6,7 +6,7 @@ import "../profile/profile.css";
 import { SessionProvider, useSession } from "./session.tsx";
 import { ConfirmProvider, Toasts } from "./ui.tsx";
 import { useLocation } from "./router.tsx";
-import { Landing, Login, Register, TwoFactor, SignupComplete, ForgotPassword, ResetPassword, VerifyEmail, Legal, NotFound } from "./pages/public.tsx";
+import { Landing, Login, Register, TwoFactor, VerifyCode, SignupComplete, ForgotPassword, ResetPassword, VerifyEmail, Legal, NotFound } from "./pages/public.tsx";
 import { DashboardShell } from "./dashboard/shell.tsx";
 import { AdminApp } from "./admin/admin.tsx";
 
@@ -39,6 +39,7 @@ function Routes() {
   if (pathname === "/") return <Landing />;
   if (pathname === "/login") return <Login />;
   if (pathname === "/login/2fa") return <TwoFactor />;
+  if (pathname === "/verify") return <VerifyCode />;
   if (pathname === "/register") return <Register />;
   if (pathname === "/signup/complete") return <SignupComplete />;
   if (pathname === "/forgot-password") return <ForgotPassword />;

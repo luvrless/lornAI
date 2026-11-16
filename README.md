@@ -53,3 +53,12 @@ Each message carries an idempotency key, so retries never send twice. Without a 
 ## Starter profiles
 
 Every account is public from sign-up as a plain card (display name, @username, join date, views, UID). The private draft replaces it only when the owner publishes; unpublishing returns to the starter card.
+
+
+## Sign-in security
+
+- **Email codes.** Sign-up sends a 6-digit code (10 minutes, single use, 5 tries). A correct password on a browser that hasn't been confirmed also needs an emailed code before the session can do anything.
+- **Remembered browsers.** A browser that passed a code is remembered for `security.session_idle_days` (14), sliding.
+- **Inactivity.** Sessions unused for 14 days stop working; the next sign-in asks for a code again.
+- Codes are only demanded when a mail provider is configured (`RESEND_API_KEY` + `MAIL_FROM`), so a missing key can't lock anyone out. Without it the UI says email isn't set up.
+- Authenticator-app 2FA has been removed. Discord and Google sign-in skip the email code because the provider already confirmed the person.

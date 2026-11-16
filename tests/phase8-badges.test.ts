@@ -48,12 +48,12 @@ const paid = (purchaseId: string, amount: number) => {
 };
 const catalogue = async (c: Client) => new Map(((await c.get("/api/badges/catalogue")).body as any[]).map((b) => [b.key, b]));
 
-test("admin panel link: owner and owner-appointed admins only — never staff or regular users", async () => {
+test("admin panel link: owner, appointed admins and appointed staff — never regular users", async () => {
   const meOwner = (await owner.get("/api/auth/me")).body, meAdmin = (await admin.get("/api/auth/me")).body;
   const meStaff = (await staff.get("/api/auth/me")).body, meUser = (await jay.get("/api/auth/me")).body;
   assert.equal(meOwner.adminPanel, true); assert.equal(meOwner.staffRole, "OWNER");
   assert.equal(meAdmin.adminPanel, true); assert.equal(meAdmin.staffRole, "ADMIN");
-  assert.equal(meStaff.adminPanel, false); assert.equal(meStaff.staffRole, null, "staff get no hint of the panel");
+  assert.equal(meStaff.adminPanel, true); assert.ok(meStaff.staffRole && !["OWNER", "ADMIN"].includes(meStaff.staffRole));
   assert.equal(meUser.adminPanel, false); assert.equal(meUser.staffRole, null);
   // Only the owner can appoint admins.
   assert.equal((await admin.post("/api/admin/staff", { discordId: "444444444444444444", role: "ADMIN" })).status, 403);

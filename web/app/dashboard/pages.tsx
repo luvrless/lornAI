@@ -27,7 +27,7 @@ export function Overview() {
         <div className="row"><Copy text={d.url} label="Copy link" /><a className="btn sm" href={`/${d.user.username}`} target="_blank" rel="noreferrer"><LuExternalLink />Open</a><Link className="btn sm primary" to="/dashboard/customize">Customize</Link></div>
       </div>
       {d.announcements.map((a: any) => <div key={a.id} className={`banner ${a.level === "warning" ? "warn" : a.level === "critical" ? "bad" : ""}`}><LuMegaphone /><div><b>{a.title}</b><div className="small">{a.body}</div></div></div>)}
-      {!d.user.emailVerified && d.user.email && <div className="banner warn"><LuCircleAlert /><div className="grow">Verify your email so you can recover your account.</div><Button size="sm" onClick={() => post("/api/auth/resend-verification").then((r) => toast(r.status === "not_configured" ? "Email delivery isn't set up on this server yet" : "Verification email sent", r.status === "not_configured" ? "bad" : "ok")).catch((e) => toast(e.message, "bad"))}>Resend email</Button></div>}
+      {!d.user.emailVerified && d.user.email && <div className="banner warn"><LuCircleAlert /><div className="grow">Confirm your email with the 6-digit code we sent, so you can recover your account.</div><Link className="btn sm primary" to="/verify">Enter code</Link></div>}
       {d.profile.moderation_hidden && <div className="banner bad">Your profile is hidden by moderators. <Link to="/dashboard/support">Contact support</Link></div>}
       <div className="grid-4">
         <Stat icon={<LuEye />} k="Views, last 30 days" v={d.analytics.views30d.toLocaleString("en")} d={{ value: delta(d.analytics.views30d, d.analytics.previous.views) }} />
@@ -269,9 +269,9 @@ function CreateTemplate({ onClose, onDone }: { onClose: () => void; onDone: () =
 
 // ------------------------------------------------------------------ integrations
 
-export function Integrations() {
+/** Connect or disconnect Discord and Google. Linking later works the same as signing up with them. */
+export function ConnectedAccounts() {
   const { me, refresh } = useSession();
-  const status = useQuery<any>("/api/meta/integrations");
   const providers = useQuery<any>("/api/auth/providers");
   const confirm = useConfirm();
   const conn = (p: string) => me?.connections?.find((c) => c.provider === p);
@@ -280,9 +280,7 @@ export function Integrations() {
     try { await del(`/api/account/connections/${p}`); await refresh(); toast("Disconnected", "ok"); } catch (e) { toast((e as Error).message, "bad"); }
   };
   return (
-    <div className="stack-24">
-      <div className="page-head"><div><h1>Integrations</h1><p>Connected accounts are verified through each platform's sign-in. Widgets for public profiles (GitHub, Roblox, Steam, YouTube, Twitch) pull live public data — add them in Widgets.</p></div></div>
-      <div className="grid-2">
+    <div className="grid-2">
         {[["discord", SiDiscord, "#5865F2"], ["google", SiGoogle, "#e2e8f0"]].map(([p, I, color]: any) => {
           const c = conn(p);
           const available = providers.data?.[p];
@@ -294,7 +292,16 @@ export function Integrations() {
             </div>
           );
         })}
-      </div>
+    </div>
+  );
+}
+
+export function Integrations() {
+  const status = useQuery<any>("/api/meta/integrations");
+  return (
+    <div className="stack-24">
+      <div className="page-head"><div><h1>Integrations</h1><p>Connected accounts are verified through each platform's sign-in. Widgets for public profiles (GitHub, Roblox, Steam, YouTube, Twitch) pull live public data — add them in Widgets.</p></div></div>
+      <ConnectedAccounts />
       <div className="panel">
         <div className="panel-head"><h3>Widget data sources</h3></div>
         <div className="table-wrap"><table className="t"><tbody>
@@ -400,6 +407,7 @@ export function AccountSettings() {
   return (
     <div className="stack-24" style={{ maxWidth: 760 }}>
       <div className="page-head"><div><h1>Account settings</h1></div></div>
+      <div className="stack-16"><h3 style={{ margin: 0 }}>Sign-in connections</h3><p className="small muted" style={{ margin: 0 }}>Signed up with email? Connect Discord here any time and use it to sign in from then on.</p><ConnectedAccounts /></div>
       <div className="panel pad stack-16">
         <h3>Username</h3>
         <div className="row"><div className="input-affix grow"><span>lorn.lol/</span><input className="input" value={username} maxLength={12} onChange={(e) => setUsername(e.target.value)} aria-label="Username" /></div>
@@ -432,8 +440,6 @@ export function Security() {
   const sessions = useQuery<any[]>("/api/account/sessions");
   const logins = useQuery<any[]>("/api/account/login-history");
   const [cur, setCur] = useState(""); const [nw, setNw] = useState("");
-  const [setup, setSetup] = useState<any>(null); const [code, setCode] = useState(""); const [codes, setCodes] = useState<string[] | null>(null);
-  const [disable, setDisable] = useState(false);
   const { busy, run } = useAction();
   if (!me?.user) return null;
   return (
@@ -445,17 +451,13 @@ export function Security() {
         <Button busy={busy} disabled={nw.length < 8} onClick={() => run(() => post("/api/account/password", { current: cur || null, next: nw }), "Password updated. Other devices were signed out.").then((r) => { if (r) { setCur(""); setNw(""); sessions.reload(); refresh(); } })}>{me.user.hasPassword ? "Change password" : "Set a password"}</Button>
       </div>
       <div className="panel pad stack-16">
-        <div className="spread"><h3><LuShieldCheck /> Two-factor authentication</h3>{me.user.twoFactor ? <span className="chip ok">On</span> : <span className="chip dim">Off</span>}</div>
-        {me.user.twoFactor ? <>
-          <p className="small muted">Sign-ins ask for a code from your authenticator app.</p>
-          <div className="row"><Button size="sm" onClick={() => setDisable(true)}>Turn off</Button><Button size="sm" onClick={async () => { const c = prompt("Enter a code from your authenticator app to create new recovery codes"); if (c) { const r = await run(() => post("/api/account/2fa/recovery-codes", { code: c })); if (r) setCodes(r.recoveryCodes); } }}>New recovery codes</Button></div>
-        </> : !setup ? <Button kind="primary" size="sm" onClick={() => run(() => post("/api/account/2fa/setup")).then((r) => r && setSetup(r))}>Set up</Button> : (
-          <div className="stack-16">
-            <p className="small">Add this key to your authenticator app (1Password, Google Authenticator, Authy…), then enter the 6-digit code it shows.</p>
-            <div className="row wrap"><img alt="QR code for your authenticator" src={`data:image/svg+xml;utf8,${encodeURIComponent(qrSvgClient(setup.otpauthUrl))}`} width={168} height={168} style={{ background: "#fff", borderRadius: 10, padding: 6 }} /><div className="col"><code className="mono" style={{ wordBreak: "break-all" }}>{setup.secret}</code><Copy text={setup.secret} label="Copy key" /></div></div>
-            <div className="row"><input className="input" style={{ maxWidth: 160 }} value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" placeholder="123456" aria-label="Authenticator code" /><Button kind="primary" busy={busy} onClick={() => run(() => post("/api/account/2fa/enable", { code })).then((r) => { if (r) { setCodes(r.recoveryCodes); setSetup(null); refresh(); } })}>Turn on</Button></div>
-          </div>
-        )}
+        <div className="spread"><h3><LuShieldCheck /> Sign-in protection</h3><span className="chip ok">On</span></div>
+        <ul className="protect-list small">
+          <li><b>Email code on new browsers.</b> After your password, we email a 6-digit code to {me.user.email ?? "your email address"} whenever you sign in from a browser we haven't confirmed.</li>
+          <li><b>Two-week inactivity limit.</b> If you don't open the dashboard for 14 days you're signed out, and the next sign-in asks for a new code.</li>
+          <li><b>Alerts.</b> A sign-in from a new device or network sends you an email and a notification.</li>
+        </ul>
+        {!me.user.email && <div className="banner warn small">Add an email address in Account settings so codes can reach you.</div>}
       </div>
       <div className="panel">
         <div className="panel-head"><h3><LuMonitor /> Active sessions</h3><Button size="sm" onClick={() => run(() => post("/api/account/sessions/revoke-others"), "Signed out of other devices").then(() => sessions.reload())}>Sign out everywhere else</Button></div>
@@ -470,25 +472,10 @@ export function Security() {
           {(logins.data ?? []).slice(0, 30).map((l, i) => <tr key={i}><td>{fmtDate(l.at, true)}</td><td>{l.success ? <span className="chip ok">Signed in</span> : <span className="chip bad">{humanize(l.failure_reason ?? "failed")}</span>} {l.suspicious && <span className="chip warn">New device</span>}</td><td>{humanize(l.method)}</td><td className="mono">{l.ip}</td><td className="small">{uaShort(l.user_agent)}</td></tr>)}
         </tbody></table></div>
       </div>
-      {codes && <Modal title="Save your recovery codes" onClose={() => setCodes(null)} footer={<><Copy text={codes.join("\n")} label="Copy all" /><Button kind="primary" onClick={() => setCodes(null)}>I've saved them</Button></>}>
-        <p className="small muted">Each code works once if you lose your authenticator. They won't be shown again.</p>
-        <div className="grid-2 mono">{codes.map((c) => <code key={c}>{c}</code>)}</div>
-      </Modal>}
-      {disable && <DisableMfa hasPassword={me.user.hasPassword} onClose={() => setDisable(false)} onDone={() => { setDisable(false); refresh(); }} />}
     </div>
   );
 }
 
-function DisableMfa({ hasPassword, onClose, onDone }: { hasPassword: boolean; onClose: () => void; onDone: () => void }) {
-  const [pw, setPw] = useState(""); const [code, setCode] = useState("");
-  const { busy, run } = useAction();
-  return (
-    <Modal title="Turn off two-factor?" onClose={onClose} footer={<><Button kind="ghost" onClick={onClose}>Cancel</Button><Button kind="danger" busy={busy} onClick={() => run(() => post("/api/account/2fa/disable", { password: pw || null, code }), "Two-factor turned off").then((r) => r !== undefined && onDone())}>Turn off</Button></>}>
-      {hasPassword && <TextField label="Password" type="password" value={pw} onChange={setPw} />}
-      <TextField label="Authenticator or recovery code" value={code} onChange={setCode} />
-    </Modal>
-  );
-}
 
 const uaShort = (ua: string | null) => {
   if (!ua) return "Unknown device";
