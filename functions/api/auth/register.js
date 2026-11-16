@@ -54,9 +54,23 @@ export async function onRequestPost(context) {
       } catch {}
     }
 
+    let uid = 1;
+    if (context.env?.LORNAI_KV) {
+      try {
+        const lastUid = await context.env.LORNAI_KV.get("next_uid");
+        if (lastUid) {
+          uid = Number(lastUid) || 1;
+        } else {
+          const members = Number(await context.env.LORNAI_KV.get("stats:members")) || 0;
+          uid = members > 0 ? members + 1 : 1;
+        }
+        await context.env.LORNAI_KV.put("next_uid", String(uid + 1));
+      } catch {}
+    }
+
     const user = {
       id: "usr_" + Math.random().toString(36).slice(2, 10),
-      uid: Math.floor(Math.random() * 89999 + 10000),
+      uid,
       username,
       email,
       emailVerified: true,

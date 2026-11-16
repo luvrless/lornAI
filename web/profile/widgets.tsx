@@ -112,16 +112,48 @@ export const WIDGET_COMPONENTS: Record<string, W> = {
     return (
       <Remote ctx={ctx} label="Roblox"
         fallback={
-          <div className="w-head">
-            <SiRoblox style={{ width: 26, height: 26 }} />
-            <div><Ext href={profileUrl}><b>{displayName}</b></Ext><div className="w-dim">{cleanId ? `@${cleanId}` : (raw || "Roblox")}</div></div>
+          <div className="w-roblox-card">
+            <div className="w-roblox-brand"><SiRoblox /> Roblox</div>
+            <div className="w-roblox-body">
+              <div className="w-roblox-av-box">
+                <SiRoblox className="w-roblox-placeholder-icon" />
+              </div>
+              <div className="w-roblox-info">
+                <div className="w-roblox-name">{displayName}</div>
+                <div className="w-roblox-stats">
+                  <span><LuStar /> {cleanId ? `@${cleanId}` : "Roblox"}</span>
+                </div>
+                <a href={profileUrl} target="_blank" rel="noopener noreferrer nofollow ugc" className="w-roblox-btn">
+                  View Profile
+                </a>
+              </div>
+            </div>
           </div>
         }
-        render={(d) => <div className="w-head">
-          {d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiRoblox />}
-          <div><Ext href={d.url || profileUrl}><b>{d.displayName || d.name || displayName}</b></Ext><div className="w-dim">@{d.name || cleanId}</div></div>
-          <div className="w-stats sm"><div><b>{nf(d.friends)}</b><span>friends</span></div><div><b>{nf(d.followers)}</b><span>followers</span></div></div>
-        </div>}
+        render={(d) => (
+          <div className="w-roblox-card">
+            <div className="w-roblox-brand"><SiRoblox /> Roblox</div>
+            <div className="w-roblox-body">
+              <div className="w-roblox-av-box">
+                {d.avatar ? (
+                  <img className="w-roblox-av" src={d.avatar} alt={d.displayName || d.name} />
+                ) : (
+                  <SiRoblox className="w-roblox-placeholder-icon" />
+                )}
+              </div>
+              <div className="w-roblox-info">
+                <div className="w-roblox-name">{d.displayName || d.name || displayName}</div>
+                <div className="w-roblox-stats">
+                  <span><LuStar /> {nf(d.friends)} Friends</span>
+                  <span><LuUsers /> {nf(d.followers)} Followers</span>
+                </div>
+                <a href={d.url || profileUrl} target="_blank" rel="noopener noreferrer nofollow ugc" className="w-roblox-btn">
+                  View Profile
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       />
     );
   },

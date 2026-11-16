@@ -27,8 +27,24 @@
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
+* {
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+html, body {
+  margin: 0;
+  min-height: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 body {
   background: var(--abyss);
   color: var(--ice);
@@ -401,7 +417,7 @@ table.t tr.click:hover td { background: rgba(156,194,255,0.04); }
 /* Shell */
 .shell { grid-template-columns: 256px minmax(0, 1fr); }
 .shell-main { min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
-.sidebar { background: linear-gradient(180deg, rgba(7,14,40,.82), rgba(4,9,26,.82)); padding: 16px 12px 12px; scrollbar-width: thin; }
+.sidebar { background: linear-gradient(180deg, rgba(7,14,40,.82), rgba(4,9,26,.82)); padding: 16px 12px 12px; scrollbar-width: none; }
 .nav-group { font-size: 11.5px; letter-spacing: .02em; padding: 16px 10px 6px; }
 .nav-item { transition: background .15s, color .15s; }
 .nav-item[aria-current="page"] { background: linear-gradient(90deg, rgba(79,140,255,.24), rgba(79,140,255,.06)); box-shadow: 0 0 0 1px rgba(79,140,255,.22) inset; }

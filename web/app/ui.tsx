@@ -167,7 +167,7 @@ export function Tabs<T extends string>({ value, onChange, tabs }: { value: T; on
   );
 }
 
-export const humanize = (s: string) => s.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_.]/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+export const humanize = (s?: string | null) => (s ? String(s).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_.]/g, " ").replace(/^\w/, (c) => c.toUpperCase()) : "");
 
 // ------------------------------------------------------------------ overlays
 

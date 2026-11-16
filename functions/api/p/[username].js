@@ -177,7 +177,7 @@ export async function onRequestGet(context) {
     status: "ok",
     payload: {
       user: {
-        uid: user.uid || 10420,
+        uid: user.uid || 1,
         username: user.username,
         createdAt: user.createdAt || new Date().toISOString(),
         premium: false,

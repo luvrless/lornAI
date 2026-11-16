@@ -23,7 +23,7 @@ export function Overview() {
   return (
     <div className="stack-24">
       <div className="page-head">
-        <div><h1>Welcome back, {d.user.displayName || d.user.username}</h1><p>{d.profile.is_published ? <>Your design is live at <a href={d.url} target="_blank" rel="noreferrer">{d.url.replace(/^https?:\/\//, "")}</a>.</> : <>Visitors to <a href={d.url} target="_blank" rel="noreferrer">{d.url.replace(/^https?:\/\//, "")}</a> see your starter card. Publish a design to replace it.</>}</p></div>
+        <div><h1>Welcome back, {d.user.displayName || d.user.username}</h1><p>{d.profile?.is_published ? <>Your design is live at <a href={d.url || `https://lorn.lol/${d.user.username}`} target="_blank" rel="noreferrer">{(d.url || `https://lorn.lol/${d.user.username}`).replace(/^https?:\/\//, "")}</a>.</> : <>Visitors to <a href={d.url || `https://lorn.lol/${d.user.username}`} target="_blank" rel="noreferrer">{(d.url || `https://lorn.lol/${d.user.username}`).replace(/^https?:\/\//, "")}</a> see your starter card. Publish a design to replace it.</>}</p></div>
         <div className="row"><Copy text={d.url} label="Copy link" /><a className="btn sm" href={`/${d.user.username}`} target="_blank" rel="noreferrer"><LuExternalLink />Open</a><Link className="btn sm primary" to="/dashboard/customize">Customize</Link></div>
       </div>
       {d.announcements.map((a: any) => <div key={a.id} className={`banner ${a.level === "warning" ? "warn" : a.level === "critical" ? "bad" : ""}`}><LuMegaphone /><div><b>{a.title}</b><div className="small">{a.body}</div></div></div>)}
@@ -90,7 +90,7 @@ export function Badges() {
           <div key={b.id} {...bind(i)} style={{ opacity: b.hidden ? .55 : 1 }}>
             <span className="handle" aria-hidden><LuGripVertical /></span>
             <BadgeIcon b={b} size={28} />
-            <div className="grow"><b>{b.name}</b><div className="small dim">{b.description || b.tooltip} · {humanize(b.rarity)} · {b.method === "purchase" ? "Purchased" : b.method === "admin_grant" ? "Granted by staff" : humanize(b.method)} {fmtDate(b.acquiredAt)}</div></div>
+            <div className="grow"><b>{b.name}</b><div className="small dim">{b.description || b.tooltip} · {humanize(b.rarity || "uncommon")} · {b.method === "purchase" ? "Purchased" : b.method === "admin_grant" ? "Granted by staff" : humanize(b.method || "unlocked")} {fmtDate(b.acquiredAt)}</div></div>
             <Button size="sm" kind="ghost" icon onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up"><LuArrowUp /></Button>
             <Button size="sm" kind="ghost" icon onClick={() => move(i, 1)} disabled={i === order.length - 1} aria-label="Move down"><LuArrowDown /></Button>
             <Button size="sm" kind="ghost" icon onClick={() => save(order.map((x) => (x.id === b.id ? { ...x, hidden: !x.hidden } : x)))} aria-label={b.hidden ? "Show on profile" : "Hide from profile"}>{b.hidden ? <LuEyeOff /> : <LuEye />}</Button>

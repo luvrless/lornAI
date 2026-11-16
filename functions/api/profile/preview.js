@@ -8,16 +8,21 @@ async function resolveRoblox(rawId) {
     cleanId = String(rawId).trim();
   }
 
+  const rbxHeaders = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json"
+  };
+
   try {
     let userObj = null;
     if (cleanId) {
-      const uRes = await fetch(`https://users.roblox.com/v1/users/${cleanId}`);
+      const uRes = await fetch(`https://users.roblox.com/v1/users/${cleanId}`, { headers: rbxHeaders });
       if (uRes.ok) userObj = await uRes.json();
     } else {
       // Look up by username
       const lookupRes = await fetch("https://users.roblox.com/v1/usernames/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...rbxHeaders },
         body: JSON.stringify({ usernames: [String(rawId).trim()], excludeBannedUsers: true })
       });
       if (lookupRes.ok) {
@@ -32,13 +37,38 @@ async function resolveRoblox(rawId) {
     if (!cleanId) return null;
 
     let avatarUrl = "";
-    try {
-      const avRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${cleanId}&size=150x150&format=Png&isCircular=false`);
-      if (avRes.ok) {
-        const avData = await avRes.json();
-        avatarUrl = avData?.data?.[0]?.imageUrl || "";
-      }
-    } catch {}
+    let friendsCount = 0;
+    let followersCount = 0;
+
+    const [avRes, frRes, foRes] = await Promise.allSettled([
+      fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${cleanId}&size=150x150&format=Png`, { headers: rbxHeaders }),
+      fetch(`https://friends.roblox.com/v1/users/${cleanId}/friends/count`, { headers: rbxHeaders }),
+      fetch(`https://friends.roblox.com/v1/users/${cleanId}/followers/count`, { headers: rbxHeaders })
+    ]);
+
+    if (avRes.status === "fulfilled" && avRes.value.ok) {
+      const avData = await avRes.value.json().catch(() => null);
+      avatarUrl = avData?.data?.[0]?.imageUrl || "";
+    }
+    if (!avatarUrl) {
+      try {
+        const hRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${cleanId}&size=150x150&format=Png&isCircular=false`);
+        if (hRes.ok) {
+          const hData = await hRes.json();
+          avatarUrl = hData?.data?.[0]?.imageUrl || "";
+        }
+      } catch {}
+    }
+
+    if (frRes.status === "fulfilled" && frRes.value.ok) {
+      const frData = await frRes.value.json().catch(() => null);
+      if (typeof frData?.count === "number") friendsCount = frData.count;
+    }
+
+    if (foRes.status === "fulfilled" && foRes.value.ok) {
+      const foData = await foRes.value.json().catch(() => null);
+      if (typeof foData?.count === "number") followersCount = foData.count;
+    }
 
     return {
       status: "ok",
@@ -48,8 +78,8 @@ async function resolveRoblox(rawId) {
         displayName: userObj?.displayName || userObj?.name || rawId,
         url: `https://www.roblox.com/users/${cleanId}/profile`,
         avatar: avatarUrl,
-        friends: 0,
-        followers: 0
+        friends: friendsCount,
+        followers: followersCount
       }
     };
   } catch {
