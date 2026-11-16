@@ -36,7 +36,7 @@ export async function onRequestPut(context) {
 
   try {
     const body = await context.request.json().catch(() => ({}));
-    const config = body.config || body.draft;
+    const config = body.config || body.draft || (body.identity ? body : null);
     const rev = (Number(body.rev) || 1) + 1;
 
     if (config && context.env?.LORNAI_KV && user.username) {

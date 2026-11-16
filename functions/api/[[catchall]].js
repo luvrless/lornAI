@@ -23,42 +23,12 @@ export async function onRequest(context) {
     });
   }
 
-  // Badges
-  if (path.includes("/api/badges/me")) {
-    return json({ badges: [], credits: 0, customRequests: [] });
-  }
-
-  if (path.includes("/api/badges/catalogue")) {
-    return rawJson([]);
-  }
-
-  // Profile
-  if (path.includes("/api/profile/status")) {
-    return json({
-      isPublished: false,
-      hasUnpublishedChanges: false,
-      publishedAt: null,
-      moderationHidden: false
-    });
-  }
-
+  // Profile versions
   if (path.includes("/api/profile/versions")) {
     return rawJson([]);
   }
 
-  if (path.includes("/api/profile/preview")) {
-    return json({ integrations: {} });
-  }
-
-  if (path.includes("/api/profile/draft")) {
-    return json({ ok: true, rev: 2, premiumBlocked: [] });
-  }
-
   // Media
-  if (path.includes("/api/media/usage")) {
-    return json({ usedBytes: 0, quotaBytes: 104857600, byKind: [] });
-  }
-
   if (path.includes("/api/media-folders") || path.includes("/api/media/history")) {
     return rawJson([]);
   }
