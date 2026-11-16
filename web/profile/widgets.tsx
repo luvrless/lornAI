@@ -18,11 +18,16 @@ const Title = ({ children }: { children: ReactNode }) => (children ? <h3 classNa
 const Ext = ({ href, children }: { href: string; children: ReactNode }) => <a href={href} target="_blank" rel="noopener noreferrer nofollow ugc">{children}</a>;
 const nf = (n: number | null | undefined) => (n == null ? "—" : Intl.NumberFormat("en", { notation: n >= 10000 ? "compact" : "standard" }).format(n));
 
-function Remote({ ctx, render, label }: { ctx: WidgetCtx; render: (d: any) => ReactNode; label: string }) {
+function Remote({ ctx, render, label, fallback }: { ctx: WidgetCtx; render: (d: any) => ReactNode; label: string; fallback?: ReactNode }) {
   const r = ctx.data;
-  if (!r || r.status === "pending") return <div className="w-loading"><span className="w-skel" /><span className="w-skel short" /></div>;
-  if (r.status === "not_configured") return <div className="w-unavail"><LuCircleAlert /> {label} isn't connected on this server yet</div>;
-  if (r.status === "error") return <div className="w-unavail"><LuCircleAlert /> {label}: {r.error}</div>;
+  if (!r || r.status === "pending") {
+    if (fallback) return <>{fallback}</>;
+    return <div className="w-loading"><span className="w-skel" /><span className="w-skel short" /></div>;
+  }
+  if (r.status === "not_configured" || r.status === "error") {
+    if (fallback) return <>{fallback}</>;
+    return <div className="w-unavail"><LuCircleAlert /> {label} {r.error ? `: ${r.error}` : "isn't connected on this server yet"}</div>;
+  }
   return <>{render(r.data)}</>;
 }
 
@@ -85,9 +90,27 @@ export const WIDGET_COMPONENTS: Record<string, W> = {
     {d.languages?.length > 0 && <div className="w-tags">{d.languages.map((l: any) => <span key={l.name} className="w-tag">{l.name}</span>)}</div>}
     {config.showRepos && <div className="w-list">{d.repos.slice(0, 4).map((r: any) => <div key={r.name} className="w-li"><LuGitBranch /><Ext href={r.url}><b>{r.name}</b></Ext><span className="w-dim"><LuStar /> {r.stars}</span></div>)}</div>}
   </>} />,
-  roblox: ({ ctx }) => <Remote ctx={ctx} label="Roblox" render={(d) => <div className="w-head">
-    {d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiRoblox />}<div><Ext href={d.url}><b>{d.displayName}</b></Ext><div className="w-dim">@{d.name}</div></div>
-    <div className="w-stats sm"><div><b>{nf(d.friends)}</b><span>friends</span></div><div><b>{nf(d.followers)}</b><span>followers</span></div></div></div>} />,
+  roblox: ({ config, ctx }) => {
+    const raw = (config?.userId || "").trim();
+    const cleanId = raw.match(/users\/(\d+)/i)?.[1] || raw.match(/^(\d+)$/)?.[1] || "";
+    const profileUrl = cleanId ? `https://www.roblox.com/users/${cleanId}/profile` : (raw.startsWith("http") ? raw : (raw ? `https://www.roblox.com/search/users?keyword=${encodeURIComponent(raw)}` : "https://www.roblox.com"));
+    const displayName = cleanId ? `Roblox User #${cleanId}` : (raw || "Roblox");
+    return (
+      <Remote ctx={ctx} label="Roblox"
+        fallback={
+          <div className="w-head">
+            <SiRoblox style={{ width: 26, height: 26 }} />
+            <div><Ext href={profileUrl}><b>{displayName}</b></Ext><div className="w-dim">{cleanId ? `@${cleanId}` : (raw || "Roblox")}</div></div>
+          </div>
+        }
+        render={(d) => <div className="w-head">
+          {d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiRoblox />}
+          <div><Ext href={d.url || profileUrl}><b>{d.displayName || d.name || displayName}</b></Ext><div className="w-dim">@{d.name || cleanId}</div></div>
+          <div className="w-stats sm"><div><b>{nf(d.friends)}</b><span>friends</span></div><div><b>{nf(d.followers)}</b><span>followers</span></div></div>
+        </div>}
+      />
+    );
+  },
   steam: ({ config, ctx }) => <Remote ctx={ctx} label="Steam" render={(d) => <>
     <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiSteam />}<Ext href={d.url}><b>{d.name}</b></Ext>{d.gameCount != null && <span className="w-dim">{d.gameCount} games</span>}</div>
     {config.showGames && <div className="w-list">{(d.recent.length ? d.recent : d.top).slice(0, 4).map((g: any) => <div key={g.appid} className="w-li">{g.icon && <img src={g.icon} alt="" />}<b>{g.name}</b><span className="w-dim">{g.hours2w != null ? `${g.hours2w} h past 2 weeks` : `${g.hours} h`}</span></div>)}</div>}

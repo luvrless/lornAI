@@ -30,6 +30,7 @@ export async function onRequestGet(context) {
   if (token) {
     let user = decodeToken(token);
     if (user && user.username) {
+      let connections = [];
       // If KV has updated info for user, refresh it
       if (context.env?.LORNAI_KV) {
         try {
@@ -48,13 +49,17 @@ export async function onRequestGet(context) {
               twoFactor: false
             };
           }
+          const connRaw = await context.env.LORNAI_KV.get(`connections:${user.username.toLowerCase()}`);
+          if (connRaw) {
+            connections = JSON.parse(connRaw);
+          }
         } catch {}
       }
 
       return new Response(JSON.stringify({
         app: "lorn",
         user,
-        connections: [],
+        connections,
         adminPanel: false,
         staffRole: null,
         mfaPending: false,

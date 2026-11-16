@@ -30,7 +30,14 @@ export async function onRequestPost(context) {
   if (context.env?.LORNAI_KV && username) {
     try {
       await context.env.LORNAI_KV.put(`published:${username.toLowerCase()}`, "true");
-      const currLive = Number(await context.env.LORNAI_KV.get("stats:live")) || 1;
+
+      // Copy the draft as the published config
+      const draft = await context.env.LORNAI_KV.get(`profile:${username.toLowerCase()}`);
+      if (draft) {
+        await context.env.LORNAI_KV.put(`published_config:${username.toLowerCase()}`, draft);
+      }
+
+      const currLive = Number(await context.env.LORNAI_KV.get("stats:live")) || 98;
       await context.env.LORNAI_KV.put("stats:live", String(currLive + 1));
     } catch {}
   }

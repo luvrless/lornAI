@@ -36,7 +36,7 @@ export const WIDGETS = {
   // SOCIAL (backed by integrations)
   discord: { category: "social", label: "Discord", schema: z.object({ showConnected: z.boolean().default(true) }) },
   discordserver: { category: "social", label: "Discord server", schema: z.object({ invite: z.string().regex(/^[A-Za-z0-9-]{2,32}$/).or(z.literal("")).default("") }) },
-  roblox: { category: "social", label: "Roblox", schema: z.object({ userId: z.string().regex(/^\d{1,20}$/).or(z.literal("")).default("") }) },
+  roblox: { category: "social", label: "Roblox", schema: z.object({ userId: z.string().max(250).default("") }) },
   steam: { category: "social", label: "Steam", schema: z.object({ steamId: z.string().regex(/^\d{17}$/).or(z.literal("")).default(""), showGames: z.boolean().default(true) }) },
   spotify: { category: "social", label: "Spotify", schema: z.object({ url: z.union([safeUrl, z.literal("")]).default("") }) },
   youtube: { category: "social", label: "YouTube", schema: z.object({ channelId: z.string().regex(/^UC[\w-]{22}$/).or(z.literal("")).default("") }) },

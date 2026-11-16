@@ -269,7 +269,7 @@ export function ProfileView({ payload, mode, pageSlug = null, entryPreview = "au
 
   // Integration widgets render from cache first, then refresh in the background.
   useEffect(() => {
-    if (mode !== "public" || !Object.values(payload.integrations).some((r: any) => r?.status === "pending")) return;
+    if (mode !== "public" || !payload?.integrations || !Object.values(payload.integrations).some((r: any) => r?.status === "pending")) return;
     fetch(`/api/p/${encodeURIComponent(payload.user.username)}/integrations`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setLive(d)).catch(() => {});
   }, [mode, payload.user.username, payload.integrations]);
 

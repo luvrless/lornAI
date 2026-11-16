@@ -9,6 +9,55 @@ import { useLocation } from "./router.tsx";
 import { Landing, Login, Register, TwoFactor, VerifyCode, SignupComplete, ForgotPassword, ResetPassword, VerifyEmail, Legal, NotFound } from "./pages/public.tsx";
 import { DashboardShell } from "./dashboard/shell.tsx";
 import { AdminApp } from "./admin/admin.tsx";
+import { ProfileView, type Payload } from "../profile/ProfileView.tsx";
+import { useState, useEffect } from "react";
+
+function PublicProfileRoute({ username, pageSlug }: { username: string; pageSlug?: string | null }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [payload, setPayload] = useState<Payload | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(`/api/p/${encodeURIComponent(username)}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(r.status === 404 ? "not_found" : "failed");
+        return r.json();
+      })
+      .then((data) => {
+        if (data?.payload) {
+          setPayload(data.payload);
+          const title = data.payload.config?.seo?.title || `${data.payload.config?.identity?.displayName || data.payload.user?.username || username} · LORN.LOL`;
+          document.title = title;
+        } else {
+          setError("not_found");
+        }
+      })
+      .catch((err) => {
+        setError(err.message || "not_found");
+      })
+      .finally(() => setLoading(false));
+  }, [username]);
+
+  if (loading) {
+    return <div className="boot" role="status" aria-label="Loading"><img src="/brand/mark-128.png" alt="" /><i /></div>;
+  }
+
+  if (error || !payload) {
+    return (
+      <div className="lp-missing" style={{ minHeight: "80vh", display: "grid", placeItems: "center", textAlign: "center" }}>
+        <div>
+          <h1 style={{ fontSize: 32, marginBottom: 12 }}>Page not found</h1>
+          <p style={{ color: "var(--mist)", marginBottom: 20 }}>lorn.lol/{username} is still available.</p>
+          <a className="btn primary" href={`/register?username=${encodeURIComponent(username)}`}>Claim it</a>
+        </div>
+      </div>
+    );
+  }
+
+  return <ProfileView payload={payload} mode="public" pageSlug={pageSlug} />;
+}
 
 /** A crash in one screen shows a recoverable message instead of blanking the app. Resets on navigation. */
 class Boundary extends Component<{ children: ReactNode; resetKey: string }, { error: Error | null; key: string }> {
@@ -49,6 +98,12 @@ function Routes() {
   if (pathname === "/privacy") return <Legal kind="privacy" />;
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return <DashboardShell />;
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return <AdminApp />;
+
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length >= 1 && parts.length <= 2 && /^[A-Za-z0-9_.]{1,12}$/.test(parts[0])) {
+    return <PublicProfileRoute username={parts[0]} pageSlug={parts[1] ?? null} />;
+  }
+
   return <NotFound />;
 }
 
