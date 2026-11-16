@@ -84,12 +84,26 @@ export const WIDGET_COMPONENTS: Record<string, W> = {
   musicplayer: ({ ctx }) => <>{ctx.renderMusic?.() ?? <div className="w-unavail">Add tracks in the Music section</div>}</>,
   embed: ({ config }) => <Embed provider={config.provider} url={config.url} />,
   spotify: ({ config }) => <Embed provider="spotify" url={config.url} />,
-  github: ({ config, ctx }) => <Remote ctx={ctx} label="GitHub" render={(d) => <>
-    <div className="w-head"><SiGithub /><Ext href={d.url}><b>{d.name || d.login}</b></Ext><span className="w-dim">@{d.login}</span></div>
-    <div className="w-stats"><div><b>{nf(d.publicRepos)}</b><span>repos</span></div><div><b>{nf(d.stars)}</b><span>stars</span></div><div><b>{nf(d.followers)}</b><span>followers</span></div></div>
-    {d.languages?.length > 0 && <div className="w-tags">{d.languages.map((l: any) => <span key={l.name} className="w-tag">{l.name}</span>)}</div>}
-    {config.showRepos && <div className="w-list">{d.repos.slice(0, 4).map((r: any) => <div key={r.name} className="w-li"><LuGitBranch /><Ext href={r.url}><b>{r.name}</b></Ext><span className="w-dim"><LuStar /> {r.stars}</span></div>)}</div>}
-  </>} />,
+  github: ({ config, ctx }) => {
+    const raw = (config?.username || "").trim();
+    const url = raw ? `https://github.com/${raw}` : "https://github.com";
+    return (
+      <Remote ctx={ctx} label="GitHub"
+        fallback={
+          <div className="w-head">
+            <SiGithub style={{ width: 24, height: 24 }} />
+            <div><Ext href={url}><b>{raw || "GitHub"}</b></Ext><div className="w-dim">{raw ? `@${raw}` : "GitHub Profile"}</div></div>
+          </div>
+        }
+        render={(d) => <>
+          <div className="w-head"><SiGithub /><Ext href={d.url || url}><b>{d.name || d.login || raw}</b></Ext><span className="w-dim">@{d.login || raw}</span></div>
+          <div className="w-stats"><div><b>{nf(d.publicRepos)}</b><span>repos</span></div><div><b>{nf(d.stars)}</b><span>stars</span></div><div><b>{nf(d.followers)}</b><span>followers</span></div></div>
+          {d.languages?.length > 0 && <div className="w-tags">{d.languages.map((l: any) => <span key={l.name} className="w-tag">{l.name}</span>)}</div>}
+          {config.showRepos && d.repos?.length > 0 && <div className="w-list">{d.repos.slice(0, 4).map((r: any) => <div key={r.name} className="w-li"><LuGitBranch /><Ext href={r.url}><b>{r.name}</b></Ext><span className="w-dim"><LuStar /> {r.stars}</span></div>)}</div>}
+        </>}
+      />
+    );
+  },
   roblox: ({ config, ctx }) => {
     const raw = (config?.userId || "").trim();
     const cleanId = raw.match(/users\/(\d+)/i)?.[1] || raw.match(/^(\d+)$/)?.[1] || "";
@@ -111,21 +125,76 @@ export const WIDGET_COMPONENTS: Record<string, W> = {
       />
     );
   },
-  steam: ({ config, ctx }) => <Remote ctx={ctx} label="Steam" render={(d) => <>
-    <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiSteam />}<Ext href={d.url}><b>{d.name}</b></Ext>{d.gameCount != null && <span className="w-dim">{d.gameCount} games</span>}</div>
-    {config.showGames && <div className="w-list">{(d.recent.length ? d.recent : d.top).slice(0, 4).map((g: any) => <div key={g.appid} className="w-li">{g.icon && <img src={g.icon} alt="" />}<b>{g.name}</b><span className="w-dim">{g.hours2w != null ? `${g.hours2w} h past 2 weeks` : `${g.hours} h`}</span></div>)}</div>}
-  </>} />,
-  twitch: ({ ctx }) => <Remote ctx={ctx} label="Twitch" render={(d) => <div className="w-head">
-    {d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiTwitch />}<div className="grow"><Ext href={d.url}><b>{d.name}</b></Ext><div className="w-dim">{d.live ? `${d.game ?? "Live"} · ${nf(d.viewers)} watching` : "Offline"}</div></div>
-    {d.live && <span className="w-live">Live</span>}</div>} />,
-  youtube: ({ ctx }) => <Remote ctx={ctx} label="YouTube" render={(d) => <>
-    <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiYoutube />}<Ext href={d.url}><b>{d.title}</b></Ext><span className="w-dim">{d.subscribers != null ? `${nf(d.subscribers)} subscribers` : ""}</span></div>
-    <div className="w-grid">{d.latest.map((v: any) => <figure key={v.id}><Ext href={`https://youtube.com/watch?v=${v.id}`}><img src={v.thumb} alt="" loading="lazy" /></Ext><figcaption>{v.title}</figcaption></figure>)}</div>
-  </>} />,
-  discord: ({ ctx }) => <Remote ctx={ctx} label="Discord" render={(d) => <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiDiscord />}<div><b>{d.username}</b><div className="w-dim">Connected Discord account</div></div></div>} />,
-  discordserver: ({ ctx }) => <Remote ctx={ctx} label="Discord server" render={(d) => <div className="w-head">
-    {d.icon ? <img className="w-av" src={d.icon} alt="" /> : <SiDiscord />}<div className="grow"><b>{d.name}</b><div className="w-dim"><LuUsers /> {nf(d.members)} members · {nf(d.online)} online</div></div>
-    <Ext href={d.url}><span className="w-join">Join</span></Ext></div>} />,
+  steam: ({ config, ctx }) => {
+    const steamId = (config?.steamId || "").trim();
+    const url = steamId ? `https://steamcommunity.com/profiles/${steamId}` : "https://steamcommunity.com";
+    return (
+      <Remote ctx={ctx} label="Steam"
+        fallback={
+          <div className="w-head"><SiSteam style={{ width: 24, height: 24 }} /><Ext href={url}><b>Steam Player</b></Ext><span className="w-dim">{steamId ? `@${steamId}` : ""}</span></div>
+        }
+        render={(d) => <>
+          <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiSteam />}<Ext href={d.url || url}><b>{d.name || "Steam Player"}</b></Ext>{d.gameCount != null && <span className="w-dim">{d.gameCount} games</span>}</div>
+          {config.showGames && (d.recent?.length || d.top?.length) ? <div className="w-list">{(d.recent?.length ? d.recent : (d.top || [])).slice(0, 4).map((g: any) => <div key={g.appid} className="w-li">{g.icon && <img src={g.icon} alt="" />}<b>{g.name}</b><span className="w-dim">{g.hours2w != null ? `${g.hours2w} h past 2 weeks` : `${g.hours} h`}</span></div>)}</div> : null}
+        </>}
+      />
+    );
+  },
+  twitch: ({ config, ctx }: any) => {
+    const raw = (config?.login || "").trim();
+    const url = raw ? `https://twitch.tv/${raw}` : "https://twitch.tv";
+    return (
+      <Remote ctx={ctx} label="Twitch"
+        fallback={
+          <div className="w-head"><SiTwitch style={{ width: 24, height: 24 }} /><div className="grow"><Ext href={url}><b>{raw || "Twitch"}</b></Ext><div className="w-dim">Twitch Channel</div></div></div>
+        }
+        render={(d) => <div className="w-head">
+          {d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiTwitch />}<div className="grow"><Ext href={d.url || url}><b>{d.name || raw}</b></Ext><div className="w-dim">{d.live ? `${d.game ?? "Live"} · ${nf(d.viewers)} watching` : "Offline"}</div></div>
+          {d.live && <span className="w-live">Live</span>}</div>}
+      />
+    );
+  },
+  youtube: ({ config, ctx }: any) => {
+    const raw = (config?.channelId || "").trim();
+    const url = raw ? `https://youtube.com/channel/${raw}` : "https://youtube.com";
+    return (
+      <Remote ctx={ctx} label="YouTube"
+        fallback={
+          <div className="w-head"><SiYoutube style={{ width: 24, height: 24 }} /><Ext href={url}><b>YouTube</b></Ext><span className="w-dim">Channel</span></div>
+        }
+        render={(d) => <>
+          <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiYoutube />}<Ext href={d.url || url}><b>{d.title || "YouTube"}</b></Ext><span className="w-dim">{d.subscribers != null ? `${nf(d.subscribers)} subscribers` : ""}</span></div>
+          {d.latest?.length > 0 && <div className="w-grid">{d.latest.map((v: any) => <figure key={v.id}><Ext href={`https://youtube.com/watch?v=${v.id}`}><img src={v.thumb} alt="" loading="lazy" /></Ext><figcaption>{v.title}</figcaption></figure>)}</div>}
+        </>}
+      />
+    );
+  },
+  discord: ({ ctx }) => (
+    <Remote ctx={ctx} label="Discord"
+      fallback={
+        <div className="w-head"><SiDiscord style={{ width: 24, height: 24 }} /><div><b>Discord</b><div className="w-dim">Connected Account</div></div></div>
+      }
+      render={(d) => <div className="w-head">{d.avatar ? <img className="w-av" src={d.avatar} alt="" /> : <SiDiscord />}<div><b>{d.username}</b><div className="w-dim">Connected Discord account</div></div></div>}
+    />
+  ),
+  discordserver: ({ config, ctx }) => {
+    const raw = (config?.invite || "").trim();
+    const url = raw ? `https://discord.gg/${raw}` : "https://discord.gg";
+    return (
+      <Remote ctx={ctx} label="Discord server"
+        fallback={
+          <div className="w-head">
+            <SiDiscord style={{ width: 24, height: 24 }} />
+            <div className="grow"><b>Discord Server</b><div className="w-dim">{raw ? `discord.gg/${raw}` : "Community"}</div></div>
+            <Ext href={url}><span className="w-join">Join</span></Ext>
+          </div>
+        }
+        render={(d) => <div className="w-head">
+          {d.icon ? <img className="w-av" src={d.icon} alt="" /> : <SiDiscord />}<div className="grow"><b>{d.name || "Discord Server"}</b><div className="w-dim"><LuUsers /> {nf(d.members)} members · {nf(d.online)} online</div></div>
+          <Ext href={d.url || url}><span className="w-join">Join</span></Ext></div>}
+      />
+    );
+  },
   calendar: ({ config }) => {
     const today = new Date().toISOString().slice(0, 10);
     const ev = [...config.events].sort((a: any, b: any) => a.date.localeCompare(b.date)).filter((e: any) => e.date >= today);

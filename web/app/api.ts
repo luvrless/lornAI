@@ -55,6 +55,9 @@ export interface UploadedAsset { id: string; kind: string; name: string; mime: s
 
 /** start → PUT bytes (XHR for progress) → complete. Works for local and S3 targets. */
 export async function uploadFile(file: File, opts: { kind?: string; folderId?: string | null; replaceAssetId?: string; onProgress?: (p: number) => void; startPath?: string; completePath?: (id: string) => string } = {}): Promise<UploadedAsset> {
+  if (file.size > 25 * 1024 * 1024) {
+    throw new ApiError(400, "file_too_large", "File size exceeds the 25MB limit. Please select a smaller file.");
+  }
   const s = await post<{ uploadId: string; target: { url: string; method: string; headers: Record<string, string> } }>(opts.startPath ?? "/api/media/uploads", {
     filename: file.name, mime: file.type || guessMime(file.name), size: file.size, kind: opts.kind, folderId: opts.folderId ?? null, replaceAssetId: opts.replaceAssetId ?? null,
   });
@@ -62,7 +65,18 @@ export async function uploadFile(file: File, opts: { kind?: string; folderId?: s
     const x = new XMLHttpRequest();
     x.open("PUT", s.target.url);
     for (const [k, v] of Object.entries(s.target.headers)) x.setRequestHeader(k, v);
-    x.upload.onprogress = (e) => e.lengthComputable && opts.onProgress?.(e.loaded / e.total);
+    let lastProgress = 0;
+    let lastTime = 0;
+    x.upload.onprogress = (e) => {
+      if (!e.lengthComputable) return;
+      const progress = e.loaded / e.total;
+      const now = performance.now();
+      if (progress === 1 || progress - lastProgress >= 0.04 || now - lastTime > 120) {
+        lastProgress = progress;
+        lastTime = now;
+        opts.onProgress?.(progress);
+      }
+    };
     x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new ApiError(x.status, "upload_failed", parseErr(x.responseText) ?? `Upload failed (${x.status})`)));
     x.onerror = () => reject(new ApiError(0, "network", "Upload interrupted. Check your connection and try again."));
     x.send(file);

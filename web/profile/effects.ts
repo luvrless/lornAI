@@ -35,8 +35,15 @@ function loop(draw: (t: number, dt: number) => void, still: boolean): Stop {
 }
 
 function fit(canvas: HTMLCanvasElement, maxDpr: number, scale = 1) {
+  const c = canvas as any;
+  const now = performance.now();
+  if (!c._cachedW || now - (c._lastCheck || 0) > 300) {
+    c._cachedW = canvas.clientWidth || 300;
+    c._cachedH = canvas.clientHeight || 150;
+    c._lastCheck = now;
+  }
   const dpr = Math.min(maxDpr, window.devicePixelRatio || 1) * scale;
-  const w = Math.max(1, Math.floor(canvas.clientWidth * dpr)), h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+  const w = Math.max(1, Math.floor(c._cachedW * dpr)), h = Math.max(1, Math.floor(c._cachedH * dpr));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   return { w, h, dpr };
 }
@@ -123,13 +130,27 @@ function webgl(canvas: HTMLCanvasElement, name: string, o: EffectOpts, still: bo
   const lowEnd = (navigator as any).hardwareConcurrency <= 4;
   const scale = name === "crt" || name === "dither" ? 1 : lowEnd ? 0.45 : 0.65;
   const uT = u("t"), uR = u("r");
-  return loop((t) => {
+  const stopLoop = loop((t) => {
     const { w, h } = fit(canvas, 1.5, scale);
     gl.viewport(0, 0, w, h);
     gl.uniform2f(uR, w, h);
     gl.uniform1f(uT, t * o.speed);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }, still);
+
+  return () => {
+    stopLoop();
+    try {
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      if (buf) gl.deleteBuffer(buf);
+      if (prog) {
+        if (vs) { gl.detachShader(prog, vs); gl.deleteShader(vs); }
+        if (fs) { gl.detachShader(prog, fs); gl.deleteShader(fs); }
+        gl.deleteProgram(prog);
+      }
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
+    } catch {}
+  };
 }
 
 // ------------------------------------------------------------------ particle systems (canvas 2D)

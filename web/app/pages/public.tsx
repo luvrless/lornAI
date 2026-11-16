@@ -214,22 +214,6 @@ export function Landing() {
         </div></div>
       </section>
 
-      {showcase.length >= 3 && (
-        <section className="lx-sec" id="community">
-          <p className="lx-kicker">Made by the community</p>
-          <h2>See what people built</h2>
-          <div className="lx-show">
-            {showcase.map((p) => (
-              <a key={p.username} className="glass lx-show-card" href={`/${p.username}`} aria-label={`View ${p.name}'s profile`}>
-                <span className="swatch" style={{ background: p.colors.length >= 2 ? `linear-gradient(135deg, ${p.colors.join(", ")})` : undefined }} />
-                <b>{p.name}</b><span className="dim">lorn.lol/{p.username}</span>
-                <span className="small muted">{compact(p.views)} {p.views === 1 ? "view" : "views"}</span>
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="lx-sec" id="features">
         <p className="lx-kicker">Everything in one editor</p>
         <h2>Change anything. See it instantly.</h2>

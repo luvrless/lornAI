@@ -1,6 +1,38 @@
 import { DEFAULT_CONFIG } from '../profile/default-config.js';
 import { ALL_BADGES } from '../badges/catalogue.js';
 
+function parseCookies(header) {
+  const list = {};
+  if (!header) return list;
+  header.split(';').forEach(cookie => {
+    let [name, ...rest] = cookie.split('=');
+    name = name?.trim();
+    if (!name) return;
+    const val = rest.join('=').trim();
+    try { list[name] = decodeURIComponent(val); } catch { list[name] = val; }
+  });
+  return list;
+}
+
+function decodeToken(token) {
+  try {
+    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4 !== 0) base64 += '=';
+    const jsonStr = decodeURIComponent(escape(atob(base64)));
+    return JSON.parse(jsonStr);
+  } catch {
+    return null;
+  }
+}
+
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  return (h >>> 0).toString(36);
+}
+
 function mergeConfigs(base, override) {
   if (!override || typeof override !== 'object') return structuredClone(base);
   const out = structuredClone(base);
@@ -47,17 +79,36 @@ export async function onRequestGet(context) {
     return json({ error: "not_found" }, 404);
   }
 
-  // Increment view count in KV
+  // Check if visitor is the profile owner viewing their own profile
+  const cookieHeader = context.request.headers.get("Cookie");
+  const cookies = parseCookies(cookieHeader);
+  const sessionUser = cookies.lorn_session ? decodeToken(cookies.lorn_session) : null;
+  const isOwner = sessionUser?.username && sessionUser.username.toLowerCase() === username;
+
+  // View count with per-person / device deduplication (IP + User-Agent within 24h window)
   let views = 0;
   if (context.env?.LORNAI_KV) {
     try {
       const v = await context.env.LORNAI_KV.get(`views:${username}`);
-      views = (Number(v) || 0) + 1;
-      await context.env.LORNAI_KV.put(`views:${username}`, String(views));
+      views = Number(v) || 0;
 
-      // Also increment global platform views
-      const gv = Number(await context.env.LORNAI_KV.get("stats:views")) || 2840;
-      await context.env.LORNAI_KV.put("stats:views", String(gv + 1));
+      if (!isOwner) {
+        const ip = context.request.headers.get("cf-connecting-ip") || context.request.headers.get("x-real-ip") || "unknown";
+        const ua = (context.request.headers.get("user-agent") || "").slice(0, 80);
+        const viewerHash = hashString(ip + ":" + ua);
+        const dedupeKey = `viewed:${username}:${viewerHash}`;
+
+        const alreadyViewed = await context.env.LORNAI_KV.get(dedupeKey);
+        if (!alreadyViewed) {
+          views += 1;
+          await context.env.LORNAI_KV.put(`views:${username}`, String(views));
+          await context.env.LORNAI_KV.put(dedupeKey, "1", { expirationTtl: 86400 });
+
+          // Also increment global platform views
+          const gv = Number(await context.env.LORNAI_KV.get("stats:views")) || 2840;
+          await context.env.LORNAI_KV.put("stats:views", String(gv + 1));
+        }
+      }
     } catch {}
   }
 

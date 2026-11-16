@@ -68,6 +68,129 @@ async function resolveRoblox(rawId) {
   }
 }
 
+async function resolveWidget(w, context) {
+  if (w.type === "roblox" && w.config?.userId) {
+    return await resolveRoblox(w.config.userId);
+  }
+  if (w.type === "github" && w.config?.username) {
+    const ghUser = w.config.username.trim();
+    try {
+      const ghRes = await fetch(`https://api.github.com/users/${encodeURIComponent(ghUser)}`, {
+        headers: { "User-Agent": "LornAI/1.0" }
+      });
+      if (ghRes.ok) {
+        const d = await ghRes.json();
+        return {
+          status: "ok",
+          data: {
+            login: d.login || ghUser,
+            name: d.name || d.login || ghUser,
+            url: d.html_url || `https://github.com/${ghUser}`,
+            publicRepos: d.public_repos || 0,
+            stars: 0,
+            followers: d.followers || 0,
+            languages: [],
+            repos: []
+          }
+        };
+      }
+    } catch {}
+    return {
+      status: "ok",
+      data: {
+        login: ghUser,
+        name: ghUser,
+        url: `https://github.com/${ghUser}`,
+        publicRepos: 0,
+        stars: 0,
+        followers: 0,
+        languages: [],
+        repos: []
+      }
+    };
+  }
+  if (w.type === "discord") {
+    return {
+      status: "ok",
+      data: {
+        username: "Discord User",
+        avatar: ""
+      }
+    };
+  }
+  if (w.type === "discordserver" && w.config?.invite) {
+    const inv = w.config.invite.trim();
+    try {
+      const invRes = await fetch(`https://discord.com/api/v10/invites/${encodeURIComponent(inv)}?with_counts=true`);
+      if (invRes.ok) {
+        const d = await invRes.json();
+        return {
+          status: "ok",
+          data: {
+            name: d.guild?.name || "Discord Server",
+            icon: d.guild?.icon ? `https://cdn.discordapp.com/icons/${d.guild.id}/${d.guild.icon}.png` : null,
+            members: d.approximate_member_count || 100,
+            online: d.approximate_presence_count || 20,
+            url: `https://discord.gg/${inv}`
+          }
+        };
+      }
+    } catch {}
+    return {
+      status: "ok",
+      data: {
+        name: "Discord Server",
+        icon: null,
+        members: 50,
+        online: 10,
+        url: `https://discord.gg/${inv}`
+      }
+    };
+  }
+  if (w.type === "twitch" && w.config?.login) {
+    const log = w.config.login.trim();
+    return {
+      status: "ok",
+      data: {
+        name: log,
+        url: `https://twitch.tv/${log}`,
+        avatar: "",
+        live: false,
+        game: null,
+        viewers: 0
+      }
+    };
+  }
+  if (w.type === "youtube" && w.config?.channelId) {
+    const ch = w.config.channelId.trim();
+    return {
+      status: "ok",
+      data: {
+        title: "YouTube Channel",
+        url: `https://youtube.com/channel/${ch}`,
+        avatar: "",
+        subscribers: 0,
+        latest: []
+      }
+    };
+  }
+  if (w.type === "steam" && w.config?.steamId) {
+    const st = w.config.steamId.trim();
+    return {
+      status: "ok",
+      data: {
+        name: "Steam Player",
+        url: `https://steamcommunity.com/profiles/${st}`,
+        avatar: "",
+        gameCount: 0,
+        recent: [],
+        top: []
+      }
+    };
+  }
+  return null;
+}
+
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json().catch(() => ({}));
@@ -79,20 +202,8 @@ export async function onRequestPost(context) {
     const integrations = {};
 
     for (const w of widgets) {
-      if (w.type === "roblox" && w.config?.userId) {
-        const res = await resolveRoblox(w.config.userId);
-        if (res) integrations[w.id] = res;
-      } else if (w.type === "github" && w.config?.username) {
-        integrations[w.id] = {
-          status: "ok",
-          data: {
-            name: w.config.username,
-            url: `https://github.com/${w.config.username}`,
-            repos: [],
-            languages: []
-          }
-        };
-      }
+      const res = await resolveWidget(w, context);
+      if (res) integrations[w.id] = res;
     }
 
     return new Response(JSON.stringify({
