@@ -146,9 +146,10 @@ export async function publish(note?: string) {
   if (!(await saveNow()) && state.status !== "saved") throw new Error(state.error ?? "Save your changes first");
   const r = await post<{ version: number }>("/api/profile/publish", { note });
   emit({ isPublished: true, publishedVersion: r.version, publishedConfig: JSON.stringify(state.config) });
+  window.dispatchEvent(new Event("lorn:profile-status"));
   return r.version;
 }
-export async function unpublish() { await post("/api/profile/unpublish"); emit({ isPublished: false }); }
+export async function unpublish() { await post("/api/profile/unpublish"); emit({ isPublished: false }); window.dispatchEvent(new Event("lorn:profile-status")); }
 export async function revertToPublished() { await saveNow(); await post("/api/profile/revert"); await loadEditor(true); }
 export async function restoreVersion(v: number) { await saveNow(); await post(`/api/profile/versions/${v}/restore`); await loadEditor(true); }
 export function acceptRecovery(use: boolean) {

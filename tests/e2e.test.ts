@@ -114,9 +114,15 @@ test("desktop: build, publish and visit a profile through the real UI", async ()
   await saved(p);
 
   // 26: nothing is public before publishing
-  assert.match(await publicHtml("jay"), /hasn(&#39;|')t been published yet/);
+  // Until then visitors get the starter card: handle, join date, views and UID, and none of the draft.
+  const starter = await publicHtml("jay");
+  assert.match(starter, /lp-handle[^>]*>@<!-- -->jay|lp-handle[^>]*>@jay/);
+  assert.match(starter, /UID/); assert.match(starter, /Joined/); assert.match(starter, /views/);
+  assert.ok(!starter.includes("building lorn") && !starter.includes("lp-link"), "draft content stays private");
+  await p.getByText("Starter card is public").waitFor();
   await p.click("button:has-text('Publish')");
   await p.getByText("Published version 1").waitFor();
+  await p.locator(".status-pill.ok").waitFor();
 
   // 27/19: the public page — server-rendered, entry screen hides the profile until clicked
   const html = await publicHtml("jay");
@@ -242,12 +248,15 @@ test("53: a regular user can't get into the admin panel", async () => {
   await p.waitForURL("**/dashboard");
   await p.locator(".sidebar a[href='/dashboard/badges']").waitFor();
   assert.equal(await p.locator(".sidebar a[href='/admin']").count(), 0, "no admin link for regular users");
+  // The panel doesn't even show a sign-in prompt to a regular member.
   await p.goto(`${h.base}/admin`);
-  await p.getByText("Confirm it's you").waitFor();
-  h.discord.users.set("777777777777777777", { id: "777777777777777777", username: "jaydiscord" });
-  h.discord.nextLogin = "777777777777777777";
-  await p.click("text=Continue with Discord");
-  await p.getByText("No admin access").waitFor();
+  await p.getByText("Nothing here").waitFor();
+  assert.equal(await p.getByText("Continue with Discord").count(), 0);
+  // Signed-out visitors are sent to the ordinary login page.
+  const anon = await browser.newContext(); const ap = watch(await anon.newPage());
+  await ap.goto(`${h.base}/admin`);
+  await ap.waitForURL("**/login?next=%2Fadmin");
+  await anon.close();
   assert.equal((await (await fetch(`${h.base}/api/admin/users`, { headers: { cookie: (await ctx.cookies()).map((c) => `${c.name}=${c.value}`).join("; ") } })).status), 403);
   await ctx.close();
 });

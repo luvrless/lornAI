@@ -21,6 +21,7 @@ export function authRoutes(app: App, r: Router) {
     const discord = links.find((l) => l.provider === "discord");
     const staff = discord ? await roleForDiscordId(app, app.db, discord.provider_user_id) : null;
     return {
+      app: "lorn",
       user: { ...u, createdAt: row.created_at, hasPassword: row.has_password, twoFactor: !!row.totp_enabled_at },
       connections: links.map((l) => ({ provider: l.provider, providerUserId: l.provider_user_id, username: l.provider_username, avatar: l.provider_avatar, linkedAt: l.linked_at })),
       // The admin panel link is shown only to the owner and owner-appointed admins.
@@ -33,11 +34,12 @@ export function authRoutes(app: App, r: Router) {
   };
 
   r.get("/api/auth/me", async (c) => {
-    if (!c.user || !c.session) return { user: null };
+    if (!c.user || !c.session) return { app: "lorn", user: null };
     return me(c);
   }, { allowMfaPending: true, maintenanceExempt: true });
 
   r.get("/api/auth/providers", async () => ({
+    app: "lorn", email: !!(app.cfg.resend || app.cfg.smtp),
     discord: !!app.cfg.discord, google: !!(app.cfg.google || app.cfg.supabaseAuth),
     registration: await getSetting(app, "registration.enabled", true),
   }), { maintenanceExempt: true });
@@ -99,6 +101,9 @@ export function authRoutes(app: App, r: Router) {
     const p = provider.safeParse(c.params.provider);
     if (!p.success) throw new HttpError(404, "not_found", "Unknown provider");
     const intent = (["login", "link", "admin"].includes(c.query.intent) ? c.query.intent : "login") as oauth.Intent;
+    // This is a full-page navigation, so a missing provider setup goes back to the login screen with a readable reason.
+    const configured = p.data === "discord" ? !!app.cfg.discord : !!(app.cfg.google || app.cfg.supabaseAuth);
+    if (!configured) { c.redirect(`/login?error=${p.data}_not_configured`); return; }
     c.redirect(await oauth.startOAuth(app, c, p.data, intent, c.query.next));
   }, { rate: { name: "oauth", rule: RULES.auth }, maintenanceExempt: true });
 

@@ -55,7 +55,7 @@ function shell(app: App, c: Ctx, o: { title: string; head?: string; body: string
 ${o.css.map((h) => `<link rel="stylesheet" href="/static/${h}">`).join("")}
 </head><body>${o.body}${o.script ? `<script type="module" src="/static/${o.script}" nonce="${o.nonce}"></script>` : ""}</body></html>`;
   c.res.setHeader("Content-Security-Policy", csp(app, o.nonce));
-  c.send(o.status ?? 200, html, "text/html; charset=utf-8", { "Cache-Control": "no-cache" });
+  c.send(o.status ?? 200, html, "text/html; charset=utf-8", { "Cache-Control": "private, no-cache" });
 }
 
 export async function renderPage(app: App, c: Ctx): Promise<boolean> {

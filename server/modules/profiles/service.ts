@@ -45,6 +45,14 @@ export async function premiumViolations(db: Queryable, userId: string, cfg: Prof
   return PREMIUM_FEATURES.filter((f) => f.test(cfg)).map((f) => f.label);
 }
 
+/** Key-order-independent JSON, so a config read back from jsonb compares equal to the same config in memory. */
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (v && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical((v as any)[k])}`).join(",")}}`;
+  return JSON.stringify(v) ?? "null";
+}
+const normalized = (cfg: unknown) => { const r = profileConfigSchema.safeParse(cfg); return r.success ? r.data : cfg; };
+
 export async function getEditorState(app: App, userId: string) {
   const p = (await app.db.query(
     `SELECT p.draft, p.draft_rev, p.draft_updated_at, p.is_published, p.published_at, p.moderation_hidden, p.moderation_reason,
@@ -60,7 +68,7 @@ export async function getEditorState(app: App, userId: string) {
     isPublished: p.is_published,
     publishedAt: p.published_at,
     publishedVersion: p.published_version,
-    hasUnpublishedChanges: !p.published_config || JSON.stringify(p.published_config) !== JSON.stringify(draft.success ? draft.data : p.draft),
+    hasUnpublishedChanges: !p.published_config || canonical(normalized(p.published_config)) !== canonical(draft.success ? draft.data : p.draft),
     moderationHidden: p.moderation_hidden,
     moderationReason: p.moderation_reason,
     premiumBlocked: draft.success ? await premiumViolations(app.db, userId, draft.data) : [],
@@ -156,11 +164,12 @@ export interface RenderPayload {
   badges: Awaited<ReturnType<typeof publicBadges>>;
   views: number;
   integrations: Record<string, unknown>;
-  mode: "published" | "draft";
+  /** "starter" is the plain card every account shows until its owner publishes a design. */
+  mode: "published" | "draft" | "starter";
   indexable: boolean;
 }
 
-async function buildPayload(app: App, row: any, cfgRaw: unknown, mode: "published" | "draft"): Promise<RenderPayload> {
+async function buildPayload(app: App, row: any, cfgRaw: unknown, mode: "published" | "draft" | "starter"): Promise<RenderPayload> {
   const config = profileConfigSchema.parse(cfgRaw);
   const now = new Date();
   if (mode === "published") {
@@ -179,7 +188,7 @@ async function buildPayload(app: App, row: any, cfgRaw: unknown, mode: "publishe
   return {
     user: { uid: Number(row.uid), username: row.username, createdAt: row.created_at, premium: await hasEntitlement(app.db, row.user_id, "premium"), verified: await hasEntitlement(app.db, row.user_id, "verified") },
     config, assets,
-    badges: await publicBadges(app.db, row.user_id, app),
+    badges: mode === "starter" ? [] : await publicBadges(app.db, row.user_id, app),
     views: Number(row.view_count),
     integrations: await resolveWidgetData(app, row.user_id, config, { cacheOnly: true }),
     mode,
@@ -194,7 +203,23 @@ export function invalidateProfileCache(_app: App, userId: string) {
   for (const [k, v] of cache) if (v.userId === userId) cache.delete(k);
 }
 
-export type PublicResult = { status: "ok"; payload: RenderPayload } | { status: "not_found" | "private" | "unpublished" | "hidden" | "banned" };
+export type PublicResult = { status: "ok"; payload: RenderPayload } | { status: "not_found" | "private" | "hidden" | "banned" };
+
+/**
+ * The profile every account has before its owner publishes anything: a plain card with
+ * display name, username, join date, view count and UID. Nothing from the private draft leaks into it.
+ */
+export function starterConfig(displayName: string | null) {
+  const c = defaultConfig();
+  c.identity.displayName = displayName ?? "";
+  c.identity.showJoined = true; c.identity.showViews = true; c.identity.showUid = true;
+  c.background.type = "gradient"; c.background.gradientFrom = "#0b1638"; c.background.gradientTo = "#020617";
+  c.effects.overlay = "none";
+  c.typography.nameEffect = "none";
+  c.card.width = 440;
+  c.seo.indexable = false;
+  return c;
+}
 
 /** Keep the cached view counter current without dropping the whole cache entry. */
 export function bumpCachedViews(userId: string) {
@@ -207,16 +232,16 @@ export async function getPublicProfile(app: App, username: string): Promise<Publ
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL) return { status: "ok", payload: hit.payload };
   const row = (await app.db.query(
-    `SELECT u.id AS user_id, u.uid, u.username, u.created_at, p.is_published, p.moderation_hidden, p.view_count, v.config,
+    `SELECT u.id AS user_id, u.uid, u.username, u.display_name, u.created_at, p.is_published, p.moderation_hidden, p.view_count, v.config,
        EXISTS (SELECT 1 FROM account_bans b WHERE b.user_id = u.id AND b.lifted_at IS NULL AND (b.expires_at IS NULL OR b.expires_at > now())) AS banned
      FROM users u JOIN profiles p ON p.user_id = u.id LEFT JOIN profile_versions v ON v.id = p.published_version_id
      WHERE u.username_lc = $1 AND u.deleted_at IS NULL`, [key])).rows[0];
   if (!row) return { status: "not_found" };
   if (row.banned) return { status: "banned" };
   if (row.moderation_hidden) return { status: "hidden" };
-  if (!row.is_published || !row.config) return { status: "unpublished" };
-  if (row.config.visibility === "private") return { status: "private" };
-  const payload = await buildPayload(app, row, row.config, "published");
+  const live = row.is_published && row.config;
+  if (live && row.config.visibility === "private") return { status: "private" };
+  const payload = live ? await buildPayload(app, row, row.config, "published") : await buildPayload(app, row, starterConfig(row.display_name), "starter");
   cache.set(key, { at: Date.now(), userId: row.user_id, payload });
   return { status: "ok", payload };
 }

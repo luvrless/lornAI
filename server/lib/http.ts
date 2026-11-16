@@ -96,7 +96,8 @@ export class Ctx {
     if (this.sent) return;
     this.sent = true;
     if (this.outCookies.length) this.res.setHeader("Set-Cookie", this.outCookies);
-    this.res.writeHead(status, { "Content-Type": type, "Cache-Control": "no-store", ...headers });
+    // Every dynamic response is per-visitor: tell browsers and any CDN in front never to store or share it.
+    this.res.writeHead(status, { "Content-Type": type, "Cache-Control": "private, no-store", "CDN-Cache-Control": "no-store", Vary: "Cookie", ...headers });
     this.res.end(body);
   }
 
@@ -108,7 +109,7 @@ export class Ctx {
     if (this.sent) return;
     this.sent = true;
     if (this.outCookies.length) this.res.setHeader("Set-Cookie", this.outCookies);
-    this.res.writeHead(status, { Location: location, "Cache-Control": "no-store" });
+    this.res.writeHead(status, { Location: location, "Cache-Control": "private, no-store", "CDN-Cache-Control": "no-store" });
     this.res.end();
   }
 }

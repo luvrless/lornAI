@@ -29,11 +29,23 @@ async function save(c: Client, mutate: (cfg: any) => void) {
   return c.put("/api/profile/draft", { config: e.draft, rev: e.rev });
 }
 
-test("9: registration creates a private, unpublished profile with full defaults", async () => {
+test("9: registration creates a public starter card; the draft stays private until published", async () => {
   const e = await editor(jay);
   assert.deepEqual(e.draft, defaultConfig());
   assert.equal(e.isPublished, false);
-  assert.equal((await new Client(h.base).get("/api/p/jay")).body.error.code, "profile_unpublished");
+  const pub = (await new Client(h.base).get("/api/p/jay")).body;
+  assert.equal(pub.mode, "starter");
+  assert.equal(pub.user.username, "jay");
+  assert.ok(pub.user.uid >= 1 && pub.user.createdAt);
+  assert.equal(pub.views, 0);
+  assert.deepEqual([pub.config.identity.showJoined, pub.config.identity.showViews, pub.config.identity.showUid], [true, true, true]);
+  assert.deepEqual([pub.config.links, pub.config.widgets, pub.badges, pub.config.identity.bio], [[], [], [], ""]);
+  // Draft edits never reach the starter card.
+  await save(jay, (d) => { d.identity.bio = "secret draft bio"; });
+  assert.equal((await new Client(h.base).get("/api/p/jay")).body.config.identity.bio, "");
+  const html = await (await fetch(`${h.base}/jay`)).text();
+  assert.ok(html.includes("lp-root") && !html.includes("secret draft bio"));
+  await save(jay, (d) => { d.identity.bio = ""; });
   assert.equal((await new Client(h.base).get("/api/p/nobody")).status, 404);
 });
 
@@ -106,7 +118,7 @@ test("version history, rollback and revert", async () => {
 
 test("unpublish, private and unlisted visibility", async () => {
   await jay.post("/api/profile/unpublish");
-  assert.equal((await new Client(h.base).get("/api/p/jay")).body.error.code, "profile_unpublished");
+  assert.equal((await new Client(h.base).get("/api/p/jay")).body.mode, "starter");
   await save(jay, (d) => { d.visibility = "private"; });
   await jay.post("/api/profile/publish");
   assert.equal((await new Client(h.base).get("/api/p/jay")).body.error.code, "profile_private");

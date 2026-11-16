@@ -6,6 +6,7 @@ import { LuLayoutDashboard, LuChartLine, LuActivity, LuUsers, LuSearch, LuBan, L
 import { get, post, ApiError } from "../api.ts";
 import { Link, match, navigate, useLocation } from "../router.tsx";
 import { useSession } from "../session.tsx";
+import { NotFound } from "../pages/public.tsx";
 import { Button, LoadingBlock } from "../ui.tsx";
 import { Sidebar } from "../dashboard/shell.tsx";
 import * as S from "./sections.tsx";
@@ -94,7 +95,7 @@ function Gate({ state }: { state: "signin" | "elevate" | "denied" | "unavailable
 
 export function AdminApp() {
   const { pathname } = useLocation();
-  const { me, logout } = useSession();
+  const { me, loading, logout } = useSession();
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [gate, setGate] = useState<"signin" | "elevate" | "denied" | "unavailable" | null>(null);
   const [open, setOpen] = useState(false);
@@ -105,6 +106,12 @@ export function AdminApp() {
       if (!p.discord) setGate("unavailable"); else setGate(e.status === 401 ? "signin" : "elevate");
     });
   }, [pathname === "/admin/denied"]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The panel doesn't reveal itself: signed-out visitors go to the normal login, and members who aren't
+  // the owner or an owner-appointed admin get the same "nothing here" page as any unknown address.
+  // (The server enforces access separately on every /api/admin request.)
+  useEffect(() => { if (!loading && me && !me.user) navigate(`/login?next=${encodeURIComponent("/admin")}`, true); }, [loading, me]);
+  if (loading || !me?.user) return <div className="boot" role="status" aria-label="Loading"><img src="/static/brand/mark-128.png" alt="" /><i /></div>;
+  if (!admin && !me.adminPanel) return <NotFound />;
   if (gate) return <Gate state={gate} />;
   if (!admin) return <div className="auth-wrap"><LoadingBlock /></div>;
   const allowed = SECTIONS.map((g) => ({ group: g.group, items: g.items.filter((i) => can(admin, ...i[3])) })).filter((g) => g.items.length);

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 import { useEffect, useMemo, useState } from "react";
-import { LuChevronDown, LuExternalLink, LuGripVertical, LuEye, LuEyeOff, LuArrowUp, LuArrowDown, LuDownload, LuStar, LuHeart, LuTrash2, LuPlus, LuShieldCheck, LuKeyRound, LuMonitor, LuLogOut, LuMegaphone, LuCircleAlert, LuTicket, LuSend } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuChartLine, LuChevronDown, LuCircleAlert, LuDownload, LuExternalLink, LuEye, LuEyeOff, LuGripVertical, LuHeart, LuKeyRound, LuLogOut, LuMegaphone, LuMonitor, LuMousePointerClick, LuPlus, LuSend, LuShieldCheck, LuStar, LuTicket, LuTrash2, LuUsers } from "react-icons/lu";
 import { SiDiscord, SiGoogle } from "react-icons/si";
 import { get, post, put, patch, del, qs, fmtDate, fmtMoney, fmtBytes, ago } from "../api.ts";
 import { Link, navigate } from "../router.tsx";
@@ -23,17 +23,17 @@ export function Overview() {
   return (
     <div className="stack-24">
       <div className="page-head">
-        <div><h1>Welcome back, {d.user.displayName || d.user.username}</h1><p>Your page is {d.profile.is_published ? <>live at <a href={d.url} target="_blank" rel="noreferrer">{d.url.replace(/^https?:\/\//, "")}</a></> : "not published yet"}.</p></div>
+        <div><h1>Welcome back, {d.user.displayName || d.user.username}</h1><p>{d.profile.is_published ? <>Your design is live at <a href={d.url} target="_blank" rel="noreferrer">{d.url.replace(/^https?:\/\//, "")}</a>.</> : <>Visitors to <a href={d.url} target="_blank" rel="noreferrer">{d.url.replace(/^https?:\/\//, "")}</a> see your starter card. Publish a design to replace it.</>}</p></div>
         <div className="row"><Copy text={d.url} label="Copy link" /><a className="btn sm" href={`/${d.user.username}`} target="_blank" rel="noreferrer"><LuExternalLink />Open</a><Link className="btn sm primary" to="/dashboard/customize">Customize</Link></div>
       </div>
       {d.announcements.map((a: any) => <div key={a.id} className={`banner ${a.level === "warning" ? "warn" : a.level === "critical" ? "bad" : ""}`}><LuMegaphone /><div><b>{a.title}</b><div className="small">{a.body}</div></div></div>)}
       {!d.user.emailVerified && d.user.email && <div className="banner warn"><LuCircleAlert /><div className="grow">Verify your email so you can recover your account.</div><Button size="sm" onClick={() => post("/api/auth/resend-verification").then((r) => toast(r.status === "not_configured" ? "Email delivery isn't set up on this server yet" : "Verification email sent", r.status === "not_configured" ? "bad" : "ok")).catch((e) => toast(e.message, "bad"))}>Resend email</Button></div>}
       {d.profile.moderation_hidden && <div className="banner bad">Your profile is hidden by moderators. <Link to="/dashboard/support">Contact support</Link></div>}
       <div className="grid-4">
-        <Stat k="Views, last 30 days" v={d.analytics.views30d.toLocaleString("en")} d={{ value: delta(d.analytics.views30d, d.analytics.previous.views) }} />
-        <Stat k="Unique visitors" v={d.analytics.uniques30d.toLocaleString("en")} d={{ value: delta(d.analytics.uniques30d, d.analytics.previous.uniques) }} />
-        <Stat k="Link clicks" v={d.analytics.clicks30d.toLocaleString("en")} d={{ value: delta(d.analytics.clicks30d, d.analytics.previous.clicks) }} />
-        <Stat k="All-time views" v={d.analytics.allTime.toLocaleString("en")} />
+        <Stat icon={<LuEye />} k="Views, last 30 days" v={d.analytics.views30d.toLocaleString("en")} d={{ value: delta(d.analytics.views30d, d.analytics.previous.views) }} />
+        <Stat icon={<LuUsers />} k="Unique visitors" v={d.analytics.uniques30d.toLocaleString("en")} d={{ value: delta(d.analytics.uniques30d, d.analytics.previous.uniques) }} />
+        <Stat icon={<LuMousePointerClick />} k="Link clicks" v={d.analytics.clicks30d.toLocaleString("en")} d={{ value: delta(d.analytics.clicks30d, d.analytics.previous.clicks) }} />
+        <Stat icon={<LuChartLine />} k="All-time views" v={d.analytics.allTime.toLocaleString("en")} />
       </div>
       <div className="grid-3">
         <div className="panel" style={{ gridColumn: "span 2" }}>

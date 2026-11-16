@@ -25,6 +25,8 @@ export interface Config {
   /** Google sign-in brokered by Supabase Auth (used when GOOGLE_CLIENT_ID isn't set). */
   supabaseAuth: { url: string; publishableKey: string } | null;
   smtp: { url: string; from: string } | null;
+  /** Resend HTTP API. Preferred over SMTP when both are set. */
+  resend: { apiKey: string; apiBase: string; from: string; replyTo: string | null } | null;
 }
 
 export function loadConfig(): Config {
@@ -75,6 +77,7 @@ export function loadConfig(): Config {
       userinfoUrl: env("GOOGLE_USERINFO_URL", "https://openidconnect.googleapis.com/v1/userinfo")!,
     } : null,
     supabaseAuth: sbUrl && sbKey ? { url: sbUrl.replace(/\/$/, ""), publishableKey: sbKey } : null,
+    resend: env("RESEND_API_KEY") ? { apiKey: env("RESEND_API_KEY")!, apiBase: env("RESEND_API_BASE", "https://api.resend.com")!.replace(/\/$/, ""), from: env("MAIL_FROM", "LORN.LOL <no-reply@lorn.lol>")!, replyTo: env("MAIL_REPLY_TO") ?? null } : null,
     smtp: smtpUrl ? { url: smtpUrl, from: env("MAIL_FROM", "LORN.LOL <no-reply@lorn.lol>")! } : null,
   };
 }
@@ -84,7 +87,7 @@ export function configStatus(c: Config) {
   return {
     discordOAuth: c.discord ? "configured" : "not_configured: set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET",
     googleOAuth: c.google ? "configured" : c.supabaseAuth ? "configured via Supabase Auth (enable the Google provider in Supabase)" : "not_configured: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY",
-    email: c.smtp ? "configured" : "not_configured: set SMTP_URL (smtp[s]://user:pass@host:port) and MAIL_FROM",
+    email: c.resend ? "configured: Resend API" : c.smtp ? "configured: SMTP" : "not_configured: set RESEND_API_KEY and MAIL_FROM (or SMTP_URL)",
     owner: c.ownerDiscordId ? "configured" : "not_configured: set LORN_OWNER_DISCORD_ID",
   };
 }

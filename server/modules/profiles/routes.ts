@@ -24,6 +24,12 @@ export function profileRoutes(app: App, r: Router) {
   // ------------------------------------------------------------ editor
   r.get("/api/profile/editor", async (c) => ({ ...(await P.getEditorState(app, c.user!.id)), user: c.user }), { auth: "required" });
 
+  // Small status read for the dashboard header.
+  r.get("/api/profile/status", async (c) => {
+    const e = await P.getEditorState(app, c.user!.id);
+    return { isPublished: e.isPublished, hasUnpublishedChanges: e.hasUnpublishedChanges, publishedAt: e.publishedAt, moderationHidden: e.moderationHidden };
+  }, { auth: "required" });
+
   r.put("/api/profile/draft", async (c) => {
     const b = await c.body(z.object({ config: z.unknown(), rev: z.number().int() }));
     return P.saveDraft(app, c.user!.id, b.config, b.rev);
@@ -117,5 +123,5 @@ export function profileRoutes(app: App, r: Router) {
 }
 
 export function publicMessage(s: string) {
-  return ({ not_found: "This profile doesn't exist", private: "This profile is private", unpublished: "This profile hasn't been published yet", hidden: "This profile is unavailable", banned: "This profile is unavailable" } as Record<string, string>)[s] ?? "Unavailable";
+  return ({ not_found: "This profile doesn't exist", private: "This profile is private", hidden: "This profile is unavailable", banned: "This profile is unavailable" } as Record<string, string>)[s] ?? "Unavailable";
 }

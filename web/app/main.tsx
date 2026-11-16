@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Component, type ReactNode } from "react";
 import "../styles.css";
 import "../profile/profile.css";
-import { SessionProvider } from "./session.tsx";
+import { SessionProvider, useSession } from "./session.tsx";
 import { ConfirmProvider, Toasts } from "./ui.tsx";
 import { useLocation } from "./router.tsx";
 import { Landing, Login, Register, TwoFactor, SignupComplete, ForgotPassword, ResetPassword, VerifyEmail, Legal, NotFound } from "./pages/public.tsx";
@@ -23,8 +23,12 @@ class Boundary extends Component<{ children: ReactNode; resetKey: string }, { er
     return (
       <div className="crash" role="alert">
         <h1>This screen ran into a problem</h1>
-        <p>Your saved work is safe. Reload to try again; if it keeps happening, contact support with what you were doing.</p>
-        <button className="btn primary" onClick={() => location.reload()}>Reload</button>
+        <p>Your saved work is safe. Reload to try again. If it keeps happening, send support the details below.</p>
+        <div className="row" style={{ justifyContent: "center" }}>
+          <button className="btn primary" onClick={() => location.reload()}>Reload</button>
+          <a className="btn" href="/dashboard">Back to overview</a>
+        </div>
+        <details className="crash-detail"><summary>Technical details</summary><pre>{String(this.state.error?.message ?? this.state.error)}{"\n"}{location.pathname}</pre></details>
       </div>
     );
   }
@@ -47,9 +51,14 @@ function Routes() {
   return <NotFound />;
 }
 
+function ServerBanner() {
+  const { serverProblem } = useSession();
+  return serverProblem ? <div className="server-banner" role="alert">{serverProblem}</div> : null;
+}
+
 function RoutedBoundary() {
   const { pathname } = useLocation();
-  return <Boundary resetKey={pathname}><Routes /></Boundary>;
+  return <><ServerBanner /><Boundary resetKey={pathname}><Routes /></Boundary></>;
 }
 
 document.body.classList.add("app-bg");

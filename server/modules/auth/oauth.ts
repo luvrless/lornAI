@@ -242,7 +242,7 @@ export async function handleCallback(app: App, c: Ctx, p: Provider): Promise<str
   }
   if (!(await isFlagEnabled(app, `signup.${p}`))) return fail("signup_disabled");
   await beginSignup(app, c, p, idn);
-  return "/signup/complete";
+  return st.redirect_to ? `/signup/complete?next=${encodeURIComponent(st.redirect_to)}` : "/signup/complete";
 }
 
 async function hasMfa(app: App, userId: string) {

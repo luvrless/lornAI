@@ -37,3 +37,19 @@ external accounts are needed to run them.
 1. Set `LORN_OWNER_DISCORD_ID` and the Discord OAuth credentials.
 2. Open `/admin` and continue with Discord. The owner is recognised by Discord ID only;
    staff are added in the admin panel by Discord ID.
+
+
+## Email (Resend)
+
+Account emails (verification, password reset, email change, sign-in alerts) are queued in `email_outbox` and sent through the Resend API.
+
+- `RESEND_API_KEY` — your Resend API key. When set, Resend is used.
+- `MAIL_FROM` — sender on a domain verified in Resend, e.g. `LORN.LOL <no-reply@lorn.lol>`.
+- `MAIL_REPLY_TO` — optional.
+- `SMTP_URL` — fallback transport if no API key is set.
+
+Each message carries an idempotency key, so retries never send twice. Without a provider, emails are recorded as `not_configured` and the UI says so.
+
+## Starter profiles
+
+Every account is public from sign-up as a plain card (display name, @username, join date, views, UID). The private draft replaces it only when the owner publishes; unpublishing returns to the starter card.

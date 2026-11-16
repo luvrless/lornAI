@@ -204,7 +204,7 @@ export function EditorBar() {
       {s.premiumBlocked.length > 0 && <div className="banner warn small" style={{ margin: 12 }}>Needs Premium to publish: {s.premiumBlocked.join(", ")}.</div>}
       {s.moderationHidden && <div className="banner bad small" style={{ margin: 12 }}>Your profile is hidden by moderators. Check your notifications or contact support.</div>}
       {history && <VersionHistory onClose={() => setHistory(false)} onUnpublish={async () => {
-        if (await confirm({ title: "Unpublish your profile?", body: "Visitors will see “not published” until you publish again. Your draft is kept.", confirm: "Unpublish", danger: true })) { await unpublish(); toast("Profile unpublished", "ok"); }
+        if (await confirm({ title: "Unpublish your profile?", body: "Visitors will see your plain starter card (name, join date, views and UID) until you publish again. Your draft is kept.", confirm: "Unpublish", danger: true })) { await unpublish(); toast("Profile unpublished", "ok"); }
       }} isPublished={s.isPublished} hasChanges={unpub} />}
     </>
   );

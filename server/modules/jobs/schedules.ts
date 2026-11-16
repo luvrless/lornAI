@@ -2,20 +2,23 @@
 import type { App } from "../../app.ts";
 import { every, enqueue, registerJob } from "./runner.ts";
 import { sendMail } from "../../lib/smtp.ts";
+import { sendViaResend } from "../../lib/resend.ts";
 import { cleanupOrphans } from "../media/service.ts";
 import { pruneAnalytics } from "../analytics/service.ts";
 import "../events/service.ts"; // registers event tick + milestone jobs
 import { recheckBoosters } from "../badges/booster.ts";
 
 export async function deliverEmails(app: App, limit = 20) {
-  if (!app.cfg.smtp) return 0;
+  if (!app.cfg.smtp && !app.cfg.resend) return 0;
   const batch = (await app.db.query(
     `UPDATE email_outbox SET attempts = attempts + 1 WHERE id IN (
-       SELECT id FROM email_outbox WHERE status = 'pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $1) RETURNING *`, [limit])).rows;
+       SELECT id FROM email_outbox WHERE status = 'pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT $1) RETURNING *`, [limit])).rows.sort((a: any, b: any) => Number(a.id) - Number(b.id)); // oldest first
   let sent = 0;
   for (const m of batch) {
     try {
-      await sendMail(app.cfg.smtp.url, { from: app.cfg.smtp.from, to: m.to_address, subject: m.subject, text: m.text_body, html: m.html_body ?? undefined });
+      const mail = { to: m.to_address, subject: m.subject, text: m.text_body, html: m.html_body ?? undefined };
+      if (app.cfg.resend) await sendViaResend(app.cfg.resend, { ...mail, from: app.cfg.resend.from }, `lorn-outbox-${m.id}`);
+      else await sendMail(app.cfg.smtp!.url, { ...mail, from: app.cfg.smtp!.from });
       await app.db.query("UPDATE email_outbox SET status = 'sent', sent_at = now(), last_error = NULL WHERE id = $1", [m.id]);
       sent++;
     } catch (e) {

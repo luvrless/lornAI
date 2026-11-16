@@ -252,15 +252,18 @@ export function ErrorBlock({ error, retry }: { error: ApiError; retry?: () => vo
 export function Empty({ icon, title, children, action }: { icon?: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return <div className="empty">{icon ?? <LuInbox />}<div style={{ color: "var(--ice)", fontWeight: 600 }}>{title}</div>{children && <div className="small" style={{ maxWidth: "46ch" }}>{children}</div>}{action}</div>;
 }
-export function Stat({ k, v, d }: { k: string; v: ReactNode; d?: { value: number; label?: string } | null }) {
+export function Stat({ k, v, d, icon }: { k: string; v: ReactNode; d?: { value: number; label?: string } | null; icon?: ReactNode }) {
   return (
     <div className="panel stat">
-      <div className="k">{k}</div><div className="v">{v}</div>
-      {d && isFinite(d.value) && <div className={`d ${d.value >= 0 ? "up" : "down"}`}>{d.value >= 0 ? "+" : ""}{(d.value * 100).toFixed(0)}% {d.label ?? "vs previous period"}</div>}
+      <div className="k">{icon && <span className="stat-ico">{icon}</span>}{k}</div><div className="v">{v}</div>
+      {d && (isFinite(d.value)
+        ? <div className={`d ${d.value > 0 ? "up" : d.value < 0 ? "down" : "flat"}`}>{d.value > 0 ? "+" : ""}{(d.value * 100).toFixed(0)}% {d.label ?? "vs previous period"}</div>
+        : <div className="d flat">No earlier data to compare</div>)}
     </div>
   );
 }
-export const delta = (a: number, b: number) => (b ? (a - b) / b : a ? 1 : 0);
+/** Change against the previous period. NaN when there is nothing to compare with, so no percentage is invented. */
+export const delta = (a: number, b: number) => (b ? (a - b) / b : NaN);
 
 export function Copy({ text, label = "Copy" }: { text: string; label?: string }) {
   const [done, setDone] = useState(false);

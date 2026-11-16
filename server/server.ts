@@ -27,7 +27,19 @@ export function buildRouter(app: App) {
     const t = Date.now();
     let db = "ok";
     try { await app.db.query("SELECT 1"); } catch { db = "down"; }
-    return { status: db === "ok" ? "ok" : "degraded", db, dbLatencyMs: Date.now() - t, pool: app.db.stats, storage: app.storageStatus, integrations: configStatus(app.cfg) };
+    return { app: "lorn", status: db === "ok" ? "ok" : "degraded", db, dbLatencyMs: Date.now() - t, pool: app.db.stats, storage: app.storageStatus, integrations: configStatus(app.cfg) };
+  }, { maintenanceExempt: true });
+  // Real platform totals for the landing page, straight from the database (cached briefly).
+  let totals: { at: number; v: { members: number; views: number; live: number } } | null = null;
+  r.get("/api/public/stats", async () => {
+    if (!totals || Date.now() - totals.at > 60_000) {
+      const row = (await app.db.query(
+        `SELECT (SELECT count(*) FROM users WHERE deleted_at IS NULL) AS members,
+                (SELECT coalesce(sum(view_count), 0) FROM profiles) AS views,
+                (SELECT count(*) FROM profiles WHERE is_published) AS live`)).rows[0];
+      totals = { at: Date.now(), v: { members: Number(row.members), views: Number(row.views), live: Number(row.live) } };
+    }
+    return totals.v;
   }, { maintenanceExempt: true });
   authRoutes(app, r);
   adminRoutes(app, r);

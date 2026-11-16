@@ -23,7 +23,7 @@ export interface Payload {
   badges: Badge[];
   views: number;
   integrations: Record<string, any>;
-  mode: "published" | "draft";
+  mode: "published" | "draft" | "starter";
 }
 
 export interface ViewProps {
@@ -403,6 +403,7 @@ export function ProfileView({ payload, mode, pageSlug = null, entryPreview = "au
                       </div>
                     )}
                   </div>
+                  {payload.mode === "starter" && <div className="lp-handle">@{payload.user.username}</div>}
                   {cfg.identity.status && <div className="lp-status">{cfg.identity.status}</div>}
                 </div>
               </div>

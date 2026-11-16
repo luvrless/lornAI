@@ -326,3 +326,5 @@
 .lp-missing h1 { font-family: "Sora", system-ui, sans-serif; font-size: 28px; margin: 0 0 8px; }
 .lp-missing p { color: #8b9bbd; margin: 0 0 18px; }
 .lp-missing a { color: #9cc2ff; }
+
+.lp-handle { color: var(--tm); font-size: .95em; margin-top: 2px; }

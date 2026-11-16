@@ -121,11 +121,16 @@ export async function notify(db: Queryable, userId: string, kind: string, title:
 // ------------------------------------------------------------------ email
 
 export async function queueEmail(app: App, db: Queryable, m: { to: string; subject: string; text: string; html?: string; template: string; userId?: string }) {
-  // Without SMTP the message is recorded honestly as not deliverable.
-  const status = app.cfg.smtp ? "pending" : "not_configured";
+  // Without a mail provider the message is recorded honestly as not deliverable.
+  const status = app.cfg.smtp || app.cfg.resend ? "pending" : "not_configured";
   const r = await db.query<{ id: number }>(
     "INSERT INTO email_outbox (to_address, subject, text_body, html_body, template, user_id, status) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
     [m.to, m.subject, m.text, m.html ?? null, m.template, m.userId ?? null, status],
   );
+  // Account emails shouldn't wait for the next delivery tick: send shortly after the surrounding transaction commits.
+  if (status === "pending" && app.cfg.env !== "test") {
+    const t = setTimeout(() => { import("../jobs/schedules.ts").then((j) => j.deliverEmails(app)).catch(() => {}); }, 400);
+    t.unref?.();
+  }
   return { id: r.rows[0].id, delivered: false, status };
 }
