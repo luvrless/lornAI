@@ -5,10 +5,10 @@ import type { Graph, GraphNode } from "@/lib/graph";
 type Row = { id: string; input: string; normalized: string; identifierType: string };
 
 const TYPE_COLOR: Record<string, string> = {
-  root: "#6366f1",
-  domain: "#38bdf8",
+  root: "#7c8cff",
+  domain: "#7cc4ff",
   ip: "#f59e0b",
-  url: "#8b5cf6",
+  url: "#9b7bff",
   email: "#34d399",
   username: "#f472b6",
   wallet: "#facc15",
@@ -68,25 +68,37 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
 
   return (
     <div>
-      <div className="panel mb-4 flex flex-wrap items-center gap-2 p-3">
-        <select value={selected} onChange={(e) => setSelected(e.target.value)} className="input !w-auto">
+      <div className="panel mb-4 flex flex-wrap items-center gap-2 p-2.5">
+        <select value={selected} onChange={(e) => setSelected(e.target.value)} className="input max-w-full sm:!w-auto">
           {investigations.length === 0 && <option>No saved investigations</option>}
           {investigations.map((i) => <option key={i.id} value={i.id}>{i.identifierType}: {i.normalized}</option>)}
         </select>
         <div className="ml-auto flex items-center gap-2 text-sm text-faint">
-          {graph && <span>{graph.nodes.length} nodes · {graph.edges.length} edges</span>}
-          <button className="btn !py-1.5" onClick={() => setView({ x: 0, y: 0, k: 1 })}>Reset</button>
-          <button className="btn !py-1.5" onClick={exportJSON} disabled={!graph}>Export JSON</button>
+          {graph && <span className="chip mr-1 !py-1 tabular-nums">{graph.nodes.length} nodes · {graph.edges.length} edges</span>}
+          <button className="btn" onClick={() => setView({ x: 0, y: 0, k: 1 })}>Reset</button>
+          <button className="btn" onClick={exportJSON} disabled={!graph}>Export JSON</button>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
         <div className="panel relative overflow-hidden">
-          {!graph && <div className="flex h-[600px] items-center justify-center text-sm text-faint">Select an investigation to render its evidence graph.</div>}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px" }}
+            aria-hidden="true"
+          />
+          {!graph && (
+            <div className="relative flex h-[420px] flex-col items-center justify-center gap-3 px-6 text-center text-sm text-faint sm:h-[600px]">
+              <div className="icon-tile h-12 w-12">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12-8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 16l8-6M18 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2 2-6-2" /></svg>
+              </div>
+              Select an investigation to render its evidence graph.
+            </div>
+          )}
           {graph && layout && (
             <svg
               viewBox={`0 0 ${layout.W} ${layout.H}`}
-              className="h-[600px] w-full cursor-grab active:cursor-grabbing"
+              className="relative h-[420px] w-full animate-fadein cursor-grab active:cursor-grabbing sm:h-[600px]"
               onWheel={(e) => {
                 const k = Math.min(3, Math.max(0.4, view.k * (e.deltaY < 0 ? 1.1 : 0.9)));
                 setView((v) => ({ ...v, k }));
@@ -100,7 +112,7 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
             >
               <defs>
                 <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="rgba(56, 189, 248, 0.7)" />
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="rgba(124, 196, 255, 0.7)" />
                 </marker>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="4" result="blur" />
@@ -121,7 +133,7 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
                         y1={a.y}
                         x2={b.x}
                         y2={b.y}
-                        stroke="rgba(56, 189, 248, 0.35)"
+                        stroke="rgba(124, 160, 255, 0.32)"
                         strokeWidth={1.5}
                         markerEnd="url(#arrow)"
                       />
@@ -145,17 +157,17 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
                   if (!p) return null;
                   const isRoot = n.type === "root";
                   const r = isRoot ? 24 : 14;
-                  const strokeColor = isRoot ? "#818cf8" : (TYPE_COLOR[n.type] || "#38bdf8");
+                  const strokeColor = isRoot ? "#8f9cff" : (TYPE_COLOR[n.type] || "#38bdf8");
                   return (
                     <g key={n.id} transform={`translate(${p.x} ${p.y})`} className="cursor-pointer group" onClick={() => setActive(n)}>
                       {/* Outer pulsing ring for root */}
                       {isRoot && (
-                        <circle r={r + 8} fill="none" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
+                        <circle r={r + 8} fill="none" stroke="#7c8cff" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
                       )}
                       {/* Node circle */}
                       <circle
                         r={r}
-                        fill="#0b0f19"
+                        fill="#0c0f1a"
                         stroke={strokeColor}
                         strokeWidth={active?.id === n.id ? 3 : 2}
                         filter={active?.id === n.id || isRoot ? "url(#glow)" : undefined}
@@ -182,10 +194,10 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
           )}
         </div>
 
-        <div className="panel p-4">
-          <h2 className="mb-3 font-medium">Node details</h2>
+        <div className="panel p-5">
+          <h2 className="mb-4 text-[15px] font-semibold tracking-tight">Node details</h2>
           {active ? (
-            <div className="space-y-2 text-sm">
+            <div key={active.id} className="animate-pop space-y-3 text-sm">
               <div><span className="label">Type</span><div className="mt-0.5">{active.type}</div></div>
               <div><span className="label">Value</span><div className="mono mt-0.5 break-all">{active.label}</div></div>
               <div><span className="label">Confidence</span><div className="mt-0.5">{Math.round(active.confidence * 100)}%</div></div>
@@ -201,11 +213,11 @@ export function GraphView({ investigations }: { investigations: Row[] }) {
           ) : (
             <p className="text-sm text-faint">Click a node to inspect it. Only evidence-backed relationships are drawn.</p>
           )}
-          <div className="mt-4 border-t border-white/5 pt-3">
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
             <div className="label mb-2">Legend</div>
             <div className="grid grid-cols-2 gap-1.5 text-xs">
               {Object.entries(TYPE_COLOR).map(([t, c]) => (
-                <div key={t} className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />{t}</div>
+                <div key={t} className="flex items-center gap-2 capitalize text-muted"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c, boxShadow: `0 0 8px ${c}` }} />{t}</div>
               ))}
             </div>
           </div>

@@ -28,7 +28,7 @@ export default function SavedPage() {
     }));
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="Saved Results" subtitle="Investigations you've bookmarked for later reference." />
+      <PageHeader eyebrow="Workspace" title="Saved Results" subtitle="Investigations you've bookmarked for later reference." />
       <InvestigationsList initial={rows} />
     </div>
   );

@@ -68,62 +68,74 @@ export function SettingsClient({
 
   return (
     <div className="space-y-5">
-      {msg && <div className="panel border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-300">{msg}</div>}
+      {msg && (
+        <div key={msg} className="alert alert-success" role="status">
+          <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <span>{msg}</span>
+        </div>
+      )}
 
-      <section className="panel p-5">
-        <h2 className="mb-1 font-medium">Account</h2>
-        <p className="mb-4 text-sm text-faint">Role: <span className="chip !py-0.5">{role}</span> · Member since {new Date(createdAt).toLocaleDateString()}</p>
+      <section className="panel animate-rise p-5 sm:p-6">
+        <div className="mb-5 flex flex-wrap items-center gap-4">
+          <div className="flex h-14 w-14 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent-blue to-accent-violet text-xl font-semibold text-white shadow-glow">{(name || email)[0]?.toUpperCase()}</div>
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold tracking-tight">Account</h2>
+            <p className="mt-0.5 text-sm text-faint">Role: <span className="chip !py-0.5 capitalize">{role}</span> · Member since {new Date(createdAt).toLocaleDateString()}</p>
+          </div>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Email</label>
-            <input className="input mt-1.5 opacity-60" value={email} disabled />
+            <input className="input mt-2 opacity-60" value={email} disabled />
           </div>
           <div>
             <label className="label">Display name</label>
-            <input className="input mt-1.5" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="input mt-2" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
         </div>
-        <button onClick={saveProfile} className="btn-primary mt-4 !py-1.5">Save profile</button>
+        <button onClick={saveProfile} className="btn-primary mt-5">Save profile</button>
       </section>
 
-      <section className="panel p-5">
-        <h2 className="mb-4 font-medium">Change password</h2>
+      <section className="panel animate-rise p-5 sm:p-6" style={{ animationDelay: "60ms" }}>
+        <h2 className="text-[15px] font-semibold tracking-tight">Change password</h2>
+        <p className="mb-5 mt-1 text-sm text-faint">Use at least 8 characters.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label">Current password</label>
-            <input type="password" className="input mt-1.5" value={cur} onChange={(e) => setCur(e.target.value)} />
+            <input type="password" autoComplete="current-password" className="input mt-2" value={cur} onChange={(e) => setCur(e.target.value)} />
           </div>
           <div>
             <label className="label">New password</label>
-            <input type="password" className="input mt-1.5" value={next} onChange={(e) => setNext(e.target.value)} />
+            <input type="password" autoComplete="new-password" className="input mt-2" value={next} onChange={(e) => setNext(e.target.value)} />
           </div>
         </div>
-        <button onClick={changePassword} className="btn mt-4 !py-1.5" disabled={!cur || next.length < 8}>Update password</button>
+        <button onClick={changePassword} className="btn mt-5" disabled={!cur || next.length < 8}>Update password</button>
       </section>
 
-      <section className="panel p-5">
-        <h2 className="mb-1 font-medium">Password exposure check</h2>
-        <p className="mb-4 text-sm text-faint">
+      <section className="panel animate-rise p-5 sm:p-6" style={{ animationDelay: "120ms" }}>
+        <h2 className="text-[15px] font-semibold tracking-tight">Password exposure check</h2>
+        <p className="mb-5 mt-1 text-sm leading-relaxed text-faint">
           Privacy-preserving: the password is hashed locally and only a 5-character SHA-1 prefix is sent (k-anonymity). It is never stored.
         </p>
-        <div className="flex gap-2">
-          <input type="password" className="input" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Password to check" />
-          <button onClick={checkPwd} className="btn-primary flex-none !py-1.5" disabled={!pwd || pwdChecking}>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input type="password" autoComplete="off" className="input" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Password to check" />
+          <button onClick={checkPwd} className="btn-primary flex-none" disabled={!pwd || pwdChecking}>
+            {pwdChecking && <span className="spinner" />}
             {pwdChecking ? "Checking…" : "Check"}
           </button>
         </div>
         {pwdResult && (
-          <div className={`mt-3 rounded-lg border p-3 text-sm ${pwdResult.exposed ? "border-red-500/30 bg-red-500/10 text-red-200" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"}`}>
+          <div className={`alert mt-4 !block ${pwdResult.exposed ? "alert-error" : "alert-success"}`}>
             {pwdResult.exposed ? `⚠ Found in ${pwdResult.count.toLocaleString()} breach records.` : "✓ Not found in known breach corpora."}
             <div className="mt-1 text-xs opacity-80">{pwdResult.advice}</div>
           </div>
         )}
       </section>
 
-      <section className="panel border-red-500/20 p-5">
-        <h2 className="mb-1 font-medium text-red-300">Danger zone</h2>
-        <p className="mb-4 text-sm text-faint">Deleting your account removes all investigations, cases and API keys immediately.</p>
-        <button onClick={deleteAccount} className="btn !border-red-500/40 !text-red-300 hover:!bg-red-500/10">Delete account</button>
+      <section className="panel animate-rise !border-red-500/20 p-5 sm:p-6" style={{ animationDelay: "180ms", background: "linear-gradient(180deg, rgba(239,68,68,0.06), rgba(239,68,68,0.015))" }}>
+        <h2 className="text-[15px] font-semibold tracking-tight text-red-300">Danger zone</h2>
+        <p className="mb-5 mt-1 text-sm text-faint">Deleting your account removes all investigations, cases and API keys immediately.</p>
+        <button onClick={deleteAccount} className="btn !border-red-500/35 !bg-red-500/[0.06] !text-red-300 hover:!bg-red-500/15">Delete account</button>
       </section>
     </div>
   );

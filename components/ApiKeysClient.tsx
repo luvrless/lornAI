@@ -36,28 +36,42 @@ export function ApiKeysClient({ initial }: { initial: Key[] }) {
   }
 
   return (
-    <div className="panel p-5">
-      <h2 className="mb-3 font-medium">API keys</h2>
+    <div className="panel p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-[15px] font-semibold tracking-tight">API keys</h2>
+        <span className="chip !py-0.5 text-[11px] tabular-nums">{keys.length} active</span>
+      </div>
       {secret && (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-          <p className="text-sm text-amber-200">Copy your key now — it won&apos;t be shown again.</p>
-          <code className="mono mt-2 block break-all rounded bg-ink-950/70 p-2 text-xs text-white">{secret}</code>
-          <button onClick={() => { navigator.clipboard.writeText(secret); }} className="btn mt-2 !py-1">Copy</button>
+        <div className="alert alert-warn mb-4 !block">
+          <p className="text-sm font-medium">Copy your key now — it won&apos;t be shown again.</p>
+          <code className="mono mt-2.5 block break-all rounded-lg border border-white/10 bg-black/40 p-2.5 text-xs text-white">{secret}</code>
+          <button onClick={() => { navigator.clipboard.writeText(secret); }} className="btn mt-2.5 !py-1.5 text-xs">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 9h10v10H9zM5 15V5h10" /></svg>
+            Copy
+          </button>
         </div>
       )}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Key name (e.g. CI pipeline)" />
-        <button onClick={create} className="btn-primary flex-none !py-1.5" disabled={creating || !name.trim()}>Create key</button>
+        <button onClick={create} className="btn-primary flex-none" disabled={creating || !name.trim()}>
+          {creating && <span className="spinner" />}
+          Create key
+        </button>
       </div>
-      <div className="mt-4 divide-y divide-white/5">
-        {keys.length === 0 && <p className="py-4 text-sm text-faint">No keys yet.</p>}
+      <div className="mt-5 divide-y divide-white/[0.05]">
+        {keys.length === 0 && <p className="py-6 text-center text-sm text-faint">No keys yet.</p>}
         {keys.map((k) => (
-          <div key={k.id} className="flex items-center justify-between gap-3 py-2.5">
-            <div className="min-w-0">
+          <div key={k.id} className="flex items-center justify-between gap-3 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="icon-tile h-9 w-9">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 7a4 4 0 1 1-3.9 4.9L4 19v2h3v-2h2v-2h2l1.1-1.1A4 4 0 0 1 15 7z" /></svg>
+              </div>
+              <div className="min-w-0">
               <div className="text-sm font-medium">{k.name}</div>
-              <div className="mono text-xs text-faint">{k.prefix}••• · {k.scopes.length} scopes · {k.lastUsedAt ? `used ${new Date(k.lastUsedAt).toLocaleDateString()}` : "never used"}</div>
+              <div className="mono truncate text-xs text-faint">{k.prefix}••• · {k.scopes.length} scopes · {k.lastUsedAt ? `used ${new Date(k.lastUsedAt).toLocaleDateString()}` : "never used"}</div>
+              </div>
             </div>
-            <button onClick={() => revoke(k.id)} className="text-xs text-red-300 hover:underline">Revoke</button>
+            <button onClick={() => revoke(k.id)} className="btn-danger flex-none">Revoke</button>
           </div>
         ))}
       </div>

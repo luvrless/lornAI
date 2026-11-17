@@ -57,8 +57,8 @@ export function TreeExplorer() {
   return (
     <div className="space-y-4">
       {/* Top search & control bar */}
-      <div className="panel flex flex-wrap items-center justify-between gap-3 p-3">
-        <div className="flex flex-1 items-center gap-2 rounded-lg bg-ink-950/70 px-3 py-2">
+      <div className="panel flex flex-wrap items-center justify-between gap-3 p-2.5">
+        <div className="searchbar w-full min-w-0 flex-1 py-2.5 sm:w-auto sm:min-w-[220px]">
           <svg className="h-4 w-4 flex-none text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
           </svg>
@@ -66,20 +66,20 @@ export function TreeExplorer() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search branches, intelligence categories, tools (e.g. crt.sh, WHOIS, company, breach)..."
-            className="mono flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+            className="mono min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="text-xs text-muted hover:text-white">Clear</button>
+            <button onClick={() => setSearch("")} className="btn-ghost">Clear</button>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={expandAll} className="btn !py-1.5 text-xs">Expand All</button>
-          <button onClick={collapseAll} className="btn !py-1.5 text-xs">Collapse</button>
+          <button onClick={expandAll} className="btn text-xs">Expand All</button>
+          <button onClick={collapseAll} className="btn text-xs">Collapse</button>
         </div>
       </div>
 
       {/* Mindmap / Tree viewer */}
-      <div className="panel p-5 overflow-x-auto">
+      <div className="panel overflow-x-auto p-5 sm:p-6">
         <div className="font-mono text-sm leading-relaxed">
           <RenderNode node={filteredTree} level={0} expanded={expanded} toggle={toggle} router={router} searchActive={Boolean(search.trim())} />
         </div>
@@ -115,24 +115,26 @@ function RenderNode({
   };
 
   return (
-    <div className={`relative ${level > 0 ? "ml-6 border-l border-white/10 pl-3 my-1" : ""}`}>
-      <div className="flex items-center gap-2 group py-0.5">
+    <div className={`relative ${level > 0 ? "my-0.5 ml-6 border-l border-white/[0.08] pl-3" : ""}`}>
+      <div className="group flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors duration-200 hover:bg-white/[0.03]">
         {hasChildren ? (
           <button
             onClick={() => toggle(node.id)}
-            className="flex h-5 w-5 items-center justify-center rounded border border-white/10 bg-white/5 text-[11px] text-muted hover:border-white/20 hover:text-white"
+            className="flex h-5 w-5 flex-none items-center justify-center rounded-md border border-white/10 bg-white/5 text-muted transition hover:border-white/20 hover:text-white"
+            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-expanded={isExpanded}
           >
-            {isExpanded ? "−" : "+"}
+            <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform duration-300 ease-ios ${isExpanded ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
           </button>
         ) : (
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-blue/80 ml-1.5 mr-1" />
+          <span className="ml-1.5 mr-1 h-1.5 w-1.5 flex-none rounded-full bg-accent-blue/80 shadow-[0_0_8px_rgba(91,140,255,0.8)]" />
         )}
 
         <span
           onClick={() => (hasChildren ? toggle(node.id) : handleLaunch())}
           className={`cursor-pointer transition select-none ${
             level === 0
-              ? "text-base font-bold text-accent-sky"
+              ? "text-gradient text-base font-bold"
               : level === 1
               ? "text-sm font-semibold text-white"
               : hasChildren
@@ -144,7 +146,7 @@ function RenderNode({
         </span>
 
         {node.type === "source" && (
-          <span className="chip !py-0 !px-1.5 text-[10px] !bg-emerald-500/10 !text-emerald-300 border-emerald-500/20">
+          <span className="chip !border-emerald-500/20 !bg-emerald-500/10 !px-1.5 !py-0 text-[10px] !text-emerald-300">
             Integrated
           </span>
         )}
@@ -168,7 +170,7 @@ function RenderNode({
       </div>
 
       {hasChildren && isExpanded && (
-        <div className="mt-0.5">
+        <div className="mt-0.5 animate-fadein">
           {node.children!.map((child) => (
             <RenderNode
               key={child.id}

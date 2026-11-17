@@ -8,6 +8,7 @@ export default function TreePage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
+        eyebrow="Intelligence"
         title="OSINT Framework Tree"
         subtitle="Massive hierarchical intelligence tree. Navigate hundreds of data branches or launch instant queries across all domains."
       />

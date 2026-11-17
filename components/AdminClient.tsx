@@ -19,43 +19,57 @@ export function AdminClient({ initial, me }: { initial: U[]; me: string }) {
   }
 
   return (
-    <div className="panel overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="border-b border-white/5 text-left text-xs uppercase tracking-wide text-faint">
+    <div className="panel overflow-x-auto">
+      <table className="table-glass w-full min-w-[560px] text-sm">
+        <thead className="border-b border-white/[0.06]">
           <tr>
-            <th className="px-4 py-2.5">User</th>
-            <th className="px-4 py-2.5">Role</th>
-            <th className="px-4 py-2.5">Status</th>
-            <th className="px-4 py-2.5 text-right">Actions</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th className="!text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-white/[0.05]">
           {users.map((u) => (
             <tr key={u.id}>
-              <td className="px-4 py-2.5">
-                <div className="font-medium">{u.displayName || u.email}</div>
-                <div className="text-xs text-faint">{u.email}</div>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gradient-to-br from-accent-blue/70 to-accent-violet/70 text-xs font-semibold text-white ring-1 ring-white/10">
+                    {(u.displayName || u.email)[0]?.toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 font-medium">
+                      {u.displayName || u.email}
+                      {u.id === me && <span className="chip !px-1.5 !py-0 text-[10px]">you</span>}
+                    </div>
+                    <div className="text-xs text-faint">{u.email}</div>
+                  </div>
+                </div>
               </td>
-              <td className="px-4 py-2.5">
+              <td className="px-4 py-3">
                 <select
                   value={u.role}
                   disabled={u.id === me}
                   onChange={(e) => update(u.id, { role: e.target.value as Role })}
-                  className="input !w-auto !py-1"
+                  className="input !w-auto !py-1.5 text-[13px] disabled:opacity-50"
                 >
                   <option value="user">user</option>
                   <option value="moderator">moderator</option>
                   <option value="admin">admin</option>
                 </select>
               </td>
-              <td className="px-4 py-2.5">
-                {u.suspended ? <span className="chip text-red-300">suspended</span> : <span className="chip text-emerald-300">active</span>}
+              <td className="px-4 py-3">
+                {u.suspended ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-300 ring-1 ring-red-500/20"><span className="h-1.5 w-1.5 rounded-full bg-current" />suspended</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-500/20"><span className="h-1.5 w-1.5 rounded-full bg-current" />active</span>
+                )}
               </td>
-              <td className="px-4 py-2.5 text-right">
+              <td className="px-4 py-3 text-right">
                 {u.id !== me && (
                   <button
                     onClick={() => update(u.id, { suspended: !u.suspended })}
-                    className="text-xs text-amber-300 hover:underline"
+                    className={u.suspended ? "btn-ghost !text-emerald-300 hover:!bg-emerald-500/10" : "btn-ghost !text-amber-300 hover:!bg-amber-500/10"}
                   >
                     {u.suspended ? "Reinstate" : "Suspend"}
                   </button>

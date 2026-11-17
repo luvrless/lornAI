@@ -15,7 +15,7 @@ export default function CasesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader title="Cases" subtitle="Organize investigations, notes and evidence. Private by default." />
+      <PageHeader eyebrow="Workspace" title="Cases" subtitle="Organize investigations, notes and evidence. Private by default." />
       <CasesClient initial={cases} />
     </div>
   );
