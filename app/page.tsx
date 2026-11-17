@@ -1,8 +1,5 @@
 import Link from "next/link";
 import { registryStats } from "@/lib/sources/registry";
-import { getCurrentUser } from "@/lib/auth";
-
-export const runtime = "nodejs";
 
 function Logo() {
   return (
@@ -30,7 +27,6 @@ const FEATURES = [
 
 export default function Landing() {
   const stats = registryStats();
-  const authed = !!getCurrentUser();
   return (
     <div className="min-h-screen">
       {/* Nav */}
@@ -44,20 +40,18 @@ export default function Landing() {
             <Link href="/sources" className="hidden px-3 py-2 text-muted hover:text-white sm:block">
               Sources
             </Link>
-            {authed ? (
-              <Link href="/overview" className="btn-primary">
-                Open console
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="btn">
-                  Sign in
-                </Link>
-                <Link href="/register" className="btn-primary">
-                  Get started
-                </Link>
-              </>
-            )}
+            <Link href="/tree" className="hidden px-3 py-2 text-muted hover:text-white sm:block">
+              Tree
+            </Link>
+            <Link href="/login" className="btn">
+              Sign in
+            </Link>
+            <Link href="/register" className="btn-primary">
+              Get started
+            </Link>
+          </nav>
+        </div>
+      </header>
           </nav>
         </div>
       </header>
