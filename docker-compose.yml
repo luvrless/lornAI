@@ -1,0 +1,15 @@
+services:
+  lorn:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # - LORN_SECRET=set-a-long-random-string
+      # - HIBP_API_KEY=
+    volumes:
+      - lorn-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  lorn-data:
