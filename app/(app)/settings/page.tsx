@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const { user } = getCurrentUser()!;
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Settings" subtitle="Manage your account, security and data." />
+      <PageHeader eyebrow="Account" title="Settings" subtitle="Manage your account, security and data." />
       <SettingsClient
         email={user.email}
         displayName={user.displayName || user.email}

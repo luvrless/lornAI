@@ -26,7 +26,7 @@ export default function HistoryPage() {
     }));
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="History" subtitle="Every saved investigation, newest first. Expand to review full results." />
+      <PageHeader eyebrow="Workspace" title="History" subtitle="Every saved investigation, newest first. Expand to review full results." />
       <InvestigationsList initial={rows} />
     </div>
   );

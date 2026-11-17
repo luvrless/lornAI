@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, hasRole, publicUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registryStats } from "@/lib/sources/registry";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, SectionTitle, StatCard } from "@/components/ui";
 import { AdminClient } from "@/components/AdminClient";
 
 export const runtime = "nodejs";
@@ -21,9 +21,9 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader title="Admin" subtitle="System monitoring, user management and audit log. Admin-only." />
+      <PageHeader eyebrow="Administration" title="Admin" subtitle="System monitoring, user management and audit log. Admin-only." />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="stagger mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
           { k: users.length, v: "Users" },
           { k: investigations.length, v: "Investigations" },
@@ -31,26 +31,24 @@ export default function AdminPage() {
           { k: keys.length, v: "Active keys" },
           { k: reg.total, v: "Sources" },
         ].map((s) => (
-          <div key={s.v} className="panel p-4">
-            <div className="text-2xl font-semibold">{s.k}</div>
-            <div className="text-xs text-muted">{s.v}</div>
-          </div>
+          <StatCard key={s.v} k={s.k} v={s.v} />
         ))}
       </div>
 
-      <h2 className="mb-2 mt-6 font-medium">Users</h2>
+      <SectionTitle action={<span className="chip !py-0.5 text-[11px] tabular-nums">{users.length} total</span>}>Users</SectionTitle>
       <AdminClient initial={users} me={session.user.id} />
 
-      <h2 className="mb-2 mt-6 font-medium">Audit log</h2>
-      <div className="panel divide-y divide-white/5 overflow-hidden">
-        {audit.length === 0 && <div className="px-4 py-6 text-center text-sm text-faint">No events yet.</div>}
+      <div className="mt-8" />
+      <SectionTitle action={<span className="text-xs text-faint">Latest 25 events</span>}>Audit log</SectionTitle>
+      <div className="panel divide-y divide-white/[0.05] overflow-hidden">
+        {audit.length === 0 && <div className="px-4 py-10 text-center text-sm text-faint">No events yet.</div>}
         {audit.map((e) => (
-          <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-            <div className="flex items-center gap-3">
-              <span className="chip !py-0.5 text-[11px]">{e.action}</span>
-              <span className="text-faint">{e.target || ""}</span>
+          <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/[0.02]">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="chip mono flex-none !py-0.5 text-[11px]">{e.action}</span>
+              <span className="truncate text-faint">{e.target || ""}</span>
             </div>
-            <span className="text-xs text-faint">{new Date(e.at).toLocaleString()}</span>
+            <span className="flex-none text-xs tabular-nums text-faint">{new Date(e.at).toLocaleString()}</span>
           </div>
         ))}
       </div>
