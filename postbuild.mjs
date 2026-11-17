@@ -31,16 +31,29 @@ if (fs.existsSync(appServerDir)) {
   copyHtmlFiles(appServerDir);
 }
 
-// 3. Copy public files into .next
+// 3. Mirror .next/static -> .next/_next/static so the browser's /_next/static/* requests
+//    resolve correctly when Cloudflare Workers serves .next/ as the asset root.
+const staticSrc = path.join(nextDir, "static");
+const staticDest = path.join(nextDir, "_next", "static");
+if (fs.existsSync(staticSrc)) {
+  fs.mkdirSync(path.join(nextDir, "_next"), { recursive: true });
+  fs.cpSync(staticSrc, staticDest, { recursive: true });
+  console.log("Mirrored .next/static -> .next/_next/static");
+}
+
+// 4. Copy public files into .next
 const publicDir = path.resolve("public");
 if (fs.existsSync(publicDir)) {
   fs.cpSync(publicDir, nextDir, { recursive: true });
 }
 
-// 4. Write .assetsignore to ensure no large or server files get scanned
+// 5. Write .assetsignore — block server bundles, cache & source maps
+//    but keep _next/ (we just created it) and *.html
 const assetsIgnore = `cache/
 cache/**
 *.pack
+server/
+server/**
 *.map
 node_modules/
 `;
