@@ -52,9 +52,6 @@ export default function Landing() {
           </nav>
         </div>
       </header>
-          </nav>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -77,7 +74,7 @@ export default function Landing() {
             real source. Nothing is invented.
           </p>
           <div className="mt-9 flex items-center justify-center gap-3">
-            <Link href={authed ? "/investigate" : "/register"} className="btn-primary px-6 py-3 text-base">
+            <Link href="/register" className="btn-primary px-6 py-3 text-base">
               Start an investigation
             </Link>
             <Link href="/sources" className="btn px-6 py-3 text-base">
