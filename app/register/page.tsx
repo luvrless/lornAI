@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AuthShell } from "../login/page";
+import { AuthShell } from "../components/auth-shell";
 
 export default function RegisterPage() {
   const router = useRouter();
