@@ -34,27 +34,30 @@ export default function RegisterPage() {
 
   return (
     <AuthShell title="Create account" subtitle="The first account created becomes the administrator.">
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="space-y-5">
         {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-            {error}
+          <div className="alert alert-error" role="alert">
+            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg>
+            <span>{error}</span>
           </div>
         )}
         <div>
-          <label className="label">Email</label>
-          <input className="input mt-1.5" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+          <label className="label" htmlFor="email">Email</label>
+          <input id="email" autoComplete="email" placeholder="you@company.com" className="input mt-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
         </div>
         <div>
-          <label className="label">Password</label>
-          <input className="input mt-1.5" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-          <p className="mt-1.5 text-xs text-faint">Minimum 8 characters. Hashed with scrypt server-side.</p>
+          <label className="label" htmlFor="password">Password</label>
+          <input id="password" placeholder="At least 8 characters" autoComplete="new-password" className="input mt-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+          <p className="mt-2 text-xs text-faint">Minimum 8 characters. Hashed with scrypt server-side.</p>
         </div>
-        <button className="btn-primary w-full" disabled={loading}>
+        <button className="btn-primary mt-2 w-full !py-2.5" disabled={loading}>
+          {loading && <span className="spinner" />}
           {loading ? "Creating…" : "Create account"}
         </button>
       </form>
-      <p className="mt-6 text-center text-sm text-muted">
-        Already have an account? <Link href="/login" className="link">Sign in</Link>
+      <div className="divider my-6" />
+      <p className="text-center text-sm text-muted">
+        Already have an account? <Link href="/login" className="link font-medium">Sign in</Link>
       </p>
     </AuthShell>
   );

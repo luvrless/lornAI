@@ -138,26 +138,29 @@ export function Investigate({ cases }: { cases: { id: string; title: string }[] 
       {/* Search bar */}
       <form
         onSubmit={(e) => { e.preventDefault(); start(); }}
-        className="panel p-2"
+        className="panel p-2 shadow-lift"
       >
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-3 rounded-lg bg-ink-950/70 px-4 py-3">
-            <svg className="h-5 w-5 flex-none text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="searchbar flex-1 py-3.5">
+            <svg className={`h-5 w-5 flex-none transition-colors ${input ? "text-accent-sky" : "text-faint"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter an email, phone, username, domain, IP, URL, hash or wallet…"
-              className="mono flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+              className="mono min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint"
               autoFocus
             />
             {liveType && !running && (
-              <span className="chip flex-none !py-0.5 text-[11px]">{liveType}</span>
+              <span key={liveType} className="chip flex-none animate-pop !border-accent-blue/30 !bg-accent-blue/10 !py-0.5 text-[11px] !text-accent-sky">{liveType}</span>
             )}
           </div>
           {running ? (
-            <button type="button" onClick={cancel} className="btn flex-none">Cancel</button>
+            <button type="button" onClick={cancel} className="btn flex-none !px-5 !py-3">
+              <span className="spinner" />
+              Cancel
+            </button>
           ) : (
-            <button type="submit" className="btn-primary flex-none" disabled={!input.trim()}>
+            <button type="submit" className="btn-primary flex-none !px-6 !py-3" disabled={!input.trim()}>
               Investigate
             </button>
           )}
@@ -165,10 +168,10 @@ export function Investigate({ cases }: { cases: { id: string; title: string }[] 
       </form>
 
       {!started && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted">
-          <span className="text-faint">Try:</span>
+        <div className="mt-5 flex animate-rise flex-wrap items-center gap-2 text-sm text-muted">
+          <span className="label mr-1">Try</span>
           {EXAMPLES.map((ex) => (
-            <button key={ex} onClick={() => start(ex)} className="chip hover:border-white/20 hover:text-white">
+            <button key={ex} onClick={() => start(ex)} className="chip mono hover:!border-accent-blue/35 hover:!bg-accent-blue/10 hover:!text-white">
               {ex}
             </button>
           ))}
@@ -176,31 +179,33 @@ export function Investigate({ cases }: { cases: { id: string; title: string }[] 
       )}
 
       {started && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[320px_1fr]">
+        <div className="mt-5 grid animate-rise gap-5 lg:grid-cols-[320px_1fr]">
           {/* Left: source rail */}
           <div className="space-y-3">
-            <div className="panel p-4">
-              <div className="mb-2 flex items-center justify-between">
+            <div className="panel p-5">
+              <div className="mb-2.5 flex items-center justify-between gap-2">
                 <span className="label">Detected</span>
-                {detected && <span className="chip !py-0.5">{detected.identifierType}{detected.note ? ` · ${detected.note}` : ""}</span>}
+                {detected && <span className="chip animate-pop !border-accent-blue/30 !bg-accent-blue/10 !py-0.5 !text-accent-sky">{detected.identifierType}{detected.note ? ` · ${detected.note}` : ""}</span>}
               </div>
-              <div className="mono break-all text-sm">{detected?.normalized || input}</div>
+              <div className="mono break-all text-[15px] text-white">{detected?.normalized || input}</div>
               {rows.length > 0 && (
-                <div className="mt-3">
-                  <div className="mb-1 flex justify-between text-xs text-faint">
+                <div className="mt-4">
+                  <div className="mb-1.5 flex justify-between text-xs tabular-nums text-faint">
                     <span>{rows.filter((r) => r.state !== "waiting" && r.state !== "running").length}/{rows.length} sources</span>
                     <span>{Math.round(progress * 100)}%</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full bg-gradient-to-r from-accent-blue to-accent-violet transition-all" style={{ width: `${progress * 100}%` }} />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+                    <div className="relative h-full overflow-hidden rounded-full bg-gradient-to-r from-accent-blue to-accent-violet shadow-[0_0_12px_rgba(110,120,255,0.7)] transition-[width] duration-500 ease-ios" style={{ width: `${progress * 100}%` }}>
+                      {running && <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/40 to-transparent" />}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="panel divide-y divide-white/5 overflow-hidden">
+            <div className="panel max-h-[560px] divide-y divide-white/[0.05] overflow-y-auto">
               {rows.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-2 px-3.5 py-2.5">
+                <div key={r.id} className={`flex items-center justify-between gap-2 px-4 py-2.5 transition-colors duration-300 ${r.state === "running" ? "bg-accent-blue/[0.04]" : ""}`}>
                   <div className="min-w-0">
                     <div className="truncate text-sm">{r.name}</div>
                     <div className="truncate text-[11px] text-faint">
@@ -212,17 +217,17 @@ export function Investigate({ cases }: { cases: { id: string; title: string }[] 
                 </div>
               ))}
               {rows.length === 0 && running && (
-                <div className="px-3.5 py-6 text-center text-sm text-faint">Planning sources…</div>
+                <div className="flex items-center justify-center gap-2 px-3.5 py-8 text-sm text-faint"><span className="spinner" />Planning sources…</div>
               )}
               {rows.length === 0 && !running && (
-                <div className="px-3.5 py-6 text-center text-sm text-faint">
+                <div className="px-4 py-8 text-center text-sm text-faint">
                   No live adapters support this identifier type. See key-ready sources below.
                 </div>
               )}
             </div>
 
             {skipped.length > 0 && (
-              <div className="panel p-4">
+              <div className="panel p-5">
                 <div className="label mb-2">Key-ready sources ({skipped.length})</div>
                 <p className="mb-2 text-xs text-faint">Registered and ready to run once credentials are configured.</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -238,25 +243,26 @@ export function Investigate({ cases }: { cases: { id: string; title: string }[] 
           {/* Right: results */}
           <div className="space-y-4">
             {investigation && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex animate-pop flex-wrap items-center gap-2">
                 {savedId ? (
-                  <span className="chip text-emerald-300">Saved ✓</span>
+                  <span className="chip animate-pop !border-emerald-500/25 !bg-emerald-500/10 !py-1.5 !text-emerald-300">Saved ✓</span>
                 ) : (
                   <>
                     {cases.length > 0 && (
-                      <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} className="input !w-auto !py-1.5 text-sm">
+                      <select value={selectedCase} onChange={(e) => setSelectedCase(e.target.value)} className="input !w-auto !py-2 text-sm">
                         <option value="">No case</option>
                         {cases.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
                       </select>
                     )}
-                    <button onClick={save} className="btn-primary !py-1.5" disabled={saving}>
+                    <button onClick={save} className="btn-primary" disabled={saving}>
+                      {saving && <span className="spinner" />}
                       {saving ? "Saving…" : "Save investigation"}
                     </button>
                   </>
                 )}
-                <button onClick={() => exportLocal("json")} className="btn !py-1.5">Export JSON</button>
-                <button onClick={() => exportLocal("csv")} className="btn !py-1.5">Export CSV</button>
-                {savedId && <Link href="/graph" className="btn !py-1.5">Open in graph</Link>}
+                <button onClick={() => exportLocal("json")} className="btn">Export JSON</button>
+                <button onClick={() => exportLocal("csv")} className="btn">Export CSV</button>
+                {savedId && <Link href="/graph" className="btn">Open in graph</Link>}
               </div>
             )}
 
@@ -307,21 +313,27 @@ function ResultsView({
 
   return (
     <div className="panel overflow-hidden">
-      <div className="flex gap-1 overflow-x-auto border-b border-white/5 px-2 pt-2">
+      <div className="border-b border-white/[0.06] p-2">
+        <div className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl bg-black/25 p-1 ring-1 ring-white/[0.05]" role="tablist">
         {tabs.map((t) => (
           <button
             key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`whitespace-nowrap rounded-t-lg px-3.5 py-2 text-sm transition ${
-              tab === t.id ? "bg-white/5 text-white" : "text-muted hover:text-white"
+            className={`whitespace-nowrap rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all duration-300 ease-ios ${
+              tab === t.id
+                ? "bg-white/[0.09] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_8px_rgba(0,0,0,0.3)]"
+                : "text-muted hover:text-white"
             }`}
           >
             {t.label}
           </button>
         ))}
+        </div>
       </div>
 
-      <div className="p-4">
+      <div key={tab} className="animate-fadein p-4 sm:p-5">
         {tab === "overview" && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -330,7 +342,7 @@ function ResultsView({
               <Stat k={stats?.uniqueFindings ?? findings.length} v="Unique findings" accent="blue" />
               <Stat k={stats?.failed ?? rows.filter((r) => ["failed", "unavailable", "rate_limited", "auth_required"].includes(r.state)).length} v="Failed / skipped" accent="amber" />
             </div>
-            {running && <p className="text-sm text-muted">Live — sources are still reporting…</p>}
+            {running && <p className="flex items-center gap-2 text-sm text-muted"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-sky opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-accent-sky" /></span>Live — sources are still reporting…</p>}
             {!running && investigation && (
               <p className="text-sm text-muted">
                 Completed in {investigation.durationMs}ms. {stats?.completed} of {stats?.attempted} sources returned data.
@@ -339,13 +351,13 @@ function ResultsView({
             {/* category highlights */}
             <div className="grid gap-3 sm:grid-cols-2">
               {Object.entries(byCat).map(([cat, items]) => (
-                <div key={cat} className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
+                <div key={cat} className="tile animate-pop p-4">
                   <div className="label mb-2">{cat.replace(/_/g, " ")}</div>
                   <ul className="space-y-1">
                     {items.slice(0, 4).map((it, i) => (
                       <li key={i} className="flex items-baseline justify-between gap-2 text-sm">
                         <span className="text-faint">{it.finding.label}</span>
-                        <span className="mono truncate text-right">{it.finding.sensitive ? "•••••" : it.finding.value}</span>
+                        <span className="mono min-w-0 truncate text-right">{it.finding.sensitive ? "•••••" : it.finding.value}</span>
                       </li>
                     ))}
                     {items.length > 4 && <li className="text-xs text-faint">+{items.length - 4} more</li>}
@@ -358,7 +370,7 @@ function ResultsView({
 
         {tab === "findings" && (
           <div className="space-y-1.5">
-            {findings.length === 0 && <p className="py-6 text-center text-sm text-faint">No findings yet.</p>}
+            {findings.length === 0 && <p className="py-10 text-center text-sm text-faint">{running ? "Waiting for findings…" : "No findings yet."}</p>}
             {findings.map((f, i) => <FindingRow key={i} f={f} />)}
           </div>
         )}
@@ -370,7 +382,7 @@ function ResultsView({
         )}
 
         {tab === "raw" && (
-          <pre className="mono max-h-[600px] overflow-auto rounded-lg bg-ink-950/70 p-3 text-xs text-muted">
+          <pre className="codeblock max-h-[600px]">
             {JSON.stringify(investigation ?? { partial: rows.map((r) => r.result).filter(Boolean) }, null, 2)}
           </pre>
         )}
@@ -382,9 +394,9 @@ function ResultsView({
 function Stat({ k, v, accent }: { k: number | string; v: string; accent?: string }) {
   const c = accent === "emerald" ? "text-emerald-300" : accent === "blue" ? "text-accent-sky" : accent === "amber" ? "text-amber-300" : "";
   return (
-    <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
-      <div className={`text-2xl font-semibold ${c}`}>{k}</div>
-      <div className="mt-0.5 text-xs text-faint">{v}</div>
+    <div className="tile p-4">
+      <div className={`text-[26px] font-semibold leading-none tracking-tight tabular-nums ${c}`}>{k}</div>
+      <div className="mt-2 text-xs text-faint">{v}</div>
     </div>
   );
 }
@@ -392,18 +404,18 @@ function Stat({ k, v, accent }: { k: number | string; v: string; accent?: string
 function FindingRow({ f }: { f: Finding }) {
   const [reveal, setReveal] = useState(false);
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.015] px-3 py-2">
+    <div className="tile flex items-start justify-between gap-3 px-3.5 py-2.5">
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wide text-faint">{f.label}</div>
-        <div className="mono mt-0.5 break-all text-sm">
+        <div className="label">{f.label}</div>
+        <div className="mono mt-1 break-all text-sm">
           {f.sensitive && !reveal ? (
-            <button onClick={() => setReveal(true)} className="text-violet-300 hover:underline">reveal sensitive ••</button>
+            <button onClick={() => setReveal(true)} className="rounded-md bg-violet-500/10 px-1.5 py-0.5 text-xs text-violet-300 ring-1 ring-violet-500/20 transition hover:bg-violet-500/20">reveal sensitive ••</button>
           ) : (
             f.value
           )}
         </div>
         {f.sourceUrl && (
-          <a href={f.sourceUrl} target="_blank" rel="noreferrer" className="link text-xs">{f.sourceUrl}</a>
+          <a href={f.sourceUrl} target="_blank" rel="noreferrer" className="link mt-0.5 block truncate text-xs">{f.sourceUrl}</a>
         )}
       </div>
       <div className="flex flex-none flex-col items-end gap-1">
@@ -417,24 +429,27 @@ function FindingRow({ f }: { f: Finding }) {
 function SourceResultCard({ row }: { row: SrcRow }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-lg border border-white/5 bg-white/[0.015]">
-      <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left">
-        <div className="min-w-0">
+    <div className={`tile overflow-hidden ${open ? "!border-white/10" : ""}`}>
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 flex-none text-faint transition-transform duration-300 ease-ios ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>
+          <div className="min-w-0">
           <div className="text-sm font-medium">{row.name}</div>
           <div className="text-[11px] text-faint">
             {row.meta?.category} · {row.result?.findings.length ?? 0} findings
             {row.result?.message ? ` · ${row.result.message}` : ""}
           </div>
+          </div>
         </div>
         <StatePill state={row.state} />
       </button>
       {open && row.result && (
-        <div className="space-y-1.5 border-t border-white/5 p-3">
+        <div className="animate-pop space-y-1.5 border-t border-white/[0.06] p-3">
           {row.result.findings.map((f, i) => <FindingRow key={i} f={f} />)}
           {row.result.raw != null && (
             <details className="mt-2">
-              <summary className="cursor-pointer text-xs text-faint">Raw response</summary>
-              <pre className="mono mt-1 max-h-72 overflow-auto rounded bg-ink-950/70 p-2 text-[11px] text-muted">
+              <summary className="cursor-pointer text-xs text-faint transition-colors hover:text-white">▸ Raw response</summary>
+              <pre className="codeblock mt-2 max-h-72 !p-3 !text-[11px]">
                 {JSON.stringify(row.result.raw, null, 2)}
               </pre>
             </details>

@@ -15,6 +15,7 @@ export default function InvestigatePage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
+        eyebrow="Console"
         title="Investigate"
         subtitle="One identifier in. Every eligible source, concurrently. Real results only."
       />

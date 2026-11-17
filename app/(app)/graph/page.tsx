@@ -14,7 +14,7 @@ export default function GraphPage() {
     .map((i) => ({ id: i.id, input: i.input, normalized: i.normalized, identifierType: i.identifierType }));
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader title="Graph Analysis" subtitle="Evidence-linked relationships between entities. Connections are drawn only from observed source findings." />
+      <PageHeader eyebrow="Analysis" title="Graph Analysis" subtitle="Evidence-linked relationships between entities. Connections are drawn only from observed source findings." />
       <GraphView investigations={investigations} />
     </div>
   );
