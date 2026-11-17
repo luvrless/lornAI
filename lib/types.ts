@@ -13,67 +13,24 @@ export type IdentifierType =
   | "unknown";
 
 export type SourceStatus =
-  | "integrated" // real, keyless, tested
-  | "requires_key" // real implementation, needs credentials
-  | "public_web" // scrapes/queries a public page
-  | "unavailable" // temporarily down
-  | "planned"; // registered slot, not yet implemented
+  | "integrated"
+  | "requires_key"
+  | "public_web"
+  | "unavailable"
+  | "planned";
 
 export type SourceCategory =
-  | "email"
-  | "phone"
-  | "username"
-  | "social"
-  | "developer"
-  | "breach"
-  | "advisory"
-  | "threat"
-  | "malware"
-  | "phishing"
-  | "dns"
-  | "whois"
-  | "certificates"
-  | "subdomains"
-  | "asn"
-  | "ip"
-  | "routing"
-  | "domain_reputation"
-  | "url_reputation"
-  | "file_reputation"
-  | "hash"
-  | "code_search"
-  | "repo_search"
-  | "org_records"
-  | "company_registry"
-  | "gov_data"
-  | "geo"
-  | "maps"
-  | "image_meta"
-  | "ocr"
-  | "video_meta"
-  | "web_index"
-  | "search_engine"
-  | "archive"
-  | "news"
-  | "forum"
-  | "academic"
-  | "document_index"
-  | "package_registry"
-  | "tech_fingerprint"
-  | "crypto";
+  | "email" | "phone" | "username" | "social" | "developer" | "breach"
+  | "advisory" | "threat" | "malware" | "phishing" | "dns" | "whois"
+  | "certificates" | "subdomains" | "asn" | "ip" | "routing"
+  | "domain_reputation" | "url_reputation" | "file_reputation" | "hash"
+  | "code_search" | "repo_search" | "org_records" | "company_registry"
+  | "gov_data" | "geo" | "maps" | "image_meta" | "ocr" | "video_meta"
+  | "web_index" | "search_engine" | "archive" | "news" | "forum"
+  | "academic" | "document_index" | "package_registry" | "tech_fingerprint" | "crypto";
 
 export type PrivacyClass = "public" | "sensitive" | "defensive";
-
-// Per-source execution state during an investigation
-export type RunState =
-  | "waiting"
-  | "running"
-  | "completed"
-  | "no_results"
-  | "rate_limited"
-  | "auth_required"
-  | "unavailable"
-  | "failed";
+export type RunState = "waiting" | "running" | "completed" | "no_results" | "rate_limited" | "auth_required" | "unavailable" | "failed";
 
 export interface SourceMeta {
   id: string;
@@ -89,15 +46,14 @@ export interface SourceMeta {
 }
 
 export interface Finding {
-  // A normalized atomic fact produced by a source
-  key: string; // e.g. "mx_record", "subdomain", "profile"
-  label: string; // human label
-  value: string; // normalized display value
-  entityType?: IdentifierType; // if this finding is itself an identifier (for graphing)
-  confidence: number; // 0..1
+  key: string;
+  label: string;
+  value: string;
+  entityType?: IdentifierType;
+  confidence: number;
   sourceId: string;
   sourceUrl?: string;
-  collectedAt: string; // ISO
+  collectedAt: string;
   publishedAt?: string;
   categories?: string[];
   extra?: Record<string, unknown>;
@@ -111,8 +67,8 @@ export interface SourceResult {
   finishedAt?: string;
   durationMs?: number;
   findings: Finding[];
-  message?: string; // error / status detail
-  raw?: unknown; // permitted raw response (redacted where needed)
+  message?: string;
+  raw?: unknown;
 }
 
 export interface Investigation {
@@ -124,14 +80,7 @@ export interface Investigation {
   createdAt: string;
   durationMs?: number;
   results: SourceResult[];
-  stats: {
-    attempted: number;
-    completed: number;
-    noResults: number;
-    failed: number;
-    totalFindings: number;
-    uniqueFindings: number;
-  };
+  stats: { attempted: number; completed: number; noResults: number; failed: number; totalFindings: number; uniqueFindings: number };
   caseId?: string | null;
   saved?: boolean;
 }
@@ -146,31 +95,24 @@ export interface AdapterContext {
 
 export interface Adapter {
   meta: SourceMeta;
-  // only run if this returns true for the given identifier
   canRun(ctx: { identifierType: IdentifierType; normalized: string }): boolean;
-  run(ctx: AdapterContext): Promise<{
-    state: RunState;
-    findings: Finding[];
-    message?: string;
-    raw?: unknown;
-  }>;
+  run(ctx: AdapterContext): Promise<{ state: RunState; findings: Finding[]; message?: string; raw?: unknown }>;
 }
-
-// ---- Persistence models ----
 
 export type Role = "user" | "moderator" | "admin";
 
 export interface User {
   id: string;
-  uid: number;        // sequential user number (1 = first ever registration)
+  uid: number;
   email: string;
-  passwordHash: string; // scrypt
+  passwordHash: string;
   salt: string;
   role: Role;
   createdAt: string;
   verified: boolean;
   suspended?: boolean;
   displayName?: string;
+  guest?: boolean;
 }
 
 export interface Session {
@@ -182,13 +124,7 @@ export interface Session {
 }
 
 export type CaseStatus = "open" | "in_progress" | "completed" | "archived";
-
-export interface CaseNote {
-  id: string;
-  body: string;
-  createdAt: string;
-}
-
+export interface CaseNote { id: string; body: string; createdAt: string }
 export interface InvestigationCase {
   id: string;
   userId: string;
@@ -206,8 +142,8 @@ export interface ApiKey {
   id: string;
   userId: string;
   name: string;
-  prefix: string; // visible prefix
-  hash: string; // sha256 of full key
+  prefix: string;
+  hash: string;
   scopes: string[];
   createdAt: string;
   expiresAt?: string | null;

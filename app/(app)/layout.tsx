@@ -8,8 +8,7 @@ export const dynamic = "force-dynamic";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const session = getCurrentUser();
   if (!session) {
-    redirect("/login");
-    return null;
+    redirect("/api/auth/guest?to=/overview");
   }
   const { user } = session;
   return (

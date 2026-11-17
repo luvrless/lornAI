@@ -18,10 +18,21 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      const text = await res.text();
+      let data: { error?: string } | null = null;
+      if (contentType.includes("application/json") || text.trim().startsWith("{")) {
+        try { data = JSON.parse(text); } catch { /* fall through */ }
+      }
+      if (!data) {
+        throw new Error(res.ok
+          ? "The server returned a non-JSON response. Please refresh and try again."
+          : `Registration request failed (${res.status}). Please refresh and try again.`);
+      }
       if (!res.ok) throw new Error(data.error || "registration failed");
       router.push("/overview");
       router.refresh();
@@ -56,7 +67,10 @@ export default function RegisterPage() {
         </button>
       </form>
       <div className="divider my-6" />
-      <p className="text-center text-sm text-muted">
+      <Link href="/api/auth/guest?to=/overview" className="btn w-full justify-center !py-2.5">
+        Continue as guest
+      </Link>
+      <p className="mt-5 text-center text-sm text-muted">
         Already have an account? <Link href="/login" className="link font-medium">Sign in</Link>
       </p>
     </AuthShell>
