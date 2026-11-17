@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { db, uid, audit } from "@/lib/db";
-import { createSession, sessionCookie, publicUser } from "@/lib/auth";
+import { createSession, getCurrentUser, sessionCookie } from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -14,21 +13,25 @@ export async function GET(req: Request) {
     ? destination
     : "/overview";
 
-  const guestEmail = "guest@lorn.local";
-  let user = db.find("users", (u) => u.email === guestEmail);
+  // Reuse this browser's guest account, but never share guest data across visitors.
+  let user: User | undefined = getCurrentUser()?.user.guest
+    ? getCurrentUser()!.user
+    : undefined;
 
   if (!user) {
+    const id = uid("usr_");
     user = {
-      id: uid("usr_"),
-      uid: (db.all("users").length || 0) + 1,
-      email: guestEmail,
+      id,
+      uid: db.all("users").length + 1,
+      email: `guest-${id.slice(-12)}@guest.lorn.local`,
       passwordHash: "",
       salt: "",
       role: "user",
       createdAt: new Date().toISOString(),
       verified: true,
       displayName: "Guest Investigator",
-    } satisfies User;
+      guest: true,
+    };
     await db.insert("users", user);
   }
 
@@ -36,10 +39,6 @@ export async function GET(req: Request) {
   const c = sessionCookie(session);
   const response = NextResponse.redirect(new URL(safeDestination, req.url));
   response.cookies.set(c.name, c.value, c.options);
-  await audit("user.login.guest", user.id, guestEmail);
-
-  // Keep publicGuest/profile data out of server logs and browser storage.
-  void publicUser;
-  void cookies;
+  await audit("user.login.guest", user.id);
   return response;
 }

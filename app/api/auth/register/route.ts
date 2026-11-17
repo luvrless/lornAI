@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   }
   const email = (body.email || "").trim().toLowerCase();
   const password = body.password || "";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err("invalid email");
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return err("invalid email");
   if (password.length < 8) return err("password must be at least 8 characters");
 
   if (db.find("users", (u) => u.email === email)) {
@@ -23,18 +23,17 @@ export async function POST(req: Request) {
   }
 
   const { hash, salt } = hashPassword(password);
-  const allUsers = db.all("users");
-  const isFirst = allUsers.length === 0;
-  const nextUid = allUsers.length + 1; // sequential UID (1 = first ever registration)
+  const registeredUsers = db.filter("users", (u) => !u.guest);
+  const isFirst = registeredUsers.length === 0;
   const user: User = {
     id: uid("usr_"),
-    uid: nextUid,
+    uid: registeredUsers.length + 1,
     email,
     passwordHash: hash,
     salt,
     role: isFirst ? "admin" : "user",
     createdAt: new Date().toISOString(),
-    verified: true, // local/self-hosted: auto-verify (wire SMTP for production)
+    verified: true,
     displayName: body.displayName?.trim() || email.split("@")[0],
   };
   await db.insert("users", user);
