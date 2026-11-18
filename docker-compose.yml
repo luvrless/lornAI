@@ -1,15 +1,7 @@
 services:
-  lorn:
+  flairgpt:
     build: .
     ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      # - LORN_SECRET=set-a-long-random-string
-      # - HIBP_API_KEY=
-    volumes:
-      - lorn-data:/app/data
+      - "8787:8787"
+    env_file: .env
     restart: unless-stopped
-
-volumes:
-  lorn-data:

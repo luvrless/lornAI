@@ -1,7 +1,0 @@
-User-agent: *
-Disallow: /overview
-Disallow: /investigate
-Disallow: /cases
-Disallow: /admin
-Disallow: /api/
-Allow: /

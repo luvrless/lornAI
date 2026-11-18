@@ -1,5 +1,0 @@
-cache/
-cache/**
-*.pack
-*.map
-node_modules/

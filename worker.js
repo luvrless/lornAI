@@ -1,43 +1,15 @@
+// Cloudflare Worker entry: serves the built SPA from ./dist and the /api/* routes.
+// Secrets: `wrangler secret put FLAIR_API_KEY` (and optionally GEMINI_API_KEY, DEEPSEEK_API_KEY).
+import { handleApi } from "./api/handler.js";
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const pathname = url.pathname;
+    if (url.pathname.startsWith("/api/")) return handleApi(request, env);
 
-    // 1. Try direct asset lookup first (handles /_next/static/*, /robots.txt, etc.)
-    const directRes = await env.ASSETS.fetch(request);
-    if (directRes.status !== 404) {
-      return directRes;
-    }
-
-    // 2. Never fall back to HTML for /_next/ paths — those are real static assets.
-    //    If not found as an asset, return 404 immediately.
-    if (pathname.startsWith("/_next/")) {
-      return new Response("Not found", { status: 404 });
-    }
-
-    // 3. For extensionless routes, try route.html then route/index.html
-    if (!pathname.includes(".")) {
-      const clean = pathname.replace(/\/$/, "") || "/index";
-
-      // Try /path.html
-      const htmlRes = await env.ASSETS.fetch(
-        new Request(new URL(clean + ".html", url), request)
-      );
-      if (htmlRes.status !== 404) return htmlRes;
-
-      // Try /path/index.html
-      const indexRes = await env.ASSETS.fetch(
-        new Request(new URL(clean + "/index.html", url), request)
-      );
-      if (indexRes.status !== 404) return indexRes;
-    }
-
-    // 4. Final fallback: serve index.html (SPA-style)
-    const root = await env.ASSETS.fetch(
-      new Request(new URL("/index.html", url), request)
-    );
-    if (root.status !== 404) return root;
-
-    return new Response("Not found", { status: 404 });
+    const asset = await env.ASSETS.fetch(request);
+    if (asset.status !== 404) return asset;
+    // SPA fallback
+    return env.ASSETS.fetch(new Request(new URL("/index.html", url), request));
   },
 };

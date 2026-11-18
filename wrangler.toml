@@ -1,8 +1,13 @@
-name = "lornai"
+name = "flairgpt"
 main = "worker.js"
 compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
 
 [assets]
-directory = ".next"
+directory = "dist"
 binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Secrets (not stored in this file):
+#   npx wrangler secret put FLAIR_API_KEY
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put DEEPSEEK_API_KEY   (optional)
