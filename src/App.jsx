@@ -336,7 +336,7 @@ export default function App() {
                   <Typed text="Hi, I'm FlairGPT." />
                 </h1>
               </div>
-              <p className="welcome-sub">Your AI coding agent powered by Flair 5.5. How can I help you build today?</p>
+              <p className="welcome-sub">Your AI coding agent powered by Lorn’s Flair 5.5. How can I help you build today?</p>
               <Composer settings={settings} setSettings={setSettings} onSend={send} onStop={stop} busy={Boolean(busyId)} centered />
               <div className="suggestions">
                 {SUGGESTIONS.map((s, i) => (

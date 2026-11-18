@@ -110,7 +110,7 @@ export default function Sidebar({ open, chats, activeId, onNew, onSelect, onDele
           <span>Settings</span>
         </button>
         <div className="powered">
-          Powered by <strong>Flair 5.5</strong>
+          <strong>Flair 5.5</strong> · powered by <strong>Lorn</strong>
         </div>
       </div>
     </aside>

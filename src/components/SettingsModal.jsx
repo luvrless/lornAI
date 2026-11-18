@@ -98,7 +98,7 @@ export default function SettingsModal({ open, onClose, settings, setSettings, se
           <div className="modal-content" key={tab}>
             {tab === "model" && (
               <>
-                <Row title="Model" desc="Flair 5.5 is the main model. Gemini is the second model; DeepSeek is optional.">
+                <Row title="Model" desc="Flair 5.5, powered by Lorn, is the main model. Gemini is the second model; DeepSeek is optional.">
                   <select value={settings.model} onChange={(e) => set({ model: e.target.value })}>
                     {["flair", "gemini", "deepseek"].map((p) => (
                       <optgroup key={p} label={PROVIDER_LABEL[p]}>
@@ -211,7 +211,7 @@ export default function SettingsModal({ open, onClose, settings, setSettings, se
                   here — overrides are stored only in this browser and sent with your requests.
                 </p>
                 {[
-                  { id: "flair", label: "Flair (abliteration.ai)", env: "FLAIR_API_KEY", ph: "ak_…" },
+                  { id: "flair", label: "Flair by Lorn (abliteration.ai API)", env: "FLAIR_API_KEY", ph: "ak_…" },
                   { id: "gemini", label: "Gemini (Google)", env: "GEMINI_API_KEY", ph: "AIza… / AQ.…" },
                   { id: "deepseek", label: "DeepSeek", env: "DEEPSEEK_API_KEY", ph: "sk-…" },
                 ].map((p) => {
@@ -269,10 +269,10 @@ export default function SettingsModal({ open, onClose, settings, setSettings, se
                 <div className="terms-card">
                   <IconSpark size={20} />
                   <div>
-                    <h3>Flair 5.5 — provided by abliteration.ai</h3>
+                    <h3>Flair 5.5 — powered by Lorn</h3>
                     <p>
-                      FlairGPT’s main model, <strong>Flair 5.5</strong>, is served by <a href="https://abliteration.ai/" target="_blank" rel="noreferrer">abliteration.ai</a>{" "}
-                      through its OpenAI-compatible API (<code>api.abliteration.ai/v1</code>). Use of the model and of the API key is governed solely by abliteration.ai’s
+                      FlairGPT’s main model, <strong>Flair 5.5</strong>, is powered by <strong>Lorn</strong> and served by <a href="https://abliteration.ai/" target="_blank" rel="noreferrer">abliteration.ai</a>{" "}
+                      through its OpenAI-compatible API (<code>api.abliteration.ai/v1</code>). Use of the API and API key is governed solely by abliteration.ai’s
                       own terms of service, usage policies and privacy policy.
                     </p>
                     <p>

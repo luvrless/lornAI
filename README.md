@@ -1,6 +1,6 @@
 # FlairGPT
 
-An AI coding agent with a DeepSeek-style interface, powered by **Flair 5.5** (served by [abliteration.ai](https://abliteration.ai/)).
+An AI coding agent with a DeepSeek-style interface, powered by **Flair 5.5**, a model by **Lorn** (served via the [abliteration.ai](https://abliteration.ai/) API).
 It's set up to be a strong developer in every major language, with particular depth in **Lua/Luau and Roblox development**.
 
 ## Features

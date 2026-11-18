@@ -174,7 +174,7 @@ export default function Composer({ settings, setSettings, onSend, onStop, busy, 
           </div>
         </div>
       </div>
-      {!centered && <div className="disclaimer">Flair 5.5 is provided by abliteration.ai under its own terms & policies. AI output can be wrong — review code before running it.</div>}
+      {!centered && <div className="disclaimer">Flair 5.5 is powered by Lorn and served via the abliteration.ai API under its terms & policies. AI output can be wrong — review code before running it.</div>}
     </div>
   );
 }
