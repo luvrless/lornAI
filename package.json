@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web \"node --env-file-if-exists=.env server.js --api-only\" \"vite\"",
-    "build": "vite build",
+    "build": "vite build && node -e \"import('node:fs').then(fs => fs.cpSync('dist', '.next', {recursive: true, force: true}))\"",
+    "pages:build": "npm run build",
     "start": "node --env-file-if-exists=.env server.js",
     "deploy": "vite build && wrangler deploy"
   },
